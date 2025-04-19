@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { NotificationBell } from './Analytics';
 
@@ -7,49 +7,42 @@ const Vehicles = () => {
   const [expandedRow, setExpandedRow] = useState(null);
   // State for showing/hiding add vehicle modal
   const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
+  // State for vehicles data
+  const [vehicles, setVehicles] = useState([]);
+  // State for loading
+  const [loading, setLoading] = useState(true);
+  // State for error
+  const [error, setError] = useState(null);
+  // State for selected vehicles (for delete)
+  const [selectedVehicles, setSelectedVehicles] = useState([]);
+  // State for delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // State for vehicle to delete
+  const [vehicleToDelete, setVehicleToDelete] = useState(null);
 
-  // Sample vehicle data
-  const vehicles = [
-    {
-      id: 'XYZ-123',
-      status: 'Active',
-      type: 'Truck',
-      lastService: 'Jan 15, 2025',
-      documents: 'Valid',
-      make: 'Toyota',
-      model: 'Hino 300',
-      year: 2023,
-      license: 'XYZ-123',
-      vin: '1HGCM82633A123456',
-      mileage: '45,000 km'
-    },
-    {
-      id: 'ABC-789',
-      status: 'Active',
-      type: 'Van',
-      lastService: 'Mar 1, 2025',
-      documents: 'Expiring Soon',
-      make: 'Mercedes',
-      model: 'Sprinter',
-      year: 2022,
-      license: 'ABC-789',
-      vin: '2FMZA5145XBA12345',
-      mileage: '32,500 km'
-    },
-    {
-      id: 'DEF-456',
-      status: 'Inactive',
-      type: 'Truck',
-      lastService: 'Feb 20, 2025',
-      documents: 'Expired',
-      make: 'Ford',
-      model: 'Transit',
-      year: 2021,
-      license: 'DEF-456',
-      vin: '3VWPD71K27M082526',
-      mileage: '58,200 km'
-    }
-  ];
+  // Fetch vehicles from API
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:3000/api/vehicles');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setVehicles(data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching vehicles:', error);
+        setError(error.message);
+        setLoading(false);
+      }
+    };
+
+    fetchVehicles();
+  }, []);
 
   // Toggle expanded row
   const toggleExpandRow = (id) => {
@@ -80,6 +73,149 @@ const Vehicles = () => {
       ? 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800'
       : 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800';
   };
+
+  // Add a new vehicle
+  const addVehicle = async (vehicleData) => {
+    try {
+      const response = await fetch('http://localhost:3000/api/vehicles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(vehicleData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const newVehicle = await response.json();
+      setVehicles([...vehicles, newVehicle]);
+      setShowAddVehicleModal(false);
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      // You could set an error state here to display to the user
+    }
+  };
+
+  // Handle vehicle selection for delete
+  const handleVehicleSelection = (vehicleId, isSelected) => {
+    if (isSelected) {
+      setSelectedVehicles([...selectedVehicles, vehicleId]);
+    } else {
+      setSelectedVehicles(selectedVehicles.filter(id => id !== vehicleId));
+    }
+  };
+
+  // Handle select all vehicles
+  const handleSelectAll = (isSelected) => {
+    if (isSelected) {
+      setSelectedVehicles(vehicles.map(vehicle => vehicle.id));
+    } else {
+      setSelectedVehicles([]);
+    }
+  };
+
+  // Open delete confirmation for single vehicle
+  const openDeleteConfirmation = (vehicle) => {
+    setVehicleToDelete(vehicle);
+    setShowDeleteModal(true);
+  };
+
+  // Open delete confirmation for multiple vehicles
+  const openBulkDeleteConfirmation = () => {
+    if (selectedVehicles.length === 0) {
+      alert('Please select at least one vehicle to delete');
+      return;
+    }
+    setVehicleToDelete(null); // null indicates bulk delete
+    setShowDeleteModal(true);
+  };
+
+  // Delete a vehicle
+  const deleteVehicle = async (vehicleId) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Remove the vehicle from the list
+      setVehicles(vehicles.filter(vehicle => vehicle.id !== vehicleId));
+      // Remove from selected vehicles too
+      setSelectedVehicles(selectedVehicles.filter(id => id !== vehicleId));
+      return true;
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      return false;
+    }
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = async () => {
+    let success = true;
+
+    if (vehicleToDelete) {
+      // Single vehicle delete
+      success = await deleteVehicle(vehicleToDelete.id);
+    } else {
+      // Bulk delete - delete each selected vehicle
+      for (const vehicleId of selectedVehicles) {
+        const result = await deleteVehicle(vehicleId);
+        if (!result) success = false;
+      }
+    }
+
+    // Close the modal
+    setShowDeleteModal(false);
+    setVehicleToDelete(null);
+    
+    // Show appropriate message
+    if (success) {
+      alert(vehicleToDelete 
+        ? `Vehicle ${vehicleToDelete.id} deleted successfully` 
+        : `${selectedVehicles.length} vehicles deleted successfully`);
+    } else {
+      alert('There was an error deleting one or more vehicles');
+    }
+  };
+
+  // Display loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-3 text-gray-700">Loading vehicles...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Display error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-gray-50">
+        <div className="text-center p-6 bg-white rounded-lg shadow-md max-w-md">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Error Loading Vehicles</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <p className="text-gray-500 text-sm mb-4">
+            This could be because the backend server is not running or there was a database error.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -191,11 +327,21 @@ const Vehicles = () => {
                 <div className="px-4 py-5 sm:p-6">
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center space-x-2">
-                      <input type="checkbox" className="rounded border-gray-300" />
-                      <button className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-gray-300" 
+                        onChange={(e) => handleSelectAll(e.target.checked)} 
+                      />
+                      <button 
+                        className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+                        onClick={() => alert('Export functionality not implemented')}
+                      >
                         <span className="mr-1">⬇️</span>Export
                       </button>
-                      <button className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">
+                      <button 
+                        className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+                        onClick={openBulkDeleteConfirmation}
+                      >
                         <span className="mr-1">🗑️</span>Delete
                       </button>
                     </div>
@@ -229,7 +375,11 @@ const Vehicles = () => {
                           <React.Fragment key={vehicle.id}>
                             <tr className="group hover:bg-gray-50">
                               <td className="px-6 py-4">
-                                <input type="checkbox" className="rounded border-gray-300" />
+                                <input 
+                                  type="checkbox" 
+                                  className="rounded border-gray-300" 
+                                  onChange={(e) => handleVehicleSelection(vehicle.id, e.target.checked)} 
+                                />
                               </td>
                               <td className="px-6 py-4">
                                 <button 
@@ -262,7 +412,10 @@ const Vehicles = () => {
                                   <button className="p-1 hover:bg-gray-100 rounded">
                                     <span className="text-gray-600">✏️</span>
                                   </button>
-                                  <button className="p-1 hover:bg-gray-100 rounded">
+                                  <button 
+                                    className="p-1 hover:bg-gray-100 rounded"
+                                    onClick={() => openDeleteConfirmation(vehicle)}
+                                  >
                                     <span className="text-gray-600">🗑️</span>
                                   </button>
                                 </div>
@@ -350,20 +503,84 @@ const Vehicles = () => {
 
       {/* Add Vehicle Modal */}
       {showAddVehicleModal && (
-        <AddVehicleModal onClose={() => setShowAddVehicleModal(false)} />
+        <AddVehicleModal onClose={() => setShowAddVehicleModal(false)} onSave={addVehicle} />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-[400px]">
+            <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 bg-white">
+              <h2 className="text-lg text-gray-900">Confirm Deletion</h2>
+              <button 
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                <span className="text-xl">✖️</span>
+              </button>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-gray-700">
+                {vehicleToDelete 
+                  ? `Are you sure you want to delete vehicle ${vehicleToDelete.id}?`
+                  : `Are you sure you want to delete ${selectedVehicles.length} vehicles?`}
+              </p>
+            </div>
+            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-end space-x-2">
+              <button 
+                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-md"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-500"
+                onClick={handleDeleteConfirm}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
 // Add Vehicle Modal Component
-const AddVehicleModal = ({ onClose }) => {
+const AddVehicleModal = ({ onClose, onSave }) => {
   const [activeTab, setActiveTab] = useState('details');
+  const [vehicleData, setVehicleData] = useState({
+    id: '',
+    status: 'Active',
+    type: 'Truck',
+    lastService: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    documents: 'Valid',
+    make: '',
+    model: '',
+    year: new Date().getFullYear(),
+    license: '',
+    vin: '',
+    mileage: ''
+  });
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setVehicleData({
+      ...vehicleData,
+      [name]: value
+    });
+  };
   
   const handleSave = () => {
-    // Here you would handle saving the vehicle data
-    console.log('Saving vehicle data...');
-    onClose();
+    // Validate form
+    if (!vehicleData.id || !vehicleData.make || !vehicleData.model) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    // Call the onSave function from parent component
+    onSave(vehicleData);
   };
 
   return (
@@ -384,7 +601,14 @@ const AddVehicleModal = ({ onClose }) => {
             <div className="flex-1">
               <label className="block text-sm text-gray-700 mb-1">Registration Number</label>
               <div className="relative">
-                <input type="text" placeholder="XYZ-123" className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                <input 
+                  type="text" 
+                  name="id"
+                  value={vehicleData.id}
+                  onChange={handleChange}
+                  placeholder="XYZ-123" 
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md" 
+                />
                 <button className="absolute right-2 top-2 text-sm text-gray-600 hover:text-gray-900">
                   <span className="mr-1">🔍</span>Auto-fill
                 </button>
@@ -393,7 +617,14 @@ const AddVehicleModal = ({ onClose }) => {
             <div className="flex-1">
               <label className="block text-sm text-gray-700 mb-1">VIN</label>
               <div className="relative">
-                <input type="text" placeholder="1HGCM82633A123456" className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                <input 
+                  type="text" 
+                  name="vin"
+                  value={vehicleData.vin}
+                  onChange={handleChange}
+                  placeholder="1HGCM82633A123456" 
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md" 
+                />
                 <button className="absolute right-2 top-2 text-sm text-gray-600 hover:text-gray-900">
                   <span className="mr-1">🔍</span>Auto-fill
                 </button>
@@ -434,19 +665,45 @@ const AddVehicleModal = ({ onClose }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Make</label>
-                    <input type="text" placeholder="Toyota" className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                    <input 
+                      type="text" 
+                      name="make"
+                      value={vehicleData.make}
+                      onChange={handleChange}
+                      placeholder="Toyota" 
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md" 
+                    />
                   </div>
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Model</label>
-                    <input type="text" placeholder="Hino 300" className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                    <input 
+                      type="text" 
+                      name="model"
+                      value={vehicleData.model}
+                      onChange={handleChange}
+                      placeholder="Hino 300" 
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md" 
+                    />
                   </div>
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Year</label>
-                    <input type="text" placeholder="2023" className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                    <input 
+                      type="text" 
+                      name="year"
+                      value={vehicleData.year}
+                      onChange={handleChange}
+                      placeholder="2023" 
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md" 
+                    />
                   </div>
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Type</label>
-                    <select className="w-full px-4 py-2 border border-gray-300 rounded-md">
+                    <select 
+                      name="type"
+                      value={vehicleData.type}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    >
                       <option>Truck</option>
                       <option>Van</option>
                       <option>Car</option>
@@ -454,7 +711,12 @@ const AddVehicleModal = ({ onClose }) => {
                   </div>
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Status</label>
-                    <select className="w-full px-4 py-2 border border-gray-300 rounded-md">
+                    <select 
+                      name="status"
+                      value={vehicleData.status}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    >
                       <option>Active</option>
                       <option>Inactive</option>
                       <option>Maintenance</option>
@@ -462,7 +724,14 @@ const AddVehicleModal = ({ onClose }) => {
                   </div>
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Current Mileage</label>
-                    <input type="text" placeholder="45,000" className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                    <input 
+                      type="text" 
+                      name="mileage"
+                      value={vehicleData.mileage}
+                      onChange={handleChange}
+                      placeholder="45,000" 
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md" 
+                    />
                   </div>
                 </div>
 
