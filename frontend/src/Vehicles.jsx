@@ -19,6 +19,12 @@ const Vehicles = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   // State for vehicle to delete
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
+  // State for CSDD integration
+  const [csddIntegration, setCsddIntegration] = useState({
+    connectionStatus: 'disconnected',
+    userInfo: null,
+    credentials: { email: '', password: '' }
+  });
 
   // Fetch vehicles from API
   useEffect(() => {
@@ -503,7 +509,12 @@ const Vehicles = () => {
 
       {/* Add Vehicle Modal */}
       {showAddVehicleModal && (
-        <AddVehicleModal onClose={() => setShowAddVehicleModal(false)} onSave={addVehicle} />
+        <AddVehicleModal 
+          onClose={() => setShowAddVehicleModal(false)} 
+          onSave={addVehicle} 
+          csddIntegration={csddIntegration}
+          setCsddIntegration={setCsddIntegration}
+        />
       )}
 
       {/* Delete Confirmation Modal */}
@@ -548,7 +559,7 @@ const Vehicles = () => {
 };
 
 // Add Vehicle Modal Component
-const AddVehicleModal = ({ onClose, onSave }) => {
+const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration }) => {
   const [activeTab, setActiveTab] = useState('details');
   const [vehicleData, setVehicleData] = useState({
     id: '',
@@ -563,6 +574,56 @@ const AddVehicleModal = ({ onClose, onSave }) => {
     vin: '',
     mileage: ''
   });
+  // Use csddIntegration state from props instead of local state
+  const [csddCredentials, setCsddCredentials] = useState({ 
+    email: csddIntegration.credentials?.email || '', 
+    password: csddIntegration.credentials?.password || '' 
+  });
+  const [csddError, setCsddError] = useState(null);
+
+  // Check session on component mount
+  useEffect(() => {
+    // If we're already connected, no need to check the session
+    if (csddIntegration.connectionStatus === 'connected') return;
+    
+    // Check if there's an active session on the backend
+    checkCsddSession();
+  }, []);
+  
+  const checkCsddSession = async () => {
+    try {
+      console.log('[Frontend] Checking for active CSDD session...');
+      
+      const response = await fetch('http://localhost:3000/api/integrations/csdd/session/default', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        console.error('[Frontend] Failed to check session status:', response.status, response.statusText);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('[Frontend] Session check response:', data);
+      
+      if (data.success && data.connected) {
+        console.log('[Frontend] Active session found, user info:', data.userInfo);
+        // Update the parent component's state
+        setCsddIntegration({
+          ...csddIntegration,
+          connectionStatus: 'connected',
+          userInfo: data.userInfo
+        });
+      } else {
+        console.log('[Frontend] No active session found');
+      }
+    } catch (error) {
+      console.error('[Frontend] Error checking CSDD session:', error);
+    }
+  };
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -570,6 +631,162 @@ const AddVehicleModal = ({ onClose, onSave }) => {
       ...vehicleData,
       [name]: value
     });
+  };
+
+  const handleCsddCredentialsChange = (e) => {
+    const { name, value } = e.target;
+    setCsddCredentials({
+      ...csddCredentials,
+      [name]: value
+    });
+  };
+  
+  const connectToCsdd = async () => {
+    // Validate form
+    if (!csddCredentials.email || !csddCredentials.password) {
+      setCsddError('Please provide both email and password');
+      return;
+    }
+
+    try {
+      console.log('[Frontend] Attempting to connect to e.csdd.lv with email:', csddCredentials.email);
+      
+      // Update parent component state
+      setCsddIntegration({
+        ...csddIntegration,
+        connectionStatus: 'connecting',
+        credentials: csddCredentials
+      });
+      setCsddError(null);
+      
+      console.log('[Frontend] Sending connection request to backend...');
+      const response = await fetch('http://localhost:3000/api/integrations/csdd/connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: csddCredentials.email,
+          password: csddCredentials.password,
+          userId: 'default' // Using a default user ID for this example
+        }),
+      });
+
+      console.log('[Frontend] Connection response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to connect: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('[Frontend] Connection response data:', data);
+      
+      if (data.success) {
+        console.log('[Frontend] Successfully connected to e.csdd.lv as:', data.userInfo);
+        // Update parent component state
+        setCsddIntegration({
+          connectionStatus: 'connected',
+          credentials: csddCredentials,
+          userInfo: data.userInfo
+        });
+      } else {
+        throw new Error(data.message || 'Connection failed');
+      }
+    } catch (error) {
+      console.error('[Frontend] Error connecting to CSDD:', error);
+      // Update parent component state
+      setCsddIntegration({
+        ...csddIntegration,
+        connectionStatus: 'disconnected'
+      });
+      setCsddError(error.message || 'Failed to connect to e.csdd.lv. Please check your credentials.');
+    }
+  };
+
+  const disconnectFromCsdd = async () => {
+    try {
+      console.log('[Frontend] Disconnecting from e.csdd.lv...');
+      
+      // Call the backend to disconnect the session
+      const response = await fetch('http://localhost:3000/api/integrations/csdd/disconnect/default', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const data = await response.json();
+      console.log('[Frontend] Disconnect response:', data);
+      
+      // Update parent component state
+      setCsddIntegration({
+        connectionStatus: 'disconnected',
+        credentials: { email: '', password: '' },
+        userInfo: null
+      });
+      
+      // Update local state
+      setCsddCredentials({ email: '', password: '' });
+      
+      console.log('[Frontend] Successfully disconnected from e.csdd.lv');
+    } catch (error) {
+      console.error('[Frontend] Error disconnecting from CSDD:', error);
+    }
+  };
+
+  const fetchVehicleDetailsFromCsdd = async () => {
+    if (csddIntegration.connectionStatus !== 'connected' || !vehicleData.id) {
+      console.log('[Frontend] Cannot fetch vehicle details - not connected or no registration number provided');
+      alert('Please connect to e.csdd.lv and enter a vehicle registration number');
+      return;
+    }
+
+    try {
+      console.log('[Frontend] Fetching vehicle details for registration number:', vehicleData.id);
+      
+      // Now we're making a real API call to fetch vehicle data
+      const response = await fetch(`http://localhost:3000/api/integrations/csdd/vehicle/${vehicleData.id}?userId=default`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log('[Frontend] Vehicle details response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch vehicle details: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('[Frontend] Vehicle details response data:', data);
+      
+      if (data.success) {
+        console.log('[Frontend] Successfully retrieved vehicle details:', {
+          make: data.make || 'Not found',
+          model: data.model || 'Not found',
+          year: data.year || 'Not found',
+          vin: data.vin || 'Not found',
+          mileage: data.mileage || 'Not found'
+        });
+        
+        // Update vehicle data with fetched information, including mileage
+        setVehicleData({
+          ...vehicleData,
+          make: data.make || vehicleData.make,
+          model: data.model || vehicleData.model,
+          year: data.year || vehicleData.year,
+          vin: data.vin || vehicleData.vin,
+          mileage: data.mileage !== undefined ? data.mileage : vehicleData.mileage
+        });
+        alert('Vehicle details successfully imported from e.csdd.lv');
+      } else {
+        throw new Error(data.message || 'Failed to retrieve vehicle information');
+      }
+    } catch (error) {
+      console.error('[Frontend] Error fetching vehicle details:', error);
+      alert(`Error fetching vehicle details: ${error.message}`);
+    }
   };
   
   const handleSave = () => {
@@ -609,9 +826,14 @@ const AddVehicleModal = ({ onClose, onSave }) => {
                   placeholder="XYZ-123" 
                   className="w-full px-4 py-2 border border-gray-300 rounded-md" 
                 />
-                <button className="absolute right-2 top-2 text-sm text-gray-600 hover:text-gray-900">
-                  <span className="mr-1">🔍</span>Auto-fill
-                </button>
+                {csddIntegration.connectionStatus === 'connected' && (
+                  <button 
+                    className="absolute right-2 top-2 text-sm text-gray-600 hover:text-gray-900"
+                    onClick={fetchVehicleDetailsFromCsdd}
+                  >
+                    <span className="mr-1">🔍</span>Auto-fill from CSDD
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex-1">
@@ -645,6 +867,12 @@ const AddVehicleModal = ({ onClose, onSave }) => {
                 onClick={() => setActiveTab('tracking')}
               >
                 Tracking
+              </button>
+              <button 
+                className={`px-4 py-2 text-sm rounded-md ${activeTab === 'integrations' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+                onClick={() => setActiveTab('integrations')}
+              >
+                Integrations
               </button>
               <button 
                 className={`px-4 py-2 text-sm rounded-md ${activeTab === 'documents' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
@@ -754,6 +982,152 @@ const AddVehicleModal = ({ onClose, onSave }) => {
             {activeTab === 'tracking' && (
               <div className="py-4">
                 <p className="text-gray-700">Configure vehicle tracking options here.</p>
+              </div>
+            )}
+
+            {activeTab === 'integrations' && (
+              <div className="py-4">
+                <h3 className="text-lg text-gray-900 mb-3">Third-Party Integrations</h3>
+                
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <span className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mr-3">
+                        <span className="text-blue-600 text-xl">🔑</span>
+                      </span>
+                      <div>
+                        <h4 className="text-md font-medium text-gray-900">e.csdd.lv Connection</h4>
+                        <p className="text-sm text-gray-500">Connect to the Latvian Road Traffic Safety Directorate portal</p>
+                      </div>
+                    </div>
+                    <div>
+                      {csddIntegration.connectionStatus === 'connected' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Connected
+                        </span>
+                      ) : csddIntegration.connectionStatus === 'connecting' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          Connecting...
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          Disconnected
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {csddIntegration.connectionStatus === 'connected' ? (
+                    <div className="space-y-4">
+                      <div className="bg-gray-50 p-4 rounded border border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-900">Connected as: <span className="font-medium">{csddIntegration.userInfo?.firstName} {csddIntegration.userInfo?.lastName}</span></p>
+                            <p className="text-xs text-gray-500 mt-1">You can now auto-fill vehicle details using the registration number</p>
+                          </div>
+                          <button 
+                            className="px-3 py-1 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50"
+                            onClick={disconnectFromCsdd}
+                          >
+                            Disconnect
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h5 className="text-sm font-medium text-gray-900 mb-2">Available Actions</h5>
+                        <ul className="space-y-2">
+                          <li className="flex items-center text-sm text-gray-700">
+                            <span className="mr-2 text-green-500">✓</span>
+                            Auto-fill vehicle details using registration number
+                          </li>
+                          <li className="flex items-center text-sm text-gray-700">
+                            <span className="mr-2 text-green-500">✓</span>
+                            Import vehicle documents and certificates
+                          </li>
+                          <li className="flex items-center text-sm text-gray-700">
+                            <span className="mr-2 text-green-500">✓</span>
+                            Check vehicle history and previous owners
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {csddError && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded text-sm">
+                          {csddError}
+                        </div>
+                      )}
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm text-gray-700 mb-1">E-mail</label>
+                          <input 
+                            type="email" 
+                            name="email"
+                            value={csddCredentials.email}
+                            onChange={handleCsddCredentialsChange}
+                            placeholder="your.email@example.com" 
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md" 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm text-gray-700 mb-1">Password</label>
+                          <input 
+                            type="password" 
+                            name="password"
+                            value={csddCredentials.password}
+                            onChange={handleCsddCredentialsChange}
+                            placeholder="••••••••" 
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md" 
+                          />
+                        </div>
+                      </div>
+
+                      <button 
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={connectToCsdd}
+                        disabled={csddIntegration.connectionStatus === 'connecting' || !csddCredentials.email || !csddCredentials.password}
+                      >
+                        {csddIntegration.connectionStatus === 'connecting' ? 'Connecting...' : 'Connect to e.csdd.lv'}
+                      </button>
+
+                      <p className="text-xs text-gray-500">
+                        By connecting your e.csdd.lv account, you authorize Fleet Manager to access vehicle information on your behalf. 
+                        Your credentials are securely stored and used only for API requests to e.csdd.lv.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4">
+                  <h5 className="text-sm font-medium text-gray-900 mb-2">Other Available Integrations</h5>
+                  <div className="space-y-2">
+                    <div className="p-3 border border-gray-200 rounded flex items-center justify-between">
+                      <div className="flex items-center">
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded mr-3">
+                          <span className="text-gray-600">🔌</span>
+                        </span>
+                        <span className="text-sm text-gray-700">Vehicle Manufacturer APIs</span>
+                      </div>
+                      <button className="px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">
+                        Configure
+                      </button>
+                    </div>
+                    <div className="p-3 border border-gray-200 rounded flex items-center justify-between">
+                      <div className="flex items-center">
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded mr-3">
+                          <span className="text-gray-600">🔌</span>
+                        </span>
+                        <span className="text-sm text-gray-700">GPS Tracking Services</span>
+                      </div>
+                      <button className="px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">
+                        Configure
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

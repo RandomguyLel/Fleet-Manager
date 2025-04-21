@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
+// Import integrations routes
+const integrationsRoutes = require('./routes/integrations');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -12,6 +14,9 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.send('Fleet Management System Backend');
 });
+
+// Register the integrations routes
+app.use('/api/integrations', integrationsRoutes);
 
 // Vehicle API Routes
 // Get all vehicles
