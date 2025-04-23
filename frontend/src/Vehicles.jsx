@@ -25,6 +25,12 @@ const Vehicles = () => {
     userInfo: null,
     credentials: { email: '', password: '' }
   });
+  // State for vehicle being edited
+  const [vehicleToEdit, setVehicleToEdit] = useState(null);
+  // State for edit confirmation modal
+  const [showEditConfirmationModal, setShowEditConfirmationModal] = useState(false);
+  // State for tracked changes
+  const [vehicleChanges, setVehicleChanges] = useState(null);
 
   // Fetch vehicles from API
   useEffect(() => {
@@ -80,6 +86,12 @@ const Vehicles = () => {
       : 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800';
   };
 
+  // Open edit vehicle modal
+  const openEditVehicleModal = (vehicle) => {
+    setVehicleToEdit(vehicle);
+    setShowAddVehicleModal(true);
+  };
+
   // Add a new vehicle
   const addVehicle = async (vehicleData) => {
     try {
@@ -92,15 +104,81 @@ const Vehicles = () => {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        
+        // Handle duplicate vehicle error
+        if (response.status === 409 && errorData.code === 'DUPLICATE_VEHICLE') {
+          alert(`Error: ${errorData.error}`);
+          return false;
+        }
+        
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const newVehicle = await response.json();
       setVehicles([...vehicles, newVehicle]);
       setShowAddVehicleModal(false);
+      return true;
     } catch (error) {
       console.error('Error adding vehicle:', error);
-      // You could set an error state here to display to the user
+      alert('Failed to add vehicle. Please try again.');
+      return false;
+    }
+  };
+
+  // Update an existing vehicle
+  const updateVehicle = async (updatedVehicleData, changes) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/vehicles/${updatedVehicleData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedVehicleData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const updatedVehicle = await response.json();
+      
+      // Update the vehicles array with the updated vehicle
+      setVehicles(vehicles.map(vehicle => 
+        vehicle.id === updatedVehicle.id ? updatedVehicle : vehicle
+      ));
+
+      // Close the modals
+      setShowEditConfirmationModal(false);
+      setShowAddVehicleModal(false);
+      
+      // Reset the edit state
+      setVehicleToEdit(null);
+      setVehicleChanges(null);
+    } catch (error) {
+      console.error('Error updating vehicle:', error);
+      alert('Failed to update vehicle. Please try again.');
+    }
+  };
+
+  // Handle save from the modal
+  const handleSaveVehicle = (vehicleData, changes = null) => {
+    if (vehicleToEdit) {
+      // If we're editing, show confirmation with changes
+      setVehicleChanges(changes);
+      setShowEditConfirmationModal(true);
+    } else {
+      // If we're adding a new vehicle, just save it
+      addVehicle(vehicleData);
+    }
+  };
+
+  // Handle confirmation of edit
+  const handleConfirmEdit = () => {
+    if (vehicleChanges && vehicleChanges.updatedData) {
+      updateVehicle(vehicleChanges.updatedData, vehicleChanges.changes);
+    } else {
+      setShowEditConfirmationModal(false);
     }
   };
 
@@ -160,6 +238,121 @@ const Vehicles = () => {
     }
   };
 
+  // Sync vehicle reminders with latest data from CSDD
+  const syncVehicleRemindersWithCsdd = async (vehicleId) => {
+    if (!vehicleId) {
+      alert('No vehicle ID provided');
+      return null;
+    }
+
+    try {
+      console.log('[Frontend] Syncing reminders for vehicle:', vehicleId);
+      
+      // First check if we have an active CSDD connection
+      const sessionResponse = await fetch('http://localhost:3000/api/integrations/csdd/session/default', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const sessionData = await sessionResponse.json();
+      
+      if (!sessionData.success || !sessionData.connected) {
+        alert('You need to connect to e.csdd.lv first. Please go to Edit Vehicle > Integrations tab to connect.');
+        return null;
+      }
+      
+      // Fetch the latest data from CSDD
+      const response = await fetch(`http://localhost:3000/api/integrations/csdd/vehicle/${vehicleId}?userId=default`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch vehicle details: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to retrieve vehicle information');
+      }
+      
+      console.log('[Frontend] Successfully retrieved vehicle details from CSDD:', data);
+      
+      // Find the vehicle in our list
+      const vehicle = vehicles.find(v => v.id === vehicleId);
+      if (!vehicle) {
+        throw new Error('Vehicle not found in the list');
+      }
+      
+      // Format the road worthiness date from DD.MM.YYYY to YYYY-MM-DD
+      let formattedRoadWorthinessDate = null;
+      if (data.roadWorthinessDate) {
+        const parts = data.roadWorthinessDate.split('.');
+        if (parts.length === 3) {
+          formattedRoadWorthinessDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+      }
+      
+      // Create a copy of the vehicle with updated reminders
+      const updatedVehicle = { ...vehicle };
+      const updatedReminders = updatedVehicle.reminders ? [...updatedVehicle.reminders] : [];
+      
+      // If we have a road worthiness date, update or add this reminder
+      if (formattedRoadWorthinessDate) {
+        const roadWorthinessIndex = updatedReminders.findIndex(
+          reminder => reminder.name === 'Road Worthiness Certificate'
+        );
+        
+        if (roadWorthinessIndex >= 0) {
+          // Update existing reminder
+          updatedReminders[roadWorthinessIndex] = {
+            ...updatedReminders[roadWorthinessIndex],
+            date: formattedRoadWorthinessDate,
+            enabled: true
+          };
+        } else {
+          // Add new reminder
+          updatedReminders.push({
+            name: 'Road Worthiness Certificate',
+            date: formattedRoadWorthinessDate,
+            enabled: true
+          });
+        }
+      }
+      
+      // Update other vehicle details
+      updatedVehicle.reminders = updatedReminders;
+      updatedVehicle.make = data.make || updatedVehicle.make;
+      updatedVehicle.model = data.model || updatedVehicle.model;
+      updatedVehicle.year = data.year || updatedVehicle.year;
+      updatedVehicle.vin = data.vin || updatedVehicle.vin;
+      updatedVehicle.mileage = data.mileage !== undefined ? data.mileage : updatedVehicle.mileage;
+      
+      // Update the vehicle in the database
+      const updateResponse = await fetch(`http://localhost:3000/api/vehicles/${vehicleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedVehicle)
+      });
+      
+      if (!updateResponse.ok) {
+        throw new Error(`Failed to update vehicle: ${updateResponse.statusText}`);
+      }
+      
+      // Update the vehicle in our local state
+      setVehicles(vehicles.map(v => 
+        v.id === vehicleId ? updatedVehicle : v
+      ));
+      
+      return updatedVehicle;
+    } catch (error) {
+      console.error('[Frontend] Error syncing vehicle with CSDD:', error);
+      alert(`Error syncing vehicle details: ${error.message}`);
+      return null;
+    }
+  };
+
   // Handle delete confirmation
   const handleDeleteConfirm = async () => {
     let success = true;
@@ -188,6 +381,15 @@ const Vehicles = () => {
       alert('There was an error deleting one or more vehicles');
     }
   };
+
+  // Reset modal state when closing
+  const handleCloseVehicleModal = () => {
+    setShowAddVehicleModal(false);
+    setVehicleToEdit(null);
+  };
+
+  // Make syncVehicleRemindersWithCsdd available to child components
+  window.syncVehicleRemindersWithCsdd = syncVehicleRemindersWithCsdd;
 
   // Display loading state
   if (loading) {
@@ -415,7 +617,10 @@ const Vehicles = () => {
                               </td>
                               <td className="px-6 py-4 text-right">
                                 <div className="invisible group-hover:visible flex justify-end space-x-2">
-                                  <button className="p-1 hover:bg-gray-100 rounded">
+                                  <button 
+                                    className="p-1 hover:bg-gray-100 rounded"
+                                    onClick={() => openEditVehicleModal(vehicle)}
+                                  >
                                     <span className="text-gray-600">✏️</span>
                                   </button>
                                   <button 
@@ -441,7 +646,7 @@ const Vehicles = () => {
                                             <p className="text-gray-500">Year: {vehicle.year}</p>
                                           </div>
                                           <div>
-                                            <p className="text-gray-500">License: {vehicle.license}</p>
+                                            <p className="text-gray-500">License: {vehicle.id}</p>
                                             <p className="text-gray-500">VIN: {vehicle.vin}</p>
                                             <p className="text-gray-500">Mileage: {vehicle.mileage}</p>
                                           </div>
@@ -452,6 +657,87 @@ const Vehicles = () => {
                                         <div className="bg-gray-200 h-40 rounded flex items-center justify-center">
                                           <span className="text-gray-600">Map View</span>
                                         </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Due Dates & Reminders Section */}
+                                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                                      <div className="flex justify-between items-center mb-3">
+                                        <h4 className="text-sm text-gray-900">Due Dates & Reminders</h4>
+                                        {csddIntegration.connectionStatus === 'connected' && (
+                                          <button 
+                                            className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 flex items-center"
+                                            onClick={() => syncVehicleRemindersWithCsdd(vehicle.id).then(result => {
+                                              if (result) alert('Reminders successfully updated from e.csdd.lv');
+                                            })}
+                                          >
+                                            <span className="mr-1">🔄</span>Sync with CSDD
+                                          </button>
+                                        )}
+                                      </div>
+                                      <div className="space-y-2">
+                                        {vehicle.reminders && vehicle.reminders.length > 0 ? (
+                                          vehicle.reminders.filter(r => r.enabled).map((reminder, idx) => {
+                                            // Calculate days remaining
+                                            const dueDate = new Date(reminder.date);
+                                            const today = new Date();
+                                            const daysRemaining = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                                            
+                                            // Determine status class based on days remaining
+                                            let statusClass = "bg-green-100 text-green-800"; // Default: > 30 days
+                                            let statusText = "On Track";
+                                            
+                                            if (daysRemaining < 0) {
+                                              statusClass = "bg-red-100 text-red-800";
+                                              statusText = "Overdue";
+                                            } else if (daysRemaining <= 30) {
+                                              statusClass = "bg-amber-100 text-amber-800";
+                                              statusText = "Due Soon";
+                                            }
+                                            
+                                            // Format due date
+                                            const formattedDate = dueDate.toLocaleDateString('en-US', { 
+                                              month: 'short', 
+                                              day: 'numeric', 
+                                              year: 'numeric' 
+                                            });
+                                            
+                                            return (
+                                              <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100">
+                                                <div className="flex items-center">
+                                                  <span className="text-gray-400 mr-2">
+                                                    {reminder.name.includes('Insurance') ? '🔐' : 
+                                                     reminder.name.includes('Service') ? '🔧' : 
+                                                     reminder.name.includes('Worthiness') ? '📝' : '🔔'}
+                                                  </span>
+                                                  <div>
+                                                    <p className="text-sm font-medium text-gray-900">{reminder.name}</p>
+                                                    <p className="text-xs text-gray-500">Due: {formattedDate}</p>
+                                                  </div>
+                                                </div>
+                                                <div className="flex items-center">
+                                                  <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>
+                                                    {daysRemaining < 0 
+                                                      ? `${Math.abs(daysRemaining)} days overdue` 
+                                                      : daysRemaining === 0 
+                                                        ? "Due today"
+                                                        : `${daysRemaining} days left`}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            );
+                                          })
+                                        ) : (
+                                          <div className="text-center py-4">
+                                            <p className="text-sm text-gray-500">No active reminders</p>
+                                            <button 
+                                              className="mt-2 px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                                              onClick={() => openEditVehicleModal(vehicle)}
+                                            >
+                                              <span className="mr-1">➕</span>Add Reminder
+                                            </button>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
 
@@ -510,11 +796,51 @@ const Vehicles = () => {
       {/* Add Vehicle Modal */}
       {showAddVehicleModal && (
         <AddVehicleModal 
-          onClose={() => setShowAddVehicleModal(false)} 
-          onSave={addVehicle} 
+          onClose={handleCloseVehicleModal} 
+          onSave={handleSaveVehicle} 
           csddIntegration={csddIntegration}
           setCsddIntegration={setCsddIntegration}
+          vehicleToEdit={vehicleToEdit}
         />
+      )}
+
+      {/* Edit Confirmation Modal */}
+      {showEditConfirmationModal && (
+        <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-[400px]">
+            <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 bg-white">
+              <h2 className="text-lg text-gray-900">Confirm Changes</h2>
+              <button 
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => setShowEditConfirmationModal(false)}
+              >
+                <span className="text-xl">✖️</span>
+              </button>
+            </div>
+            <div className="px-6 py-4">
+              <p className="text-gray-700">Are you sure you want to save the changes?</p>
+              <ul className="mt-2 text-sm text-gray-600 list-disc pl-5">
+                {vehicleChanges?.changes?.map((change, index) => (
+                  <li key={index}>{change}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-end space-x-2">
+              <button 
+                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-md"
+                onClick={() => setShowEditConfirmationModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-500"
+                onClick={handleConfirmEdit}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}
@@ -559,9 +885,10 @@ const Vehicles = () => {
 };
 
 // Add Vehicle Modal Component
-const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration }) => {
+const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration, vehicleToEdit }) => {
   const [activeTab, setActiveTab] = useState('details');
-  const [vehicleData, setVehicleData] = useState({
+  const [initialData, setInitialData] = useState(vehicleToEdit || {});
+  const [vehicleData, setVehicleData] = useState(vehicleToEdit || {
     id: '',
     status: 'Active',
     type: 'Truck',
@@ -572,7 +899,11 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
     year: new Date().getFullYear(),
     license: '',
     vin: '',
-    mileage: ''
+    mileage: '',
+    reminders: [
+      { name: 'Insurance Renewal', date: '2025-01-15', enabled: true },
+      { name: 'Service Due', date: '2025-03-20', enabled: true }
+    ]
   });
   // Use csddIntegration state from props instead of local state
   const [csddCredentials, setCsddCredentials] = useState({ 
@@ -583,6 +914,11 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
 
   // Check session on component mount
   useEffect(() => {
+    // Store the initial data for comparison when editing
+    if (vehicleToEdit) {
+      setInitialData(JSON.parse(JSON.stringify(vehicleToEdit)));
+    }
+
     // If we're already connected, no need to check the session
     if (csddIntegration.connectionStatus === 'connected') return;
     
@@ -685,6 +1021,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
         console.log('[Frontend] Successfully connected to e.csdd.lv as:', data.userInfo);
         // Update parent component state
         setCsddIntegration({
+          ...csddIntegration,
           connectionStatus: 'connected',
           credentials: csddCredentials,
           userInfo: data.userInfo
@@ -767,8 +1104,44 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
           model: data.model || 'Not found',
           year: data.year || 'Not found',
           vin: data.vin || 'Not found',
-          mileage: data.mileage || 'Not found'
+          mileage: data.mileage || 'Not found',
+          roadWorthinessDate: data.roadWorthinessDate || 'Not found'
         });
+        
+        // Format the road worthiness date from DD.MM.YYYY to YYYY-MM-DD for HTML date input
+        let formattedRoadWorthinessDate = null;
+        if (data.roadWorthinessDate) {
+          const parts = data.roadWorthinessDate.split('.');
+          if (parts.length === 3) {
+            formattedRoadWorthinessDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+          }
+        }
+        
+        // If we have a road worthiness date, update or add this reminder
+        let updatedReminders = [...vehicleData.reminders];
+        
+        if (formattedRoadWorthinessDate) {
+          // Check if we already have a road worthiness reminder
+          const roadWorthinessIndex = updatedReminders.findIndex(
+            reminder => reminder.name === 'Road Worthiness Certificate'
+          );
+          
+          if (roadWorthinessIndex >= 0) {
+            // Update existing reminder
+            updatedReminders[roadWorthinessIndex] = {
+              ...updatedReminders[roadWorthinessIndex],
+              date: formattedRoadWorthinessDate,
+              enabled: true
+            };
+          } else {
+            // Add new reminder
+            updatedReminders.push({
+              name: 'Road Worthiness Certificate',
+              date: formattedRoadWorthinessDate,
+              enabled: true
+            });
+          }
+        }
         
         // Update vehicle data with fetched information, including mileage
         setVehicleData({
@@ -777,7 +1150,8 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
           model: data.model || vehicleData.model,
           year: data.year || vehicleData.year,
           vin: data.vin || vehicleData.vin,
-          mileage: data.mileage !== undefined ? data.mileage : vehicleData.mileage
+          mileage: data.mileage !== undefined ? data.mileage : vehicleData.mileage,
+          reminders: updatedReminders
         });
         alert('Vehicle details successfully imported from e.csdd.lv');
       } else {
@@ -789,6 +1163,96 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
     }
   };
   
+  // Handle reminder changes
+  const handleReminderChange = (index, field, value) => {
+    const updatedReminders = [...vehicleData.reminders];
+    updatedReminders[index] = {
+      ...updatedReminders[index],
+      [field]: value
+    };
+    setVehicleData({
+      ...vehicleData,
+      reminders: updatedReminders
+    });
+  };
+  
+  // Add a new custom reminder
+  const addReminder = () => {
+    const newReminder = {
+      name: 'Custom Reminder',
+      date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+      enabled: true
+    };
+    
+    setVehicleData({
+      ...vehicleData,
+      reminders: vehicleData.reminders ? [...vehicleData.reminders, newReminder] : [newReminder]
+    });
+  };
+  
+  // Remove a reminder
+  const removeReminder = (index) => {
+    if (!vehicleData.reminders) return;
+    
+    const updatedReminders = [...vehicleData.reminders];
+    updatedReminders.splice(index, 1);
+    setVehicleData({
+      ...vehicleData,
+      reminders: updatedReminders
+    });
+  };
+  
+  // Generate a list of changes when in edit mode
+  const getChanges = () => {
+    if (!vehicleToEdit) return null;
+    
+    const changes = [];
+    const changedFields = {};
+    
+    // Track simple field changes
+    for (const key in vehicleData) {
+      // Skip the reminders array as we'll handle it separately
+      if (key === 'reminders') continue;
+      
+      // Check if the value has changed
+      if (JSON.stringify(vehicleData[key]) !== JSON.stringify(initialData[key])) {
+        changes.push(`${key}: Changed from "${initialData[key]}" to "${vehicleData[key]}"`);
+        changedFields[key] = {
+          from: initialData[key],
+          to: vehicleData[key]
+        };
+      }
+    }
+    
+    // Track reminder changes
+    const currentReminders = vehicleData.reminders || [];
+    const originalReminders = initialData.reminders || [];
+    
+    // Find added reminders
+    for (const reminder of currentReminders) {
+      if (!originalReminders.some(r => 
+        r.name === reminder.name && r.date === reminder.date && r.enabled === reminder.enabled
+      )) {
+        changes.push(`Added reminder: ${reminder.name} (${reminder.date})`);
+      }
+    }
+    
+    // Find removed reminders
+    for (const reminder of originalReminders) {
+      if (!currentReminders.some(r => 
+        r.name === reminder.name && r.date === reminder.date && r.enabled === reminder.enabled
+      )) {
+        changes.push(`Removed reminder: ${reminder.name} (${reminder.date})`);
+      }
+    }
+    
+    return {
+      changes,
+      changedFields,
+      updatedData: vehicleData
+    };
+  };
+  
   const handleSave = () => {
     // Validate form
     if (!vehicleData.id || !vehicleData.make || !vehicleData.model) {
@@ -796,15 +1260,26 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
       return;
     }
     
-    // Call the onSave function from parent component
-    onSave(vehicleData);
+    if (vehicleToEdit) {
+      // In edit mode, track changes and show confirmation
+      const changes = getChanges();
+      if (changes && changes.changes.length > 0) {
+        onSave(vehicleData, changes);
+      } else {
+        // No changes detected
+        alert('No changes detected');
+      }
+    } else {
+      // In add mode, just save the new vehicle
+      onSave(vehicleData);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-[800px] max-h-[90vh] overflow-y-auto">
-        <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 bg-white">
-          <h2 className="text-lg text-gray-900">Add New Vehicle</h2>
+    <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-[800px] flex flex-col max-h-[90vh] my-4">
+        <div className="border-b border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center bg-white z-10 rounded-t-lg sticky top-0">
+          <h2 className="text-lg text-gray-900">{vehicleToEdit ? 'Edit Vehicle' : 'Add New Vehicle'}</h2>
           <button 
             className="text-gray-500 hover:text-gray-700"
             onClick={onClose}
@@ -813,9 +1288,9 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
           </button>
         </div>
 
-        <div className="px-6 py-4">
-          <div className="flex space-x-4 mb-6">
-            <div className="flex-1">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-6">
+            <div className="w-full">
               <label className="block text-sm text-gray-700 mb-1">Registration Number</label>
               <div className="relative">
                 <input 
@@ -825,8 +1300,9 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
                   onChange={handleChange}
                   placeholder="XYZ-123" 
                   className="w-full px-4 py-2 border border-gray-300 rounded-md" 
+                  disabled={vehicleToEdit} // Don't allow changing registration number when editing (used as ID)
                 />
-                {csddIntegration.connectionStatus === 'connected' && (
+                {csddIntegration.connectionStatus === 'connected' && !vehicleToEdit && (
                   <button 
                     className="absolute right-2 top-2 text-sm text-gray-600 hover:text-gray-900"
                     onClick={fetchVehicleDetailsFromCsdd}
@@ -836,7 +1312,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
                 )}
               </div>
             </div>
-            <div className="flex-1">
+            <div className="w-full">
               <label className="block text-sm text-gray-700 mb-1">VIN</label>
               <div className="relative">
                 <input 
@@ -855,33 +1331,33 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
           </div>
 
           <div className="border-b border-gray-200 pb-4">
-            <div className="flex space-x-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
               <button 
-                className={`px-4 py-2 text-sm rounded-md ${activeTab === 'details' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-3 py-2 text-sm rounded-md ${activeTab === 'details' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
                 onClick={() => setActiveTab('details')}
               >
                 Vehicle Details
               </button>
               <button 
-                className={`px-4 py-2 text-sm rounded-md ${activeTab === 'tracking' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-3 py-2 text-sm rounded-md ${activeTab === 'tracking' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
                 onClick={() => setActiveTab('tracking')}
               >
                 Tracking
               </button>
               <button 
-                className={`px-4 py-2 text-sm rounded-md ${activeTab === 'integrations' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-3 py-2 text-sm rounded-md ${activeTab === 'integrations' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
                 onClick={() => setActiveTab('integrations')}
               >
                 Integrations
               </button>
               <button 
-                className={`px-4 py-2 text-sm rounded-md ${activeTab === 'documents' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-3 py-2 text-sm rounded-md ${activeTab === 'documents' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
                 onClick={() => setActiveTab('documents')}
               >
                 Documents
               </button>
               <button 
-                className={`px-4 py-2 text-sm rounded-md ${activeTab === 'notifications' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-3 py-2 text-sm rounded-md ${activeTab === 'notifications' ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50'}`}
                 onClick={() => setActiveTab('notifications')}
               >
                 Notifications
@@ -890,7 +1366,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
 
             {activeTab === 'details' && (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">Make</label>
                     <input 
@@ -976,9 +1452,82 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
                     <span className="mr-2">☁️</span>Import Third-party Data
                   </button>
                 </div>
+
+                <div className="mt-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                    <h4 className="text-sm text-gray-900">Reminder Settings</h4>
+                    <div className="flex gap-2">
+                      {csddIntegration.connectionStatus === 'connected' && vehicleToEdit && (
+                        <button 
+                          className="px-2 py-1 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 flex items-center"
+                          onClick={async () => {
+                            // Use the vehicleToEdit ID since we're in edit mode
+                            const updatedVehicle = await window.syncVehicleRemindersWithCsdd(vehicleToEdit.id);
+                            if (updatedVehicle) {
+                              // Update local state with the synced data
+                              setVehicleData({
+                                ...vehicleData,
+                                reminders: updatedVehicle.reminders,
+                                make: updatedVehicle.make,
+                                model: updatedVehicle.model,
+                                year: updatedVehicle.year,
+                                vin: updatedVehicle.vin,
+                                mileage: updatedVehicle.mileage
+                              });
+                              alert('Reminders successfully updated from e.csdd.lv');
+                            }
+                          }}
+                        >
+                          <span className="mr-1">🔄</span>Sync with CSDD
+                        </button>
+                      )}
+                      <button 
+                        className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 flex items-center self-start sm:self-auto"
+                        onClick={addReminder}
+                      >
+                        <span className="text-sm mr-1">➕</span>Add Reminder
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {vehicleData.reminders && vehicleData.reminders.map((reminder, index) => (
+                      <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-2 bg-gray-50 rounded gap-2">
+                        <div className="flex items-center">
+                          <input 
+                            type="checkbox" 
+                            className="rounded border-gray-300" 
+                            checked={reminder.enabled}
+                            onChange={(e) => handleReminderChange(index, 'enabled', e.target.checked)} 
+                          />
+                          <input
+                            type="text"
+                            className="ml-2 text-sm text-gray-900 bg-transparent border-none focus:ring-0 w-full sm:w-40"
+                            value={reminder.name}
+                            onChange={(e) => handleReminderChange(index, 'name', e.target.value)}
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="date" 
+                            className="px-2 py-1 border border-gray-300 rounded text-sm w-full sm:w-auto" 
+                            value={reminder.date}
+                            onChange={(e) => handleReminderChange(index, 'date', e.target.value)}
+                          />
+                          <button 
+                            className="text-gray-500 hover:text-red-500"
+                            onClick={() => removeReminder(index)}
+                          >
+                            <span className="text-sm">❌</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
 
+            {/* Other tabs remain the same */}
             {activeTab === 'tracking' && (
               <div className="py-4">
                 <p className="text-gray-700">Configure vehicle tracking options here.</p>
@@ -990,9 +1539,9 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
                 <h3 className="text-lg text-gray-900 mb-3">Third-Party Integrations</h3>
                 
                 <div className="bg-white p-4 rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
                     <div className="flex items-center">
-                      <span className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mr-3">
+                      <span className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mr-3 flex-shrink-0">
                         <span className="text-blue-600 text-xl">🔑</span>
                       </span>
                       <div>
@@ -1020,13 +1569,13 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
                   {csddIntegration.connectionStatus === 'connected' ? (
                     <div className="space-y-4">
                       <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div>
                             <p className="text-sm text-gray-900">Connected as: <span className="font-medium">{csddIntegration.userInfo?.firstName} {csddIntegration.userInfo?.lastName}</span></p>
                             <p className="text-xs text-gray-500 mt-1">You can now auto-fill vehicle details using the registration number</p>
                           </div>
                           <button 
-                            className="px-3 py-1 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50"
+                            className="px-3 py-1 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50 self-start sm:self-auto"
                             onClick={disconnectFromCsdd}
                           >
                             Disconnect
@@ -1143,29 +1692,9 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
               </div>
             )}
           </div>
-
-          <div className="mt-4">
-            <h4 className="text-sm text-gray-900 mb-2">Reminder Settings</h4>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <div className="flex items-center">
-                  <input type="checkbox" className="rounded border-gray-300" defaultChecked />
-                  <span className="ml-2 text-sm text-gray-900">Insurance Renewal</span>
-                </div>
-                <input type="date" className="px-2 py-1 border border-gray-300 rounded text-sm" defaultValue="2025-01-15" />
-              </div>
-              <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <div className="flex items-center">
-                  <input type="checkbox" className="rounded border-gray-300" defaultChecked />
-                  <span className="ml-2 text-sm text-gray-900">Service Due</span>
-                </div>
-                <input type="date" className="px-2 py-1 border border-gray-300 rounded text-sm" defaultValue="2025-03-20" />
-              </div>
-            </div>
-          </div>
         </div>
 
-        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-end space-x-2">
+        <div className="border-t border-gray-200 px-4 sm:px-6 py-4 bg-gray-50 flex justify-end space-x-2 mt-auto rounded-b-lg">
           <button 
             className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-md"
             onClick={onClose}
@@ -1176,7 +1705,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration 
             className="px-4 py-2 text-sm bg-gray-900 text-white rounded-md hover:bg-gray-800"
             onClick={handleSave}
           >
-            Save Vehicle
+            {vehicleToEdit ? 'Save Changes' : 'Save Vehicle'}
           </button>
         </div>
       </div>

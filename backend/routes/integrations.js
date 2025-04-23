@@ -301,6 +301,12 @@ router.get('/csdd/vehicle/:registrationNumber', async (req, res) => {
             }
             console.log('cheerio mileage:', value);
           }
+          if (label.includes('Nākamāsapskatesdatums') || label.includes('Nākamās apskates datums')) {
+            // Extract the road worthiness date (format: DD.MM.YYYY)
+            vehicleData.roadWorthinessDate = value.trim();
+            found++;
+            console.log('cheerio roadWorthinessDate:', value);
+          }
         }
       });
       // If we couldn't extract any data, return an error instead of mock data

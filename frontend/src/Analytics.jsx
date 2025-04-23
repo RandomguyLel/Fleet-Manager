@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const Analytics = () => {
@@ -216,22 +216,145 @@ const Analytics = () => {
 // Notification Bell Component to be reused across pages
 export const NotificationBell = () => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   
-  // Sample notifications data
-  const notifications = [
-    {
-      id: 1,
-      type: 'maintenance',
-      message: 'Maintenance due for XYZ-123',
-      icon: '⚠️'
-    },
-    {
-      id: 2,
-      type: 'insurance',
-      message: 'Insurance expiring soon',
-      icon: '⏰'
+  // Fetch notifications from the API
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:3000/api/notifications');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setNotifications(data);
+      
+      // Count unread notifications
+      const unread = data.filter(notification => !notification.is_read).length;
+      setUnreadCount(unread);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+  
+  // Fetch notifications on mount and when the component is shown
+  useEffect(() => {
+    fetchNotifications();
+    
+    // Set up periodic refresh (every 5 minutes)
+    const intervalId = setInterval(fetchNotifications, 5 * 60 * 1000);
+    
+    // Clear interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
+  
+  // Fetch notifications when the dropdown is opened
+  useEffect(() => {
+    if (showNotifications) {
+      fetchNotifications();
+    }
+  }, [showNotifications]);
+  
+  // Handle marking a notification as read
+  const markAsRead = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/notifications/${id}/read`, {
+        method: 'PUT'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error! Status: ${response.status}`);
+      }
+      
+      // Update local state
+      setNotifications(notifications.map(notif => 
+        notif.id === id ? { ...notif, is_read: true } : notif
+      ));
+      setUnreadCount(Math.max(0, unreadCount - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+  
+  // Handle marking a notification as dismissed
+  const dismissNotification = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:3000/api/notifications/${id}/dismiss`, {
+        method: 'PUT'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error! Status: ${response.status}`);
+      }
+      
+      // Update local state
+      const updatedNotifications = notifications.filter(notif => notif.id !== id);
+      setNotifications(updatedNotifications);
+      
+      // Update unread count if the dismissed notification was unread
+      const wasUnread = notifications.find(notif => notif.id === id && !notif.is_read);
+      if (wasUnread) {
+        setUnreadCount(Math.max(0, unreadCount - 1));
+      }
+    } catch (error) {
+      console.error('Error dismissing notification:', error);
+    }
+  };
+  
+  // Handle marking all notifications as read
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/notifications/read-all', {
+        method: 'PUT'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error! Status: ${response.status}`);
+      }
+      
+      // Update local state
+      setNotifications(notifications.map(notif => ({ ...notif, is_read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+  
+  // Generate an icon based on notification type
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'insurance':
+        return '🔐';
+      case 'maintenance':
+        return '🔧';
+      case 'roadworthiness':
+        return '📝';
+      default:
+        return '🔔';
+    }
+  };
+  
+  // Generate a background color based on notification priority and read status
+  const getNotificationBackground = (priority, isRead) => {
+    if (isRead) return 'bg-gray-50';
+    
+    switch (priority) {
+      case 'high':
+        return 'bg-red-50';
+      case 'normal':
+        return 'bg-amber-50';
+      case 'low':
+        return 'bg-blue-50';
+      default:
+        return 'bg-gray-50';
+    }
+  };
   
   return (
     <div className="relative">
@@ -240,7 +363,11 @@ export const NotificationBell = () => {
         onClick={() => setShowNotifications(!showNotifications)}
       >
         <span className="text-xl">🔔</span>
-        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
       </button>
       
       {showNotifications && (
@@ -249,23 +376,77 @@ export const NotificationBell = () => {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-sm text-gray-900">Notifications</h3>
               <div className="flex space-x-2">
-                <button className="text-xs text-gray-600 hover:text-gray-900">Clear All</button>
-                <button className="text-xs text-gray-600 hover:text-gray-900">Mute (1h)</button>
+                <button 
+                  className="text-xs text-gray-600 hover:text-gray-900"
+                  onClick={markAllAsRead}
+                >
+                  Mark All Read
+                </button>
               </div>
             </div>
-            <div className="space-y-3">
-              {notifications.map(notification => (
-                <div key={notification.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center">
-                    <span className="text-gray-600">{notification.icon}</span>
-                    <span className="ml-2 text-sm text-gray-800">{notification.message}</span>
+            
+            {loading ? (
+              <div className="py-4 text-center">
+                <div className="inline-block animate-spin h-5 w-5 border-2 border-gray-300 border-t-blue-500 rounded-full"></div>
+                <p className="mt-2 text-sm text-gray-500">Loading notifications...</p>
+              </div>
+            ) : notifications.length > 0 ? (
+              <div className="max-h-80 overflow-y-auto space-y-3">
+                {notifications.map(notification => (
+                  <div 
+                    key={notification.id} 
+                    className={`flex items-center justify-between p-3 rounded-lg border border-gray-200 ${getNotificationBackground(notification.priority, notification.is_read)}`}
+                  >
+                    <div className="flex items-center max-w-[85%]">
+                      <span className="text-gray-600 mr-2 flex-shrink-0">{getNotificationIcon(notification.type)}</span>
+                      <div>
+                        <p className="text-sm text-gray-800 font-medium">{notification.title}</p>
+                        <p className="text-xs text-gray-500 truncate">{notification.message}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <button 
+                        className="text-gray-400 hover:text-gray-600 text-xs"
+                        onClick={() => markAsRead(notification.id)}
+                        title="Mark as read"
+                      >
+                        <span>✓</span>
+                      </button>
+                      <button 
+                        className="text-gray-400 hover:text-red-500 text-xs"
+                        onClick={() => dismissNotification(notification.id)}
+                        title="Dismiss"
+                      >
+                        <span>×</span>
+                      </button>
+                    </div>
                   </div>
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <span>✓</span>
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-sm text-gray-500">No notifications</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="border-t border-gray-200 p-3 bg-gray-50 text-xs text-center rounded-b-lg text-gray-500">
+            <button
+              className="text-blue-500 hover:text-blue-700"
+              onClick={() => {
+                fetch('http://localhost:3000/api/notifications/generate', { 
+                  method: 'POST' 
+                })
+                .then(res => res.json())
+                .then(data => {
+                  console.log('Notifications generated:', data);
+                  fetchNotifications();
+                })
+                .catch(err => console.error('Error generating notifications:', err));
+              }}
+            >
+              Check for new notifications
+            </button>
           </div>
         </div>
       )}

@@ -37,6 +37,10 @@ async function setupDatabase() {
     // Read the schema file
     const schemaSQL = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
     
+    // Drop existing tables to allow clean recreation
+    await fleetManagerPool.query('DROP TABLE IF EXISTS reminders CASCADE');
+    await fleetManagerPool.query('DROP TABLE IF EXISTS vehicles CASCADE');
+    
     // Execute the schema
     await fleetManagerPool.query(schemaSQL);
     
