@@ -13,6 +13,29 @@ CREATE TABLE IF NOT EXISTS vehicles (
   mileage VARCHAR(20)
 );
 
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  first_name VARCHAR(50),
+  last_name VARCHAR(50),
+  role VARCHAR(20) DEFAULT 'user', -- 'admin', 'user', 'manager', etc.
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_login TIMESTAMP
+);
+
+-- Create user_sessions table for token management
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  token VARCHAR(255) UNIQUE NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create reminders table
 CREATE TABLE IF NOT EXISTS reminders (
   id SERIAL PRIMARY KEY,
@@ -37,6 +60,13 @@ CREATE TABLE IF NOT EXISTS notifications (
   is_dismissed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Insert sample users with freshly generated bcrypt hashes
+INSERT INTO users (username, email, password_hash, first_name, last_name, role)
+VALUES 
+  ('admin', 'admin@fleetmanager.com', '$2b$10$iqqU7TiRrstPdMcqVzGJceqBtGzBih20B4AlR8J14oLXAymM1e9au', 'Admin', 'User', 'admin'), -- password: admin123
+  ('manager', 'manager@fleetmanager.com', '$2b$10$ULACjrb.0pOw2.iln4/8su8RNlUUiFDyQRL6/OMdC0WfqCk7rHha2', 'Fleet', 'Manager', 'manager'), -- password: manager123
+  ('user', 'user@fleetmanager.com', '$2b$10$bw78pDjO1z8dX24qd5.z5OAmRc/yuEucTiuJR49o9YfIftoLrZv9K', 'Regular', 'User', 'user'); -- password: user123
 
 -- Insert sample vehicle data
 INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, vin, mileage)

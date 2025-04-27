@@ -40,6 +40,8 @@ async function setupDatabase() {
     // Drop existing tables to allow clean recreation
     await fleetManagerPool.query('DROP TABLE IF EXISTS reminders CASCADE');
     await fleetManagerPool.query('DROP TABLE IF EXISTS vehicles CASCADE');
+    await fleetManagerPool.query('DROP TABLE IF EXISTS user_sessions CASCADE');
+    await fleetManagerPool.query('DROP TABLE IF EXISTS users CASCADE');
     
     // Execute the schema
     await fleetManagerPool.query(schemaSQL);

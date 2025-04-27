@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { NotificationBell } from './Analytics';
+import NotificationBell from './components/NotificationBell';
 
 const AuditLog = () => {
   // State for user menu dropdown

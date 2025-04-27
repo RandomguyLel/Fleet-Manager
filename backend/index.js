@@ -1,8 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
-// Import integrations routes
+// Import routes
 const integrationsRoutes = require('./routes/integrations');
+const { router: authRoutes, authenticateToken } = require('./routes/auth');
+const { generateNotifications } = require('./generate-notifications');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -15,12 +18,15 @@ app.get('/', (req, res) => {
   res.send('Fleet Management System Backend');
 });
 
+// Register the authentication routes
+app.use('/api/auth', authRoutes);
+
 // Register the integrations routes
 app.use('/api/integrations', integrationsRoutes);
 
 // Vehicle API Routes
 // Get all vehicles
-app.get('/api/vehicles', async (req, res) => {
+app.get('/api/vehicles', authenticateToken, async (req, res) => {
   try {
     const vehiclesResult = await db.query('SELECT * FROM vehicles');
     
@@ -52,7 +58,7 @@ app.get('/api/vehicles', async (req, res) => {
 });
 
 // Get a single vehicle by ID
-app.get('/api/vehicles/:id', async (req, res) => {
+app.get('/api/vehicles/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const vehicleResult = await db.query('SELECT * FROM vehicles WHERE id = $1', [id]);
@@ -79,7 +85,7 @@ app.get('/api/vehicles/:id', async (req, res) => {
 });
 
 // Create a new vehicle
-app.post('/api/vehicles', async (req, res) => {
+app.post('/api/vehicles', authenticateToken, async (req, res) => {
   try {
     const { id, status, type, lastService, documents, make, model, year, license, vin, mileage, reminders } = req.body;
     
@@ -140,7 +146,7 @@ app.post('/api/vehicles', async (req, res) => {
 });
 
 // Update a vehicle
-app.put('/api/vehicles/:id', async (req, res) => {
+app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, type, lastService, documents, make, model, year, license, vin, mileage, reminders } = req.body;
@@ -206,7 +212,7 @@ app.put('/api/vehicles/:id', async (req, res) => {
 });
 
 // Delete a vehicle
-app.delete('/api/vehicles/:id', async (req, res) => {
+app.delete('/api/vehicles/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await db.query('DELETE FROM vehicles WHERE id = $1 RETURNING *', [id]);
@@ -224,7 +230,7 @@ app.delete('/api/vehicles/:id', async (req, res) => {
 
 // Reminders API Routes
 // Get all reminders for a vehicle
-app.get('/api/vehicles/:id/reminders', async (req, res) => {
+app.get('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -247,7 +253,7 @@ app.get('/api/vehicles/:id/reminders', async (req, res) => {
 });
 
 // Create a new reminder
-app.post('/api/vehicles/:id/reminders', async (req, res) => {
+app.post('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, date, enabled } = req.body;
@@ -276,7 +282,7 @@ app.post('/api/vehicles/:id/reminders', async (req, res) => {
 });
 
 // Update a reminder
-app.put('/api/reminders/:id', async (req, res) => {
+app.put('/api/reminders/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, date, enabled } = req.body;
@@ -303,7 +309,7 @@ app.put('/api/reminders/:id', async (req, res) => {
 });
 
 // Delete a reminder
-app.delete('/api/reminders/:id', async (req, res) => {
+app.delete('/api/reminders/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await db.query('DELETE FROM reminders WHERE id = $1 RETURNING *', [id]);
@@ -320,7 +326,7 @@ app.delete('/api/reminders/:id', async (req, res) => {
 });
 
 // Batch update reminders for a vehicle
-app.put('/api/vehicles/:id/reminders', async (req, res) => {
+app.put('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { reminders } = req.body;
@@ -374,7 +380,7 @@ app.put('/api/vehicles/:id/reminders', async (req, res) => {
 
 // Notifications API Routes
 // Get all notifications
-app.get('/api/notifications', async (req, res) => {
+app.get('/api/notifications', authenticateToken, async (req, res) => {
   try {
     const { unreadOnly } = req.query;
     
@@ -401,7 +407,7 @@ app.get('/api/notifications', async (req, res) => {
 });
 
 // Mark notification as read
-app.put('/api/notifications/:id/read', async (req, res) => {
+app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -422,7 +428,7 @@ app.put('/api/notifications/:id/read', async (req, res) => {
 });
 
 // Mark notification as dismissed
-app.put('/api/notifications/:id/dismiss', async (req, res) => {
+app.put('/api/notifications/:id/dismiss', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -443,7 +449,7 @@ app.put('/api/notifications/:id/dismiss', async (req, res) => {
 });
 
 // Mark all notifications as read
-app.put('/api/notifications/read-all', async (req, res) => {
+app.put('/api/notifications/read-all', authenticateToken, async (req, res) => {
   try {
     await db.query('UPDATE notifications SET is_read = TRUE WHERE is_read = FALSE');
     res.json({ message: 'All notifications marked as read' });
@@ -454,7 +460,7 @@ app.put('/api/notifications/read-all', async (req, res) => {
 });
 
 // Generate notifications from reminders
-app.post('/api/notifications/generate', async (req, res) => {
+app.post('/api/notifications/generate', authenticateToken, async (req, res) => {
   try {
     // Begin transaction
     await db.query('BEGIN');
@@ -548,6 +554,15 @@ app.post('/api/notifications/generate', async (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+  
+  // Generate initial notifications when server starts
+  try {
+    console.log('Generating initial notifications from reminders...');
+    const notifications = await generateNotifications();
+    console.log(`Generated ${notifications.length} initial notifications.`);
+  } catch (error) {
+    console.error('Error generating initial notifications:', error);
+  }
 });

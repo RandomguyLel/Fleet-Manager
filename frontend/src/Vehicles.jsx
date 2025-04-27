@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { NotificationBell } from './Analytics';
+import { useAuth } from './AuthContext';
+import NotificationBell from './components/NotificationBell';
 
 const Vehicles = () => {
   // State for expanded row
@@ -31,30 +32,40 @@ const Vehicles = () => {
   const [showEditConfirmationModal, setShowEditConfirmationModal] = useState(false);
   // State for tracked changes
   const [vehicleChanges, setVehicleChanges] = useState(null);
+  // Get auth context
+  const { currentUser, logout, getAuthHeader } = useAuth();
+  // State for user profile dropdown
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Fetch vehicles from API
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:3000/api/vehicles');
-        
+        const response = await fetch('http://localhost:3000/api/vehicles', {
+          headers: {
+            ...getAuthHeader(),
+            'Content-Type': 'application/json'
+          }
+        });
+
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`Failed to fetch vehicles: ${response.status} ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         setVehicles(data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching vehicles:', error);
-        setError(error.message);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching vehicles:', err);
+        setError(`Error fetching vehicles: ${err.message}`);
+      } finally {
         setLoading(false);
       }
     };
 
     fetchVehicles();
-  }, []);
+  }, [getAuthHeader]);
 
   // Toggle expanded row
   const toggleExpandRow = (id) => {
@@ -99,6 +110,7 @@ const Vehicles = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader()
         },
         body: JSON.stringify(vehicleData),
       });
@@ -133,6 +145,7 @@ const Vehicles = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeader()
         },
         body: JSON.stringify(updatedVehicleData),
       });
@@ -221,6 +234,9 @@ const Vehicles = () => {
     try {
       const response = await fetch(`http://localhost:3000/api/vehicles/${vehicleId}`, {
         method: 'DELETE',
+        headers: {
+          ...getAuthHeader()
+        }
       });
 
       if (!response.ok) {
@@ -251,7 +267,10 @@ const Vehicles = () => {
       // First check if we have an active CSDD connection
       const sessionResponse = await fetch('http://localhost:3000/api/integrations/csdd/session/default', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        }
       });
       
       const sessionData = await sessionResponse.json();
@@ -264,7 +283,10 @@ const Vehicles = () => {
       // Fetch the latest data from CSDD
       const response = await fetch(`http://localhost:3000/api/integrations/csdd/vehicle/${vehicleId}?userId=default`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        }
       });
 
       if (!response.ok) {
@@ -332,7 +354,10 @@ const Vehicles = () => {
       // Update the vehicle in the database
       const updateResponse = await fetch(`http://localhost:3000/api/vehicles/${vehicleId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
         body: JSON.stringify(updatedVehicle)
       });
       
@@ -439,11 +464,38 @@ const Vehicles = () => {
             </div>
             <div className="flex items-center">
               <NotificationBell />
-              <div className="ml-4 flex items-center">
-                <div className="h-9 w-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center overflow-hidden">
-                  <span className="text-sm font-medium text-blue-700">A</span>
-                </div>
-                <span className="ml-2 text-sm font-medium text-gray-700">Admin</span>
+              <div className="ml-4 relative">
+                <button 
+                  className="h-9 w-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center overflow-hidden"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                >
+                  <span className="text-sm font-medium text-blue-700">{currentUser?.firstName?.charAt(0) || currentUser?.username?.charAt(0) || 'A'}</span>
+                </button>
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
+                    <div className="py-2">
+                      <p className="px-4 py-2 text-sm text-gray-700">
+                        {currentUser?.firstName && currentUser?.lastName 
+                          ? `${currentUser.firstName} ${currentUser.lastName}` 
+                          : currentUser?.username || 'Admin'}
+                        <br />
+                        <span className="text-xs text-gray-500">{currentUser?.email || ''}</span>
+                      </p>
+                      <Link 
+                        to="/profile" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      >
+                        Profile
+                      </Link>
+                      <button 
+                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        onClick={logout}
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1427,7 +1479,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">Current Mileage</label>
+                    <label className="block text-sm text-gray-700 mb-1">Current Mileage (KM)</label>
                     <input 
                       type="text" 
                       name="mileage"
@@ -1592,11 +1644,11 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                           </li>
                           <li className="flex items-center text-sm text-gray-700">
                             <span className="mr-2 text-green-500">✓</span>
-                            Import vehicle documents and certificates
+                            Import vehicle due dates and reminders
                           </li>
                           <li className="flex items-center text-sm text-gray-700">
                             <span className="mr-2 text-green-500">✓</span>
-                            Check vehicle history and previous owners
+                            Update vehicle reminders from csdd.lv
                           </li>
                         </ul>
                       </div>
