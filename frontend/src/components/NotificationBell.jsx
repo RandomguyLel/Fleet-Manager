@@ -7,12 +7,14 @@ const NotificationBell = () => {
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const { getAuthHeader } = useAuth();
+  // API URL from environment variable
+  const apiUrl = import.meta.env.VITE_API_URL;
   
   // Fetch notifications from the API
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3000/api/notifications', {
+      const response = await fetch(`${apiUrl}/api/notifications`, {
         headers: {
           ...getAuthHeader(),
           'Content-Type': 'application/json'
@@ -57,7 +59,7 @@ const NotificationBell = () => {
   // Handle marking a notification as read
   const markAsRead = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/notifications/${id}/read`, {
+      const response = await fetch(`${apiUrl}/api/notifications/${id}/read`, {
         method: 'PUT',
         headers: getAuthHeader()
       });
@@ -79,7 +81,7 @@ const NotificationBell = () => {
   // Handle marking a notification as dismissed
   const dismissNotification = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/notifications/${id}/dismiss`, {
+      const response = await fetch(`${apiUrl}/api/notifications/${id}/dismiss`, {
         method: 'PUT',
         headers: getAuthHeader()
       });
@@ -105,7 +107,7 @@ const NotificationBell = () => {
   // Handle marking all notifications as read
   const markAllAsRead = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/notifications/read-all', {
+      const response = await fetch(`${apiUrl}/api/notifications/read-all`, {
         method: 'PUT',
         headers: getAuthHeader()
       });
@@ -228,7 +230,7 @@ const NotificationBell = () => {
             <button
               className="text-blue-500 hover:text-blue-700"
               onClick={() => {
-                fetch('http://localhost:3000/api/notifications/generate', { 
+                fetch(`${apiUrl}/api/notifications/generate`, { 
                   method: 'POST',
                   headers: getAuthHeader()
                 })

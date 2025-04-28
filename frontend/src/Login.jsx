@@ -1,4 +1,3 @@
-// filepath: c:\Users\ritva\Desktop\TMS\Fleet Manager\frontend\src\Login.jsx
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
@@ -13,6 +12,8 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
+  // API URL from environment variable
+  const apiUrl = import.meta.env.VITE_API_URL;
   
   // Check if we have a redirect URL from a previous unauthorized attempt
   const from = location.state?.from?.pathname || '/';
@@ -30,7 +31,7 @@ const Login = () => {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

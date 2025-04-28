@@ -25,3 +25,6 @@ dist-ssr
 
 # Testin stuff
 files
+
+#.env files
+*.env

@@ -17,6 +17,8 @@ const Dashboard = () => {
   const { currentUser, logout, getAuthHeader } = useAuth();
   // State for user profile dropdown
   const [showUserMenu, setShowUserMenu] = useState(false);
+  // API URL from environment variable
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   // Fetch dashboard data
   useEffect(() => {
@@ -25,7 +27,7 @@ const Dashboard = () => {
         setLoading(true);
         
         // Fetch vehicles data to calculate statistics
-        const vehiclesResponse = await fetch('http://localhost:3000/api/vehicles', {
+        const vehiclesResponse = await fetch(`${apiUrl}/api/vehicles`, {
           headers: {
             ...getAuthHeader(),
             'Content-Type': 'application/json'
@@ -76,7 +78,7 @@ const Dashboard = () => {
         });
         
         // Fetch notifications
-        const notificationsResponse = await fetch('http://localhost:3000/api/notifications?unreadOnly=true', {
+        const notificationsResponse = await fetch(`${apiUrl}/api/notifications?unreadOnly=true`, {
           headers: {
             ...getAuthHeader(),
             'Content-Type': 'application/json'
@@ -100,7 +102,7 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, [getAuthHeader]);
+  }, [getAuthHeader, apiUrl]);
 
   if (loading) {
     return (

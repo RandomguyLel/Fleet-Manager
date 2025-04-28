@@ -1,4 +1,3 @@
-// filepath: c:\Users\ritva\Desktop\TMS\Fleet Manager\frontend\src\Profile.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
@@ -10,6 +9,8 @@ const Profile = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  // API URL from environment variable
+  const apiUrl = import.meta.env.VITE_API_URL;
   
   // Form states
   const [profileData, setProfileData] = useState({
@@ -28,7 +29,7 @@ const Profile = () => {
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3000/api/auth/profile', {
+      const response = await fetch(`${apiUrl}/api/auth/profile`, {
         headers: {
           ...getAuthHeader(),
           'Content-Type': 'application/json'
@@ -96,7 +97,7 @@ const Profile = () => {
     setSuccess(null);
     
     try {
-      const response = await fetch('http://localhost:3000/api/auth/profile', {
+      const response = await fetch(`${apiUrl}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +143,7 @@ const Profile = () => {
     setSuccess(null);
     
     try {
-      const response = await fetch('http://localhost:3000/api/auth/change-password', {
+      const response = await fetch(`${apiUrl}/api/auth/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

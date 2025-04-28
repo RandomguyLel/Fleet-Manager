@@ -36,13 +36,15 @@ const Vehicles = () => {
   const { currentUser, logout, getAuthHeader } = useAuth();
   // State for user profile dropdown
   const [showUserMenu, setShowUserMenu] = useState(false);
+  // API URL from environment variable
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   // Fetch vehicles from API
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:3000/api/vehicles', {
+        const response = await fetch(`${apiUrl}/api/vehicles`, {
           headers: {
             ...getAuthHeader(),
             'Content-Type': 'application/json'
@@ -65,7 +67,7 @@ const Vehicles = () => {
     };
 
     fetchVehicles();
-  }, [getAuthHeader]);
+  }, [getAuthHeader, apiUrl]);
 
   // Toggle expanded row
   const toggleExpandRow = (id) => {
@@ -106,7 +108,7 @@ const Vehicles = () => {
   // Add a new vehicle
   const addVehicle = async (vehicleData) => {
     try {
-      const response = await fetch('http://localhost:3000/api/vehicles', {
+      const response = await fetch(`${apiUrl}/api/vehicles`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,7 +143,7 @@ const Vehicles = () => {
   // Update an existing vehicle
   const updateVehicle = async (updatedVehicleData, changes) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/vehicles/${updatedVehicleData.id}`, {
+      const response = await fetch(`${apiUrl}/api/vehicles/${updatedVehicleData.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -232,7 +234,7 @@ const Vehicles = () => {
   // Delete a vehicle
   const deleteVehicle = async (vehicleId) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/vehicles/${vehicleId}`, {
+      const response = await fetch(`${apiUrl}/api/vehicles/${vehicleId}`, {
         method: 'DELETE',
         headers: {
           ...getAuthHeader()
@@ -265,7 +267,7 @@ const Vehicles = () => {
       console.log('[Frontend] Syncing reminders for vehicle:', vehicleId);
       
       // First check if we have an active CSDD connection
-      const sessionResponse = await fetch('http://localhost:3000/api/integrations/csdd/session/default', {
+      const sessionResponse = await fetch(`${apiUrl}/api/integrations/csdd/session/default`, {
         method: 'GET',
         headers: { 
           'Content-Type': 'application/json',
@@ -281,7 +283,7 @@ const Vehicles = () => {
       }
       
       // Fetch the latest data from CSDD
-      const response = await fetch(`http://localhost:3000/api/integrations/csdd/vehicle/${vehicleId}?userId=default`, {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/vehicle/${vehicleId}?userId=default`, {
         method: 'GET',
         headers: { 
           'Content-Type': 'application/json',
@@ -352,7 +354,7 @@ const Vehicles = () => {
       updatedVehicle.mileage = data.mileage !== undefined ? data.mileage : updatedVehicle.mileage;
       
       // Update the vehicle in the database
-      const updateResponse = await fetch(`http://localhost:3000/api/vehicles/${vehicleId}`, {
+      const updateResponse = await fetch(`${apiUrl}/api/vehicles/${vehicleId}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -835,6 +837,7 @@ const Vehicles = () => {
                             )}
                           </React.Fragment>
                         ))}
+
                       </tbody>
                     </table>
                   </div>
@@ -963,6 +966,8 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
     password: csddIntegration.credentials?.password || '' 
   });
   const [csddError, setCsddError] = useState(null);
+  // API URL from environment variable
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   // Check session on component mount
   useEffect(() => {
@@ -982,7 +987,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
     try {
       console.log('[Frontend] Checking for active CSDD session...');
       
-      const response = await fetch('http://localhost:3000/api/integrations/csdd/session/default', {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/session/default`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -1048,7 +1053,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
       setCsddError(null);
       
       console.log('[Frontend] Sending connection request to backend...');
-      const response = await fetch('http://localhost:3000/api/integrations/csdd/connect', {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/connect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1097,7 +1102,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
       console.log('[Frontend] Disconnecting from e.csdd.lv...');
       
       // Call the backend to disconnect the session
-      const response = await fetch('http://localhost:3000/api/integrations/csdd/disconnect/default', {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/disconnect/default`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1134,7 +1139,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
       console.log('[Frontend] Fetching vehicle details for registration number:', vehicleData.id);
       
       // Now we're making a real API call to fetch vehicle data
-      const response = await fetch(`http://localhost:3000/api/integrations/csdd/vehicle/${vehicleData.id}?userId=default`, {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/vehicle/${vehicleData.id}?userId=default`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
