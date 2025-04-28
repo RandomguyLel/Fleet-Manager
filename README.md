@@ -1,7 +1,6 @@
 # 🚚 Fleet Manager
 
-![License](https://img.shields.io/badge/license-ISC-blue.svg)
-![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
+
 
 ## 📋 Overview
 
