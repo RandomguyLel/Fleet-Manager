@@ -42,13 +42,14 @@ Fleet Manager is a comprehensive transportation management solution designed to 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/fleet-manager.git
+   git clone https://github.com/RandomguyLel/fleet-manager.git
    cd fleet-manager
    ```
 
 2. **Install dependencies**
    ```bash
    # Install backend dependencies
+   cd backend
    npm install
    
    # Install frontend dependencies
@@ -57,7 +58,7 @@ Fleet Manager is a comprehensive transportation management solution designed to 
    ```
 
 3. **Set up environment variables**
-   Create a `.env` file in the root directory:
+   Create a `.env` file in the backend directory:
    ```
    DB_HOST=localhost
    DB_PORT=5432
@@ -65,6 +66,10 @@ Fleet Manager is a comprehensive transportation management solution designed to 
    DB_USER=your_username
    DB_PASSWORD=your_password
    JWT_SECRET=your_jwt_secret
+   ```
+   Create a `.env` file in the frontend directory:
+   ```
+   VITE_API_URL=http://localhost:3000
    ```
 
 4. **Set up the database**
@@ -75,6 +80,7 @@ Fleet Manager is a comprehensive transportation management solution designed to 
 5. **Start the application**
    ```bash
    # Start the backend server
+   cd backend
    npm start
    
    # In a separate terminal, start the frontend
@@ -83,7 +89,7 @@ Fleet Manager is a comprehensive transportation management solution designed to 
    ```
 
 6. **Access the application**
-   Open your browser and navigate to `http://localhost:3000`
+   Open your browser and navigate to `http://localhost:3000` or your specified address.
 
 ## 📱 Application Structure
 
@@ -115,7 +121,7 @@ The Fleet Manager API provides the following endpoints:
 ## 🔄 Integrations WIP
 
 Fleet Manager can integrate with:
-- [NYI] Vehicle GPS location API's
+- [Soon™] Vehicle GPS location API's
 
 - [X] E-CSDD vehicle registry *account required
 
@@ -130,4 +136,4 @@ This project is licensed under the ISC License - see the LICENSE file for detail
 
 ---
 
-Made with ❤️ by the Fleet Manager Team | Last updated: April 27, 2025
+Made with ❤️ by RandomguyLel | Last updated: April 29, 2025
