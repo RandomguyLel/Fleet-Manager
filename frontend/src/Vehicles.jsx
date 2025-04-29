@@ -38,6 +38,10 @@ const Vehicles = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   // API URL from environment variable
   const apiUrl = import.meta.env.VITE_API_URL;
+  // State for insurance loading
+  const [insuranceLoading, setInsuranceLoading] = useState(false);
+  // Add fetchingData state for overall data loading
+  const [fetchingData, setFetchingData] = useState(false);
 
   // Fetch vehicles from API
   useEffect(() => {
@@ -350,29 +354,120 @@ const Vehicles = () => {
       updatedVehicle.make = data.make || updatedVehicle.make;
       updatedVehicle.model = data.model || updatedVehicle.model;
       updatedVehicle.year = data.year || updatedVehicle.year;
-      updatedVehicle.vin = data.vin || updatedVehicle.vin;
-      updatedVehicle.mileage = data.mileage !== undefined ? data.mileage : updatedVehicle.mileage;
+      updatedVehicle.mileage = data.mileage || updatedVehicle.mileage;
       
       // Update the vehicle in the database
       const updateResponse = await fetch(`${apiUrl}/api/vehicles/${vehicleId}`, {
         method: 'PUT',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...getAuthHeader()
         },
-        body: JSON.stringify(updatedVehicle)
+        body: JSON.stringify(updatedVehicle),
       });
       
       if (!updateResponse.ok) {
         throw new Error(`Failed to update vehicle: ${updateResponse.statusText}`);
       }
       
-      // Update the vehicle in our local state
+      const updatedVehicleData = await updateResponse.json();
+      
+      // Update the vehicles array with the updated vehicle
       setVehicles(vehicles.map(v => 
-        v.id === vehicleId ? updatedVehicle : v
+        v.id === updatedVehicleData.id ? updatedVehicleData : v
       ));
       
-      return updatedVehicle;
+      // Check if we also have the regaplnr and fetch insurance info if available
+      if (data.regaplnr || updatedVehicle.regaplnr) {
+        console.log('[Frontend] Registration Certificate Number available, also fetching insurance info');
+        try {
+          // Use the fetchInsuranceInfo function without showing its own alert
+          // to combine alerts at the end
+          let insuranceSuccess = false;
+          
+          await fetch(`${apiUrl}/api/integrations/insurance/${vehicleId}/${data.regaplnr || updatedVehicle.regaplnr}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeader()
+            }
+          }).then(async (insuranceResponse) => {
+            if (insuranceResponse.ok) {
+              const insuranceData = await insuranceResponse.json();
+              
+              if (insuranceData.success && insuranceData.lastPolicyDate) {
+                console.log('[Frontend] Found insurance policy date:', insuranceData.lastPolicyDate);
+                
+                // Make a copy of the updated reminders
+                const insuranceUpdatedReminders = [...updatedVehicleData.reminders];
+                
+                const insuranceIndex = insuranceUpdatedReminders.findIndex(
+                  reminder => reminder.name === 'Insurance Renewal'
+                );
+                
+                if (insuranceIndex >= 0) {
+                  // Update existing reminder
+                  insuranceUpdatedReminders[insuranceIndex] = {
+                    ...insuranceUpdatedReminders[insuranceIndex],
+                    date: insuranceData.lastPolicyDate,
+                    enabled: true
+                  };
+                } else {
+                  // Add new reminder
+                  insuranceUpdatedReminders.push({
+                    name: 'Insurance Renewal',
+                    date: insuranceData.lastPolicyDate,
+                    enabled: true
+                  });
+                }
+                
+                // Update the vehicle with insurance data
+                const insuranceUpdatedVehicle = {
+                  ...updatedVehicleData,
+                  reminders: insuranceUpdatedReminders
+                };
+                
+                // Save the updated vehicle with insurance data
+                const finalUpdateResponse = await fetch(`${apiUrl}/api/vehicles/${vehicleId}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeader()
+                  },
+                  body: JSON.stringify(insuranceUpdatedVehicle),
+                });
+                
+                if (finalUpdateResponse.ok) {
+                  const finalUpdatedVehicleData = await finalUpdateResponse.json();
+                  
+                  // Update the vehicles array with the final updated vehicle
+                  setVehicles(vehicles.map(v => 
+                    v.id === finalUpdatedVehicleData.id ? finalUpdatedVehicleData : v
+                  ));
+                  
+                  // Return the final updated vehicle data
+                  updatedVehicleData.reminders = insuranceUpdatedReminders;
+                  insuranceSuccess = true;
+                }
+              }
+            }
+          }).catch(error => {
+            console.error('[Frontend] Error fetching insurance info during sync:', error);
+          });
+          
+          // Show success message with information about what was updated
+          alert(insuranceSuccess 
+            ? 'All vehicle data successfully synchronized: Road worthiness and insurance reminders updated.' 
+            : 'Vehicle data partially synchronized: Road worthiness updated, but insurance data could not be retrieved.');
+        } catch (error) {
+          console.error('[Frontend] Error updating insurance info during sync:', error);
+          alert('Vehicle data partially synchronized: Road worthiness updated, but insurance data could not be retrieved.');
+        }
+      } else {
+        alert('Vehicle details successfully updated from e.csdd.lv. No Registration Certificate Number available to check insurance.');
+      }
+      
+      return updatedVehicleData;
     } catch (error) {
       console.error('[Frontend] Error syncing vehicle with CSDD:', error);
       alert(`Error syncing vehicle details: ${error.message}`);
@@ -701,7 +796,7 @@ const Vehicles = () => {
                                           </div>
                                           <div>
                                             <p className="text-gray-500">License: {vehicle.id}</p>
-                                            <p className="text-gray-500">VIN: {vehicle.vin}</p>
+                                            <p className="text-gray-500">Registration Certificate Number: {vehicle.regaplnr}</p>
                                             <p className="text-gray-500">Mileage: {vehicle.mileage}</p>
                                           </div>
                                         </div>
@@ -946,14 +1041,14 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
   const [vehicleData, setVehicleData] = useState(vehicleToEdit || {
     id: '',
     status: 'Active',
-    type: 'Truck',
-    lastService: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    type: 'Vieglais auto',
+    lastService: new Date().toLocaleDateString('lv-LV', { month: 'short', day: 'numeric', year: 'numeric' }),
     documents: 'Valid',
     make: '',
     model: '',
     year: new Date().getFullYear(),
     license: '',
-    vin: '',
+    regaplnr: '',
     mileage: '',
     reminders: [
       { name: 'Insurance Renewal', date: '2025-01-15', enabled: true },
@@ -966,6 +1061,10 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
     password: csddIntegration.credentials?.password || '' 
   });
   const [csddError, setCsddError] = useState(null);
+  // Add insuranceLoading state
+  const [insuranceLoading, setInsuranceLoading] = useState(false);
+  // Add fetchingData state for overall data loading
+  const [fetchingData, setFetchingData] = useState(false);
   // API URL from environment variable
   const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -974,6 +1073,12 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
     // Store the initial data for comparison when editing
     if (vehicleToEdit) {
       setInitialData(JSON.parse(JSON.stringify(vehicleToEdit)));
+      
+      // Make sure all fields are explicitly set, using regaplnr consistently
+      setVehicleData({
+        ...vehicleData,
+        ...vehicleToEdit
+      });
     }
 
     // If we're already connected, no need to check the session
@@ -1128,95 +1233,209 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
     }
   };
 
-  const fetchVehicleDetailsFromCsdd = async () => {
-    if (csddIntegration.connectionStatus !== 'connected' || !vehicleData.id) {
-      console.log('[Frontend] Cannot fetch vehicle details - not connected or no registration number provided');
-      alert('Please connect to e.csdd.lv and enter a vehicle registration number');
+  const handleAutoFill = async () => {
+    // Check if we have enough data to fetch anything
+    if (!vehicleData.id) {
+      alert('Please enter a Registration Number to auto-fill vehicle details');
       return;
     }
 
     try {
-      console.log('[Frontend] Fetching vehicle details for registration number:', vehicleData.id);
+      // First, check if we can fetch from CSDD (requires connection and registration number)
+      if (csddIntegration.connectionStatus === 'connected') {
+        console.log('[Frontend] Attempting to fetch data from CSDD for:', vehicleData.id);
+        
+        // Show loading state
+        setFetchingData(true);
+        
+        // Fetch vehicle details from CSDD
+        const response = await fetch(`${apiUrl}/api/integrations/csdd/vehicle/${vehicleData.id}?userId=default`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch vehicle details: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+          console.log('[Frontend] Successfully retrieved vehicle details:', data);
+          
+          // Format road worthiness date if available
+          let formattedRoadWorthinessDate = null;
+          if (data.roadWorthinessDate) {
+            const parts = data.roadWorthinessDate.split('.');
+            if (parts.length === 3) {
+              formattedRoadWorthinessDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+          }
+          
+          // Update vehicle reminders with road worthiness date if available
+          let updatedReminders = [...(vehicleData.reminders || [])];
+          
+          if (formattedRoadWorthinessDate) {
+            const roadWorthinessIndex = updatedReminders.findIndex(
+              reminder => reminder.name === 'Road Worthiness Certificate'
+            );
+            
+            if (roadWorthinessIndex >= 0) {
+              updatedReminders[roadWorthinessIndex] = {
+                ...updatedReminders[roadWorthinessIndex],
+                date: formattedRoadWorthinessDate,
+                enabled: true
+              };
+            } else {
+              updatedReminders.push({
+                name: 'Road Worthiness Certificate',
+                date: formattedRoadWorthinessDate,
+                enabled: true
+              });
+            }
+          }
+          
+          // Create a new vehicle data object with the updated information
+          const updatedVehicleData = {
+            ...vehicleData,
+            make: data.make || vehicleData.make,
+            model: data.model || vehicleData.model,
+            year: data.year || vehicleData.year,
+            regaplnr: data.regaplnr || vehicleData.regaplnr,
+            mileage: data.mileage !== undefined ? data.mileage : vehicleData.mileage,
+            reminders: updatedReminders
+          };
+          
+          console.log('[Frontend] Updated vehicle data with CSDD info:', updatedVehicleData);
+          
+          // Update the state with the new vehicle data
+          setVehicleData(updatedVehicleData);
+          
+          // If we got the regaplnr from CSDD or it was already present, try to fetch insurance info
+          const regaplnr = data.regaplnr || vehicleData.regaplnr;
+          
+          if (regaplnr) {
+            console.log('[Frontend] Registration Certificate Number available, fetching insurance info');
+            // Pass the updated data to fetchInsuranceInfo instead of relying on state
+            await fetchInsuranceInfo(vehicleData.id, regaplnr, updatedVehicleData);
+          } else {
+            setFetchingData(false);
+            alert('Vehicle details successfully imported from e.csdd.lv, but no Registration Certificate Number was found to check insurance.');
+          }
+        } else {
+          setFetchingData(false);
+          throw new Error(data.message || 'Failed to retrieve vehicle information');
+        }
+      } 
+      // If we're not connected to CSDD but have both registration numbers, try insurance lookup only
+      else if (vehicleData.regaplnr) {
+        console.log('[Frontend] Not connected to CSDD but have Registration Certificate Number, trying insurance info only');
+        await fetchInsuranceInfo(vehicleData.id, vehicleData.regaplnr);
+      }
+      // Neither CSDD connection nor registration certificate number
+      else {
+        alert('Please connect to e.csdd.lv to auto-fill vehicle details or enter a Registration Certificate Number to check insurance');
+      }
+    } catch (error) {
+      setFetchingData(false);
+      console.error('[Frontend] Error in auto-fill process:', error);
+      alert(`Error fetching data: ${error.message}`);
+    }
+  };
+  
+  // Fetch insurance information using the Registration Number and Registration Certificate Number
+  // Added optional parameter to pass already updated vehicle data
+  const fetchInsuranceInfo = async (registrationNumber, regaplnr, updatedVehicleDataFromCsdd = null) => {
+    if (!registrationNumber || !regaplnr) {
+      alert('Both Registration Number and Registration Certificate Number are required to fetch insurance information');
+      return;
+    }
+    
+    try {
+      console.log('[Frontend] Fetching insurance info for:', registrationNumber, 'with cert number:', regaplnr);
       
-      // Now we're making a real API call to fetch vehicle data
-      const response = await fetch(`${apiUrl}/api/integrations/csdd/vehicle/${vehicleData.id}?userId=default`, {
+      // Use the passed in data from CSDD if available, otherwise use current state
+      const currentVehicleData = updatedVehicleDataFromCsdd || { ...vehicleData };
+      console.log('[Frontend] Current vehicle data before insurance fetch:', currentVehicleData);
+      
+      // Set loading state
+      setInsuranceLoading(true);
+      
+      const response = await fetch(`${apiUrl}/api/integrations/insurance/${registrationNumber}/${regaplnr}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         }
       });
-
-      console.log('[Frontend] Vehicle details response status:', response.status);
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch vehicle details: ${response.statusText}`);
+        throw new Error(`Failed to fetch insurance info: ${response.statusText}`);
       }
-
-      const data = await response.json();
-      console.log('[Frontend] Vehicle details response data:', data);
       
-      if (data.success) {
-        console.log('[Frontend] Successfully retrieved vehicle details:', {
-          make: data.make || 'Not found',
-          model: data.model || 'Not found',
-          year: data.year || 'Not found',
-          vin: data.vin || 'Not found',
-          mileage: data.mileage || 'Not found',
-          roadWorthinessDate: data.roadWorthinessDate || 'Not found'
-        });
+      const data = await response.json();
+      console.log('[Frontend] Insurance info response:', data);
+      
+      // Reset loading states
+      setInsuranceLoading(false);
+      setFetchingData(false);
+      
+      if (data.success && data.lastPolicyDate) {
+        console.log('[Frontend] Found insurance policy date:', data.lastPolicyDate);
         
-        // Format the road worthiness date from DD.MM.YYYY to YYYY-MM-DD for HTML date input
-        let formattedRoadWorthinessDate = null;
-        if (data.roadWorthinessDate) {
-          const parts = data.roadWorthinessDate.split('.');
-          if (parts.length === 3) {
-            formattedRoadWorthinessDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-          }
+        // Make a copy of the existing reminders or initialize an empty array if none exist
+        const updatedReminders = [...(currentVehicleData.reminders || [])];
+        
+        const insuranceIndex = updatedReminders.findIndex(
+          reminder => reminder.name === 'Insurance Renewal'
+        );
+        
+        if (insuranceIndex >= 0) {
+          // Update existing reminder
+          updatedReminders[insuranceIndex] = {
+            ...updatedReminders[insuranceIndex],
+            date: data.lastPolicyDate,
+            enabled: true
+          };
+        } else {
+          // Add new reminder
+          updatedReminders.push({
+            name: 'Insurance Renewal',
+            date: data.lastPolicyDate,
+            enabled: true
+          });
         }
         
-        // If we have a road worthiness date, update or add this reminder
-        let updatedReminders = [...vehicleData.reminders];
-        
-        if (formattedRoadWorthinessDate) {
-          // Check if we already have a road worthiness reminder
-          const roadWorthinessIndex = updatedReminders.findIndex(
-            reminder => reminder.name === 'Road Worthiness Certificate'
-          );
-          
-          if (roadWorthinessIndex >= 0) {
-            // Update existing reminder
-            updatedReminders[roadWorthinessIndex] = {
-              ...updatedReminders[roadWorthinessIndex],
-              date: formattedRoadWorthinessDate,
-              enabled: true
-            };
-          } else {
-            // Add new reminder
-            updatedReminders.push({
-              name: 'Road Worthiness Certificate',
-              date: formattedRoadWorthinessDate,
-              enabled: true
-            });
-          }
-        }
-        
-        // Update vehicle data with fetched information, including mileage
-        setVehicleData({
-          ...vehicleData,
-          make: data.make || vehicleData.make,
-          model: data.model || vehicleData.model,
-          year: data.year || vehicleData.year,
-          vin: data.vin || vehicleData.vin,
-          mileage: data.mileage !== undefined ? data.mileage : vehicleData.mileage,
+        // Create the updated data object while preserving ALL existing fields 
+        const updatedVehicleData = {
+          ...currentVehicleData,
           reminders: updatedReminders
-        });
-        alert('Vehicle details successfully imported from e.csdd.lv');
+        };
+        
+        console.log('[Frontend] Updated vehicle data after adding insurance:', updatedVehicleData);
+        
+        // Set state with the updated data first
+        setVehicleData(updatedVehicleData);
+        
+        // Wait for React to complete the state update
+        setTimeout(() => {
+          // Double check that our data is still intact before showing the alert
+          console.log('[Frontend] Vehicle data before showing alert:', vehicleData);
+          // Only now show the alert
+          alert('Vehicle details and insurance information successfully imported.');
+        }, 100); // Reduced timeout for better UX
       } else {
-        throw new Error(data.message || 'Failed to retrieve vehicle information');
+        console.log('[Frontend] No insurance data found');
+        alert('Vehicle details imported, but no insurance information was found.');
       }
     } catch (error) {
-      console.error('[Frontend] Error fetching vehicle details:', error);
-      alert(`Error fetching vehicle details: ${error.message}`);
+      // Reset loading states
+      setInsuranceLoading(false);
+      setFetchingData(false);
+      
+      console.error('[Frontend] Error fetching insurance info:', error);
+      alert(`Vehicle details imported, but couldn't fetch insurance info: ${error.message}`);
     }
   };
   
@@ -1359,31 +1578,57 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                   className="w-full px-4 py-2 border border-gray-300 rounded-md" 
                   disabled={vehicleToEdit} // Don't allow changing registration number when editing (used as ID)
                 />
-                {csddIntegration.connectionStatus === 'connected' && !vehicleToEdit && (
+                {!vehicleToEdit && !fetchingData && (
                   <button 
                     className="absolute right-2 top-2 text-sm text-gray-600 hover:text-gray-900"
-                    onClick={fetchVehicleDetailsFromCsdd}
+                    onClick={handleAutoFill}
+                    disabled={!vehicleData.id}
                   >
-                    <span className="mr-1">🔍</span>Auto-fill from CSDD
+                    <span className="mr-1">🔍</span>Auto-fill Data
                   </button>
                 )}
+                {fetchingData && (
+                  <div className="absolute right-2 top-2 flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-2"></div>
+                    <span className="text-xs text-blue-600">Fetching data...</span>
+                  </div>
+                )}
               </div>
+              {!vehicleToEdit && (
+                <p className="mt-1 text-xs text-gray-500">
+                  {csddIntegration.connectionStatus === 'connected' 
+                    ? "Connected to e.csdd.lv. Will auto-fill from CSDD and check insurance info."
+                    : "Enter Registration Number and Certificate Number to check insurance info."}
+                </p>
+              )}
             </div>
             <div className="w-full">
-              <label className="block text-sm text-gray-700 mb-1">VIN</label>
+              <label className="block text-sm text-gray-700 mb-1">Registration Certificate Number</label>
               <div className="relative">
                 <input 
                   type="text" 
-                  name="vin"
-                  value={vehicleData.vin}
+                  name="regaplnr"
+                  value={vehicleData.regaplnr}
                   onChange={handleChange}
-                  placeholder="1HGCM82633A123456" 
+                  placeholder="AF 0000000" 
                   className="w-full px-4 py-2 border border-gray-300 rounded-md" 
                 />
-                <button className="absolute right-2 top-2 text-sm text-gray-600 hover:text-gray-900">
-                  <span className="mr-1">🔍</span>Auto-fill
-                </button>
+                {vehicleData.id && vehicleData.regaplnr && !insuranceLoading && (
+                  <button 
+                    className="absolute right-2 top-2 text-sm text-gray-600 hover:text-gray-900"
+                    onClick={() => fetchInsuranceInfo(vehicleData.id, vehicleData.regaplnr)}
+                  >
+                    <span className="mr-1">🔍</span>Check Insurance
+                  </button>
+                )}
+                {insuranceLoading && (
+                  <div className="absolute right-2 top-2 flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-2"></div>
+                    <span className="text-xs text-blue-600">Fetching insurance data...</span>
+                  </div>
+                )}
               </div>
+              <p className="mt-1 text-xs text-gray-500">This field and Registration Number will be used to obtain insurance certificate data.</p>
             </div>
           </div>
 
@@ -1431,7 +1676,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                       name="make"
                       value={vehicleData.make}
                       onChange={handleChange}
-                      placeholder="Toyota" 
+                      placeholder="Manufacturer" 
                       className="w-full px-4 py-2 border border-gray-300 rounded-md" 
                     />
                   </div>
@@ -1442,7 +1687,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                       name="model"
                       value={vehicleData.model}
                       onChange={handleChange}
-                      placeholder="Hino 300" 
+                      placeholder="Model" 
                       className="w-full px-4 py-2 border border-gray-300 rounded-md" 
                     />
                   </div>
@@ -1465,9 +1710,16 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md"
                     >
-                      <option>Truck</option>
-                      <option>Van</option>
-                      <option>Car</option>
+                      <option>Vieglais auto</option>
+                      <option>Kravas auto</option>
+                      <option>Piekabe</option>
+                      <option>Autobuss</option>
+                      <option>Mopēds</option>
+                      <option>Motocikls</option>
+                      <option>Tricikls</option>
+                      <option>Laiva</option>
+                      <option>Kuģis</option>
+                      <option>Cits</option>
                     </select>
                   </div>
                   <div>
@@ -1528,7 +1780,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                                 make: updatedVehicle.make,
                                 model: updatedVehicle.model,
                                 year: updatedVehicle.year,
-                                vin: updatedVehicle.vin,
+                                regaplnr: updatedVehicle.regaplnr,
                                 mileage: updatedVehicle.mileage
                               });
                               alert('Reminders successfully updated from e.csdd.lv');
@@ -1567,7 +1819,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                           <input 
                             type="date" 
                             className="px-2 py-1 border border-gray-300 rounded text-sm w-full sm:w-auto" 
-                            value={reminder.date}
+                            value={reminder.date ? reminder.date.substring(0, 10) : ''}
                             onChange={(e) => handleReminderChange(index, 'date', e.target.value)}
                           />
                           <button 
@@ -1599,7 +1851,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
                     <div className="flex items-center">
                       <span className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mr-3 flex-shrink-0">
-                        <span className="text-blue-600 text-xl">🔑</span>
+                                             <span className="text-blue-600 text-xl">🔑</span>
                       </span>
                       <div>
                         <h4 className="text-md font-medium text-gray-900">e.csdd.lv Connection</h4>
@@ -1607,7 +1859,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                       </div>
                     </div>
                     <div>
-                      {csddIntegration.connectionStatus === 'connected' ? (
+                    {csddIntegration.connectionStatus === 'connected' ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           Connected
                         </span>
@@ -1690,62 +1942,17 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                           />
                         </div>
                       </div>
-
+                      
+                      
                       <button 
-                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-500"
                         onClick={connectToCsdd}
-                        disabled={csddIntegration.connectionStatus === 'connecting' || !csddCredentials.email || !csddCredentials.password}
                       >
-                        {csddIntegration.connectionStatus === 'connecting' ? 'Connecting...' : 'Connect to e.csdd.lv'}
+                        Connect to e.csdd.lv
                       </button>
-
-                      <p className="text-xs text-gray-500">
-                        By connecting your e.csdd.lv account, you authorize Fleet Manager to access vehicle information on your behalf. 
-                        Your credentials are securely stored and used only for API requests to e.csdd.lv.
-                      </p>
                     </div>
                   )}
                 </div>
-
-                <div className="mt-4">
-                  <h5 className="text-sm font-medium text-gray-900 mb-2">Other Available Integrations</h5>
-                  <div className="space-y-2">
-                    <div className="p-3 border border-gray-200 rounded flex items-center justify-between">
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded mr-3">
-                          <span className="text-gray-600">🔌</span>
-                        </span>
-                        <span className="text-sm text-gray-700">Vehicle Manufacturer APIs</span>
-                      </div>
-                      <button className="px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">
-                        Configure
-                      </button>
-                    </div>
-                    <div className="p-3 border border-gray-200 rounded flex items-center justify-between">
-                      <div className="flex items-center">
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded mr-3">
-                          <span className="text-gray-600">🔌</span>
-                        </span>
-                        <span className="text-sm text-gray-700">GPS Tracking Services</span>
-                      </div>
-                      <button className="px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200">
-                        Configure
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'documents' && (
-              <div className="py-4">
-                <p className="text-gray-700">Upload and manage vehicle documents here.</p>
-              </div>
-            )}
-
-            {activeTab === 'notifications' && (
-              <div className="py-4">
-                <p className="text-gray-700">Configure notification settings here.</p>
               </div>
             )}
           </div>

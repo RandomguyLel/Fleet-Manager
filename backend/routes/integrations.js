@@ -307,6 +307,12 @@ router.get('/csdd/vehicle/:registrationNumber', async (req, res) => {
             found++;
             console.log('cheerio roadWorthinessDate:', value);
           }
+          // Look for Registration Certificate Number (stored in the regaplnr field)
+          if (label.includes('Reģistrācijasapliecībasnumurs') || label.includes('Reģistrācijas apliecības numurs')) {
+            vehicleData.regaplnr = value.trim();
+            found++;
+            console.log('cheerio registrationCertificateNumber:', value);
+          }
         }
       });
       // If we couldn't extract any data, return an error instead of mock data
@@ -331,6 +337,246 @@ router.get('/csdd/vehicle/:registrationNumber', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: `Failed to retrieve vehicle data: ${error.message}`
+    });
+  }
+});
+
+// Get insurance info from manapolise.lv
+router.get('/insurance/:registrationNumber/:regaplnr', async (req, res) => {
+  try {
+    const { registrationNumber, regaplnr } = req.params;
+    
+    console.log(`[${new Date().toISOString()}] Fetching insurance info for vehicle: ${registrationNumber} with cert number: ${regaplnr}`);
+    
+    // Remove any dashes or spaces from both numbers
+    const cleanRegNumber = registrationNumber.replace(/[-\s]/g, '');
+    const cleanCertNumber = regaplnr.replace(/[-\s]/g, '');
+    
+    try {
+      // First, make a request to the main calculator page to get necessary cookies/session
+      const mainUrl = `https://www.manapolise.lv/lv/octa/calculator/?octa_step=-1&promotion_code=&octa_vehiclenr=${cleanRegNumber}&octa_regnr=${cleanCertNumber}&octa_period=1`;
+      
+      console.log(`[${new Date().toISOString()}] Making initial request to: ${mainUrl}`);
+      
+      const headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      };
+      
+      // Log request
+      logRequest('GET', mainUrl, headers);
+      
+      const mainResponse = await fetch(mainUrl, { headers });
+      
+      // Get cookies that will be needed for subsequent requests
+      const cookies = mainResponse.headers.get('set-cookie') || '';
+      let sessionCookies = '';
+      
+      if (cookies) {
+        // Extract the session cookie using regex
+        const cookieRegex = /(MANA_POLISE_SESSION_ID=[^;]+)/;
+        const match = cookies.match(cookieRegex);
+        if (match) {
+          sessionCookies = match[1];
+          console.log(`[${new Date().toISOString()}] Extracted session cookie: ${sessionCookies}`);
+        }
+        
+        // Add the octa cookie with vehicle info
+        sessionCookies += `; octa=${cleanRegNumber}%2C${cleanCertNumber}; language=lv`;
+      }
+      
+      // Wait a bit to simulate the page loading
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Now make a POST request to the connector endpoint
+      const connectorUrl = 'https://www.manapolise.lv/lv/octa/connector/';
+      
+      // Generate a random transId similar to what the website would use
+      const transId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      // Create the payload as per the observed request
+      const payload = new URLSearchParams({
+        'octa_step': 'last_date',
+        'octa_regnr': cleanCertNumber,
+        'octa_vehiclenr': cleanRegNumber,
+        'transId': transId
+      }).toString();
+      
+      // Set up the headers for the POST request
+      const postHeaders = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Origin': 'https://www.manapolise.lv',
+        'Referer': mainUrl,
+        'Cookie': sessionCookies
+      };
+      
+      console.log(`[${new Date().toISOString()}] Making POST request to connector: ${connectorUrl}`);
+      console.log(`[${new Date().toISOString()}] Payload: ${payload}`);
+      
+      // Log the connector request
+      logRequest('POST', connectorUrl, postHeaders, payload);
+      
+      const connectorResponse = await fetch(connectorUrl, {
+        method: 'POST',
+        headers: postHeaders,
+        body: payload
+      });
+      
+      // Get the JSON response
+      let connectorData = null;
+      try {
+        connectorData = await connectorResponse.json();
+        
+        // Log the connector response
+        logResponse(
+          connectorUrl,
+          connectorResponse.status,
+          Object.fromEntries([...connectorResponse.headers.entries()]),
+          JSON.stringify(connectorData)
+        );
+        
+        console.log(`[${new Date().toISOString()}] Connector response data:`, connectorData);
+      } catch (e) {
+        console.error(`[${new Date().toISOString()}] Error parsing connector response:`, e);
+        
+        // Try to get the text response if JSON parsing fails
+        const text = await connectorResponse.text();
+        logResponse(
+          connectorUrl,
+          connectorResponse.status,
+          Object.fromEntries([...connectorResponse.headers.entries()]),
+          text
+        );
+      }
+      
+      // Extract the date from the connector response
+      let lastPolicyDate = null;
+      
+      if (connectorData && connectorData.lastDate) {
+        lastPolicyDate = connectorData.lastDate;
+        console.log(`[${new Date().toISOString()}] Found policy date in connector response: ${lastPolicyDate}`);
+      }
+      
+      // If we couldn't get the date from the connector, fall back to HTML scraping as a last resort
+      if (!lastPolicyDate) {
+        console.log(`[${new Date().toISOString()}] Connector didn't provide a date, falling back to HTML scraping`);
+        
+        // Get the full page HTML
+        const htmlResponse = await fetch(mainUrl, { headers });
+        const html = await htmlResponse.text();
+        
+        // Use cheerio to look for the date
+        const $ = cheerio.load(html);
+        lastPolicyDate = $('#octaLastPolicyDate').text().trim();
+        
+        // If still no date, try three more times with delays
+        if (!lastPolicyDate || lastPolicyDate.includes('loading')) {
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            console.log(`[${new Date().toISOString()}] Attempt ${attempt} to get policy date through HTML scraping`);
+            
+            // Wait for 5 seconds
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            
+            // Fetch the page again
+            const retryResponse = await fetch(mainUrl, { headers });
+            const retryHtml = await retryResponse.text();
+            
+            const $retry = cheerio.load(retryHtml);
+            lastPolicyDate = $retry('#octaLastPolicyDate').text().trim();
+            
+            if (lastPolicyDate && !lastPolicyDate.includes('loading')) {
+              console.log(`[${new Date().toISOString()}] Found policy date in HTML on retry ${attempt}: ${lastPolicyDate}`);
+              break;
+            }
+          }
+        }
+      }
+      
+      // Parse the date if found
+      let insuranceData = { success: false };
+      
+      if (lastPolicyDate && !lastPolicyDate.includes('loading')) {
+        console.log(`[${new Date().toISOString()}] Raw policy date extracted: "${lastPolicyDate}"`);
+        
+        // Remove any non-date characters (sometimes there might be extra text)
+        lastPolicyDate = lastPolicyDate.replace(/[^0-9\.\-]/g, '').trim();
+        
+        // Convert the date format if needed
+        let parsedDate = null;
+        
+        // Try different date formats
+        const dateFormats = [
+          // DD.MM.YYYY
+          /(\d{2})\.(\d{2})\.(\d{4})/,
+          // YYYY-MM-DD
+          /(\d{4})-(\d{2})-(\d{2})/,
+          // YYYY.MM.DD
+          /(\d{4})\.(\d{2})\.(\d{2})/
+        ];
+        
+        for (const format of dateFormats) {
+          const match = lastPolicyDate.match(format);
+          if (match) {
+            if (format === dateFormats[0]) {
+              // DD.MM.YYYY -> YYYY-MM-DD
+              parsedDate = `${match[3]}-${match[2]}-${match[1]}`;
+            } else if (format === dateFormats[1]) {
+              // Already in YYYY-MM-DD format
+              parsedDate = lastPolicyDate;
+            } else if (format === dateFormats[2]) {
+              // YYYY.MM.DD -> YYYY-MM-DD
+              parsedDate = `${match[1]}-${match[2]}-${match[3]}`;
+            }
+            break;
+          }
+        }
+        
+        if (parsedDate) {
+          // Calculate the renewal date (usually 1 year after the policy date)
+          const policyDate = new Date(parsedDate);
+          const renewalDate = new Date(policyDate);
+          renewalDate.setFullYear(renewalDate.getFullYear() + 1);
+          
+          // Format as YYYY-MM-DD
+          const formattedRenewalDate = renewalDate.toISOString().split('T')[0];
+          
+          insuranceData = {
+            success: true,
+            lastPolicyDate: parsedDate,
+            renewalDate: formattedRenewalDate
+          };
+          
+          console.log(`[${new Date().toISOString()}] Successfully extracted insurance data:`, insuranceData);
+        } else {
+          console.log(`[${new Date().toISOString()}] Could not parse date: ${lastPolicyDate}`);
+        }
+      } else {
+        console.log(`[${new Date().toISOString()}] No valid policy date found`);
+      }
+      
+      return res.json(insuranceData);
+      
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error fetching insurance data:`, error);
+      return res.status(500).json({
+        success: false,
+        message: `Error fetching insurance data: ${error.message}`
+      });
+    }
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Error in insurance info endpoint:`, error);
+    return res.status(500).json({
+      success: false,
+      message: `Server error: ${error.message}`
     });
   }
 });

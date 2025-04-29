@@ -87,7 +87,7 @@ app.get('/api/vehicles/:id', authenticateToken, async (req, res) => {
 // Create a new vehicle
 app.post('/api/vehicles', authenticateToken, async (req, res) => {
   try {
-    const { id, status, type, lastService, documents, make, model, year, license, vin, mileage, reminders } = req.body;
+    const { id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage, reminders } = req.body;
     
     // Check if a vehicle with this ID already exists
     const existingVehicle = await db.query('SELECT id FROM vehicles WHERE id = $1', [id]);
@@ -104,8 +104,8 @@ app.post('/api/vehicles', authenticateToken, async (req, res) => {
     try {
       // Insert vehicle
       const vehicleResult = await db.query(
-        'INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, vin, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-        [id, status, type, lastService, documents, make, model, year, license, vin, mileage]
+        'INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+        [id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage]
       );
       
       // Process reminders if provided
@@ -149,7 +149,7 @@ app.post('/api/vehicles', authenticateToken, async (req, res) => {
 app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, type, lastService, documents, make, model, year, license, vin, mileage, reminders } = req.body;
+    const { status, type, lastService, documents, make, model, year, license, regaplnr, mileage, reminders } = req.body;
     
     // Begin transaction
     await db.query('BEGIN');
@@ -157,8 +157,8 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
     try {
       // Update vehicle
       const vehicleResult = await db.query(
-        'UPDATE vehicles SET status = $1, type = $2, "lastService" = $3, documents = $4, make = $5, model = $6, year = $7, license = $8, vin = $9, mileage = $10 WHERE id = $11 RETURNING *',
-        [status, type, lastService, documents, make, model, year, license, vin, mileage, id]
+        'UPDATE vehicles SET status = $1, type = $2, "lastService" = $3, documents = $4, make = $5, model = $6, year = $7, license = $8, regaplnr = $9, mileage = $10 WHERE id = $11 RETURNING *',
+        [status, type, lastService, documents, make, model, year, license, regaplnr, mileage, id]
       );
       
       if (vehicleResult.rows.length === 0) {

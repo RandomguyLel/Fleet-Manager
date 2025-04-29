@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   model VARCHAR(50),
   year INTEGER,
   license VARCHAR(20),
-  vin VARCHAR(20) UNIQUE,
+  regaplnr VARCHAR(20) UNIQUE,
   mileage VARCHAR(20)
 );
 
@@ -69,11 +69,11 @@ VALUES
   ('user', 'user@fleetmanager.com', '$2b$10$bw78pDjO1z8dX24qd5.z5OAmRc/yuEucTiuJR49o9YfIftoLrZv9K', 'Regular', 'User', 'user'); -- password: user123
 
 -- Insert sample vehicle data
-INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, vin, mileage)
+INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, regaplnr, mileage)
 VALUES 
-  ('XYZ-123', 'Active', 'Truck', 'Jan 15, 2025', 'Valid', 'Toyota', 'Hino 300', 2023, 'XYZ-123', '1HGCM82633A123456', '45,000 km'),
-  ('ABC-789', 'Active', 'Van', 'Mar 1, 2025', 'Expiring Soon', 'Mercedes', 'Sprinter', 2022, 'ABC-789', '2FMZA5145XBA12345', '32,500 km'),
-  ('DEF-456', 'Inactive', 'Truck', 'Feb 20, 2025', 'Expired', 'Ford', 'Transit', 2021, 'DEF-456', '3VWPD71K27M082526', '58,200 km');
+  ('XYZ-123', 'Active', 'Kravas auto', 'Jan 15, 2025', 'Valid', 'Toyota', 'Hino 300', 2023, 'XYZ-123', '1HGCM82633A123456', '45,000 km'),
+  ('ABC-789', 'Active', 'Vieglais auto', 'Mar 1, 2025', 'Expiring Soon', 'Mercedes', 'Sprinter', 2022, 'ABC-789', '2FMZA5145XBA12345', '32,500 km'),
+  ('DEF-456', 'Inactive', 'Kravas auto', 'Feb 20, 2025', 'Expired', 'Ford', 'Transit', 2021, 'DEF-456', '3VWPD71K27M082526', '58,200 km');
 
 -- Insert sample reminders
 INSERT INTO reminders (vehicle_id, name, date, enabled)
