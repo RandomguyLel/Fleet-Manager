@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, href } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
 const Login = () => {
@@ -138,7 +138,7 @@ const Login = () => {
             </div>
 
             <div className="text-sm">
-              <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+              <a href="#" className="font-medium text-blue-600 hover:text-blue-500" onClick={() => {alert('Feature not implemented yet!');}}>
                 Forgot your password?
               </a>
             </div>
@@ -176,28 +176,31 @@ const Login = () => {
           </div>
           
           <div className="text-center">
-            <p className="mt-2 text-sm text-gray-600">
-              Demo accounts: 
+            <p className="mt-2 text-sm text-red-600">
+            ⚠️ In active development. Source code available ➡️ 
+              
               <button 
                 type="button"
                 className="ml-1 font-medium text-blue-600 hover:text-blue-500"
-                onClick={() => {setUsername('admin'); setPassword('admin123');}}
+                onClick={() => {window.location.href = 'https://github.com/RandomguyLel/Fleet-Manager'}}
                 disabled={isLoading}
               >
-                admin
+                here
               </button>
-              <span className="mx-1">|</span>
-              <button 
-                type="button"
-                className="font-medium text-blue-600 hover:text-blue-500"
-                onClick={() => {setUsername('user'); setPassword('user123');}}
-                disabled={isLoading}
-              >
-                user
-              </button>
+                     
             </p>
           </div>
         </form>
+        
+        {/* Footer section */}
+        <div className="mt-8 pt-4 border-t border-gray-200">
+          <p className="text-center text-xs text-gray-500">
+            &copy; {new Date().getFullYear()} Fleet Manager. Developed by RandomguyLel
+          </p>
+          <p className="text-center text-xs text-gray-400 mt-1">
+            Version something alpha | Last updated: April 30, 2025
+          </p>
+        </div>
       </div>
     </div>
   );

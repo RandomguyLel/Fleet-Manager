@@ -283,5 +283,35 @@ router.put('/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// Add GET endpoint for profile data
+router.get('/profile', authenticateToken, async (req, res) => {
+  try {
+    // Get complete user profile from database
+    const userResult = await db.query(
+      'SELECT id, username, email, first_name, last_name, role FROM users WHERE id = $1',
+      [req.user.id]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Return user profile data with camelCase property names
+    res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      role: user.role
+    });
+  } catch (error) {
+    console.error('Error in get profile endpoint:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Export middleware separately for use in other routes
 module.exports = { router, authenticateToken };

@@ -4,7 +4,14 @@ const db = require('./db');
 // Import routes
 const integrationsRoutes = require('./routes/integrations');
 const { router: authRoutes, authenticateToken } = require('./routes/auth');
-const { generateNotifications } = require('./generate-notifications');
+// Import the enhanced notification service functions
+const { 
+  generateNotifications, 
+  getNotifications, 
+  markNotificationAsRead, 
+  dismissNotification,
+  markAllNotificationsAsRead
+} = require('./generate-notifications');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -87,7 +94,7 @@ app.get('/api/vehicles/:id', authenticateToken, async (req, res) => {
 // Create a new vehicle
 app.post('/api/vehicles', authenticateToken, async (req, res) => {
   try {
-    const { id, status, type, lastService, documents, make, model, year, license, vin, mileage, reminders } = req.body;
+    const { id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage, reminders } = req.body;
     
     // Check if a vehicle with this ID already exists
     const existingVehicle = await db.query('SELECT id FROM vehicles WHERE id = $1', [id]);
@@ -104,8 +111,8 @@ app.post('/api/vehicles', authenticateToken, async (req, res) => {
     try {
       // Insert vehicle
       const vehicleResult = await db.query(
-        'INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, vin, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-        [id, status, type, lastService, documents, make, model, year, license, vin, mileage]
+        'INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+        [id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage]
       );
       
       // Process reminders if provided
@@ -149,7 +156,7 @@ app.post('/api/vehicles', authenticateToken, async (req, res) => {
 app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, type, lastService, documents, make, model, year, license, vin, mileage, reminders } = req.body;
+    const { status, type, lastService, documents, make, model, year, license, regaplnr, mileage, reminders } = req.body;
     
     // Begin transaction
     await db.query('BEGIN');
@@ -157,8 +164,8 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
     try {
       // Update vehicle
       const vehicleResult = await db.query(
-        'UPDATE vehicles SET status = $1, type = $2, "lastService" = $3, documents = $4, make = $5, model = $6, year = $7, license = $8, vin = $9, mileage = $10 WHERE id = $11 RETURNING *',
-        [status, type, lastService, documents, make, model, year, license, vin, mileage, id]
+        'UPDATE vehicles SET status = $1, type = $2, "lastService" = $3, documents = $4, make = $5, model = $6, year = $7, license = $8, regaplnr = $9, mileage = $10 WHERE id = $11 RETURNING *',
+        [status, type, lastService, documents, make, model, year, license, regaplnr, mileage, id]
       );
       
       if (vehicleResult.rows.length === 0) {
@@ -382,26 +389,20 @@ app.put('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
 // Get all notifications
 app.get('/api/notifications', authenticateToken, async (req, res) => {
   try {
-    const { unreadOnly } = req.query;
+    const { unreadOnly, limit, offset } = req.query;
     
-    let query = `
-      SELECT n.*, v.make, v.model 
-      FROM notifications n
-      LEFT JOIN vehicles v ON n.vehicle_id = v.id
-    `;
+    // Use the enhanced notification service
+    const options = {
+      limit: limit ? parseInt(limit) : 50,
+      offset: offset ? parseInt(offset) : 0,
+      unreadOnly: unreadOnly === 'true',
+      activeOnly: true
+    };
     
-    if (unreadOnly === 'true') {
-      query += ` WHERE n.is_read = false AND n.is_dismissed = false`;
-    } else {
-      query += ` WHERE n.is_dismissed = false`;
-    }
-    
-    query += ` ORDER BY n.created_at DESC`;
-    
-    const result = await db.query(query);
-    res.json(result.rows);
+    const notifications = await getNotifications(options);
+    res.json(notifications);
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching notifications:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -411,18 +412,15 @@ app.put('/api/notifications/:id/read', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     
-    const result = await db.query(
-      'UPDATE notifications SET is_read = TRUE WHERE id = $1 RETURNING *',
-      [id]
-    );
+    const updatedNotification = await markNotificationAsRead(id);
+    res.json(updatedNotification);
+  } catch (err) {
+    console.error('Error marking notification as read:', err);
     
-    if (result.rows.length === 0) {
+    if (err.message.includes('not found')) {
       return res.status(404).json({ error: 'Notification not found' });
     }
     
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -432,18 +430,15 @@ app.put('/api/notifications/:id/dismiss', authenticateToken, async (req, res) =>
   try {
     const { id } = req.params;
     
-    const result = await db.query(
-      'UPDATE notifications SET is_dismissed = TRUE WHERE id = $1 RETURNING *',
-      [id]
-    );
+    const updatedNotification = await dismissNotification(id);
+    res.json(updatedNotification);
+  } catch (err) {
+    console.error('Error dismissing notification:', err);
     
-    if (result.rows.length === 0) {
+    if (err.message.includes('not found')) {
       return res.status(404).json({ error: 'Notification not found' });
     }
     
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -451,10 +446,14 @@ app.put('/api/notifications/:id/dismiss', authenticateToken, async (req, res) =>
 // Mark all notifications as read
 app.put('/api/notifications/read-all', authenticateToken, async (req, res) => {
   try {
-    await db.query('UPDATE notifications SET is_read = TRUE WHERE is_read = FALSE');
-    res.json({ message: 'All notifications marked as read' });
+    const count = await markAllNotificationsAsRead();
+    res.json({ 
+      success: true,
+      message: 'All notifications marked as read',
+      count
+    });
   } catch (err) {
-    console.error(err);
+    console.error('Error marking all notifications as read:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -462,91 +461,16 @@ app.put('/api/notifications/read-all', authenticateToken, async (req, res) => {
 // Generate notifications from reminders
 app.post('/api/notifications/generate', authenticateToken, async (req, res) => {
   try {
-    // Begin transaction
-    await db.query('BEGIN');
+    const { force } = req.query;
     
-    try {
-      // Get all active reminders
-      const remindersResult = await db.query(
-        `SELECT r.*, v.make, v.model 
-         FROM reminders r
-         JOIN vehicles v ON r.vehicle_id = v.id
-         WHERE r.enabled = TRUE`
-      );
-      
-      const today = new Date();
-      const notifications = [];
-      
-      // Process each reminder
-      for (const reminder of remindersResult.rows) {
-        const dueDate = new Date(reminder.date);
-        const diffTime = dueDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        // Get notification type based on reminder name
-        let type = 'other';
-        if (reminder.name.toLowerCase().includes('insurance')) type = 'insurance';
-        else if (reminder.name.toLowerCase().includes('service')) type = 'maintenance';
-        else if (reminder.name.toLowerCase().includes('worthiness')) type = 'roadworthiness';
-        
-        // Determine if we need to create a notification
-        let shouldCreateNotification = false;
-        let priority = 'normal';
-        let title = '';
-        
-        if (diffDays <= 0) {
-          // Overdue
-          shouldCreateNotification = true;
-          priority = 'high';
-          title = `${reminder.name} overdue for ${reminder.make} ${reminder.model}`;
-        } else if (diffDays <= 7) {
-          // Due within a week
-          shouldCreateNotification = true;
-          priority = 'high';
-          title = `${reminder.name} due in ${diffDays} day${diffDays === 1 ? '' : 's'}`;
-        } else if (diffDays <= 30) {
-          // Due within a month
-          shouldCreateNotification = true;
-          priority = 'normal';
-          title = `${reminder.name} due soon`;
-        }
-        
-        if (shouldCreateNotification) {
-          // Check if a similar notification already exists
-          const existingNotificationResult = await db.query(
-            `SELECT id FROM notifications 
-             WHERE vehicle_id = $1 AND type = $2 AND due_date = $3 AND is_dismissed = FALSE`,
-            [reminder.vehicle_id, type, reminder.date]
-          );
-          
-          if (existingNotificationResult.rows.length === 0) {
-            const message = `${reminder.name} for ${reminder.make} ${reminder.model} (${reminder.vehicle_id}) is due on ${new Date(reminder.date).toLocaleDateString()}.`;
-            
-            // Create notification
-            const notificationResult = await db.query(
-              `INSERT INTO notifications (vehicle_id, type, title, message, due_date, priority)
-               VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-              [reminder.vehicle_id, type, title, message, reminder.date, priority]
-            );
-            
-            notifications.push(notificationResult.rows[0]);
-          }
-        }
-      }
-      
-      // Commit transaction
-      await db.query('COMMIT');
-      
-      res.json({
-        success: true,
-        notificationsCreated: notifications.length,
-        notifications
-      });
-    } catch (err) {
-      // Rollback transaction on error
-      await db.query('ROLLBACK');
-      throw err;
-    }
+    // Use the enhanced notification generator
+    const notifications = await generateNotifications(force === 'true');
+    
+    res.json({
+      success: true,
+      notificationsCreated: notifications.length,
+      notifications
+    });
   } catch (err) {
     console.error('Error generating notifications:', err);
     res.status(500).json({ error: 'Server error' });
