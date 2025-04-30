@@ -191,6 +191,16 @@ const Login = () => {
             </p>
           </div>
         </form>
+        
+        {/* Footer section */}
+        <div className="mt-8 pt-4 border-t border-gray-200">
+          <p className="text-center text-xs text-gray-500">
+            &copy; {new Date().getFullYear()} Fleet Manager. Developed by RandomguyLel
+          </p>
+          <p className="text-center text-xs text-gray-400 mt-1">
+            Version something alpha | Last updated: April 30, 2025
+          </p>
+        </div>
       </div>
     </div>
   );

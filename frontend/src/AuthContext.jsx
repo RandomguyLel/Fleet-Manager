@@ -15,7 +15,30 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
+  const [darkMode, setDarkMode] = useState(() => {
+    // Get saved preference from localStorage
+    const savedMode = localStorage.getItem('darkMode');
+    // Default to user's system preference if no saved preference
+    if (savedMode === null) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return savedMode === 'true';
+  });
   const navigate = useNavigate();
+  
+  // API URL from environment variable
+  const apiUrl = import.meta.env.VITE_API_URL;
+  
+  // Apply dark mode effect
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    // Save preference to localStorage
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
   
   // Check for token in localStorage or sessionStorage
   const getToken = () => {
@@ -57,7 +80,7 @@ export const AuthProvider = ({ children }) => {
       const token = getToken();
       if (!token) return false;
       
-      const response = await fetch('http://localhost:3000/api/auth/me', {
+      const response = await fetch(`${apiUrl}/api/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -79,7 +102,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Error refreshing user data:', error);
       return false;
     }
-  }, []);
+  }, [apiUrl]);
   
   // Initialize auth state
   useEffect(() => {
@@ -138,7 +161,7 @@ export const AuthProvider = ({ children }) => {
       const token = getToken();
       if (token && !silent) {
         // Call the logout API only for explicit logouts
-        await fetch('http://localhost:3000/api/auth/logout', {
+        await fetch(`${apiUrl}/api/auth/logout`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`
@@ -172,6 +195,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!currentUser,
     isLoading,
     authError,
+    darkMode,
+    setDarkMode,
     login,
     logout,
     getAuthHeader,
@@ -201,10 +226,10 @@ export const ProtectedRoute = ({ children }) => {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gray-50">
+      <div className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-3 text-gray-700">Loading...</p>
+          <p className="mt-3 text-gray-700 dark:text-gray-300">Loading...</p>
         </div>
       </div>
     );

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import ProfileDropdown from './components/ProfileDropdown';
+import NotificationBell from './components/NotificationBell';
 
 const Profile = () => {
   const { currentUser, logout, getAuthHeader, refreshUserData } = useAuth();
@@ -8,7 +10,6 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [showUserMenu, setShowUserMenu] = useState(false);
   // API URL from environment variable
   const apiUrl = import.meta.env.VITE_API_URL;
   
@@ -42,6 +43,9 @@ const Profile = () => {
       
       const userData = await response.json();
       
+      // Log data for debugging
+      console.log('Profile data from API:', userData);
+      
       setProfileData({
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
@@ -55,6 +59,7 @@ const Profile = () => {
       console.error('Error fetching user profile:', err);
       // Fall back to currentUser data if available
       if (currentUser) {
+        console.log('Using currentUser fallback data:', currentUser);
         setProfileData({
           firstName: currentUser.firstName || '',
           lastName: currentUser.lastName || '',
@@ -66,10 +71,21 @@ const Profile = () => {
     }
   };
 
-  // Load user data on component mount
+  // Load user data on component mount and when currentUser changes
   useEffect(() => {
     fetchUserProfile();
-  }, []);
+  }, [currentUser?.id]);
+
+  // Also initialize form with currentUser data when available
+  useEffect(() => {
+    if (currentUser && (!profileData.firstName || !profileData.lastName)) {
+      setProfileData({
+        firstName: currentUser.firstName || '',
+        lastName: currentUser.lastName || '',
+        email: currentUser.email || ''
+      });
+    }
+  }, [currentUser]);
 
   // Handle profile form change
   const handleProfileChange = (e) => {
@@ -118,7 +134,7 @@ const Profile = () => {
       
       setSuccess('Profile updated successfully');
       
-      // Refresh user data if needed
+      // Refresh user data after successful update
       await refreshUserData();
       
     } catch (error) {
@@ -178,55 +194,27 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="shrink-0 flex items-center">
-                <span className="text-2xl text-blue-600">🚚</span>
+                <span className="text-2xl text-blue-600 dark:text-blue-400">🚚</span>
               </div>
-              <div className="ml-4 text-xl font-medium text-gray-800">Fleet Manager</div>
+              <div className="ml-4 text-xl font-medium text-gray-800 dark:text-white">Fleet Manager</div>
             </div>
             <div className="flex items-center">
               <button 
                 onClick={() => navigate(-1)}
-                className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 Back
               </button>
-              <div className="ml-4 relative">
-                <button 
-                  className="h-9 w-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center overflow-hidden"
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                >
-                  <span className="text-sm font-medium text-blue-700">{currentUser?.username?.charAt(0) || 'U'}</span>
-                </button>
-                
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                    <div className="py-2">
-                      <p className="px-4 py-2 text-sm text-gray-700">
-                        <span className="font-medium">{currentUser?.username || 'User'}</span>
-                        <br />
-                        <span className="text-xs text-gray-500">{currentUser?.email || ''}</span>
-                      </p>
-                      <Link 
-                        to="/"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                      >
-                        Dashboard
-                      </Link>
-                      <button 
-                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                        onClick={logout}
-                      >
-                        Logout
-                      </button>
-                    </div>
-                  </div>
-                )}
+              <NotificationBell />
+              <div className="ml-4">
+                <ProfileDropdown />
               </div>
             </div>
           </div>
@@ -235,30 +223,30 @@ const Profile = () => {
 
       <div className="flex-1 py-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-8">User Profile</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">User Profile</h1>
           
           {/* Success message */}
           {success && (
-            <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+            <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded dark:bg-green-900/30 dark:border-green-800 dark:text-green-400">
               {success}
             </div>
           )}
           
           {/* Error message */}
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded dark:bg-red-900/30 dark:border-red-800 dark:text-red-400">
               {error}
             </div>
           )}
           
-          <div className="bg-white shadow rounded-lg mb-6">
+          <div className="bg-white shadow rounded-lg mb-6 dark:bg-gray-800">
             <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Account Information</h2>
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Account Information</h2>
               
               <form onSubmit={handleUpdateProfile}>
                 <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       First Name
                     </label>
                     <input
@@ -267,12 +255,12 @@ const Profile = () => {
                       id="firstName"
                       value={profileData.firstName}
                       onChange={handleProfileChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
                   
                   <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Last Name
                     </label>
                     <input
@@ -281,12 +269,12 @@ const Profile = () => {
                       id="lastName"
                       value={profileData.lastName}
                       onChange={handleProfileChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
                   
                   <div className="sm:col-span-2">
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Email
                     </label>
                     <input
@@ -295,12 +283,12 @@ const Profile = () => {
                       id="email"
                       value={profileData.email}
                       onChange={handleProfileChange}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
                   
                   <div className="sm:col-span-2">
-                    <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Username
                     </label>
                     <input
@@ -309,16 +297,16 @@ const Profile = () => {
                       id="username"
                       value={currentUser?.username || ''}
                       disabled
-                      className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm p-2 border"
+                      className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm p-2 border dark:bg-gray-600 dark:border-gray-700 dark:text-gray-300"
                     />
-                    <p className="mt-1 text-xs text-gray-500">Username cannot be changed</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Username cannot be changed</p>
                   </div>
                 </div>
                 
                 <div className="mt-6">
                   <button
                     type="submit"
-                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
                     disabled={loading}
                   >
                     {loading ? 'Updating...' : 'Update Profile'}
@@ -328,14 +316,14 @@ const Profile = () => {
             </div>
           </div>
           
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow rounded-lg dark:bg-gray-800">
             <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Change Password</h2>
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Change Password</h2>
               
               <form onSubmit={handleChangePassword}>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Current Password
                     </label>
                     <input
@@ -345,12 +333,12 @@ const Profile = () => {
                       value={passwordData.currentPassword}
                       onChange={handlePasswordChange}
                       required
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
                   
                   <div>
-                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       New Password
                     </label>
                     <input
@@ -360,12 +348,12 @@ const Profile = () => {
                       value={passwordData.newPassword}
                       onChange={handlePasswordChange}
                       required
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
                   
                   <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Confirm New Password
                     </label>
                     <input
@@ -375,7 +363,7 @@ const Profile = () => {
                       value={passwordData.confirmPassword}
                       onChange={handlePasswordChange}
                       required
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
                   </div>
                 </div>
@@ -383,7 +371,7 @@ const Profile = () => {
                 <div className="mt-6">
                   <button
                     type="submit"
-                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
                     disabled={loading}
                   >
                     {loading ? 'Changing...' : 'Change Password'}

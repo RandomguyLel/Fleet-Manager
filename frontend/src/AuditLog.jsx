@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import NotificationBell from './components/NotificationBell';
+import ProfileDropdown from './components/ProfileDropdown';
+import { useAuth } from './AuthContext';
 
 const AuditLog = () => {
-  // State for user menu dropdown
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  // State for dark mode
-  const [darkMode, setDarkMode] = useState(false);
+  // Get darkMode from AuthContext
+  const { darkMode } = useAuth();
   
   // Sample audit log data
   const auditLogs = [
@@ -77,15 +77,6 @@ const AuditLog = () => {
     }
   ];
 
-  // Effect to apply dark mode
-  React.useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -101,42 +92,7 @@ const AuditLog = () => {
             <div className="flex items-center relative">
               <NotificationBell />
               <div className="ml-4 flex items-center">
-                <div className="h-9 w-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => setShowUserMenu(!showUserMenu)}>
-                  <span className="text-sm font-medium text-blue-700">A</span>
-                </div>
-                {showUserMenu && (
-                  <div className="absolute right-0 top-12 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10 dark:bg-gray-800 dark:border-gray-700">
-                    <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                      <div className="font-medium text-gray-900 dark:text-white">Admin User</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">admin@fleetmanager.com</div>
-                    </div>
-                    <button className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                      <span className="mr-2">👤</span>My Profile
-                    </button>
-                    <button className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700">
-                      <span className="mr-2">🔔</span>Notifications
-                    </button>
-                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                    <div className="flex items-center justify-between px-4 py-2 text-sm dark:text-gray-300">
-                      <div className="flex items-center">
-                        <span className="mr-2">{darkMode ? '🌙' : '☀️'}</span>
-                        <span>Dark Mode</span>
-                      </div>
-                      <div 
-                        className="relative w-10 h-5 bg-gray-200 rounded-full cursor-pointer dark:bg-blue-600"
-                        onClick={() => setDarkMode(!darkMode)}
-                      >
-                        <div 
-                          className={`absolute left-0 top-0 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${darkMode ? 'translate-x-5' : 'translate-x-0'}`}
-                        ></div>
-                      </div>
-                    </div>
-                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
-                    <button className="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <span className="mr-2">🚪</span>Logout
-                    </button>
-                  </div>
-                )}
+                <ProfileDropdown />
               </div>
             </div>
           </div>

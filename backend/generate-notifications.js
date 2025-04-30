@@ -122,7 +122,7 @@ async function getNotifications(options = {}) {
   
   try {
     let query = `
-      SELECT n.*, v.make, v.model, v.reg_number 
+      SELECT n.*, v.make, v.model, v.regaplnr 
       FROM notifications n
       JOIN vehicles v ON n.vehicle_id = v.id
       WHERE 1=1
