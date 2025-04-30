@@ -1,7 +1,12 @@
 // filepath: c:\Users\ritva\Desktop\TMS\Fleet Manager\backend\generate-notifications.js
 const db = require('./db');
 
-async function generateNotifications() {
+/**
+ * Generate notifications from active reminders
+ * @param {boolean} force - If true, will regenerate already existing notifications
+ * @returns {Promise<Array>} Array of generated notifications
+ */
+async function generateNotifications(force = false) {
   try {
     console.log('Generating notifications from reminders...');
     
@@ -55,20 +60,24 @@ async function generateNotifications() {
         }
         
         if (shouldCreateNotification) {
-          // Check if a similar notification already exists
-          const existingNotificationResult = await db.query(
-            `SELECT id FROM notifications 
-             WHERE vehicle_id = $1 AND type = $2 AND due_date = $3 AND is_dismissed = FALSE`,
-            [reminder.vehicle_id, type, reminder.date]
-          );
+          // Check if a similar notification already exists (unless force=true)
+          let shouldCreateNew = true;
+          if (!force) {
+            const existingNotificationResult = await db.query(
+              `SELECT id FROM notifications 
+               WHERE vehicle_id = $1 AND type = $2 AND due_date = $3 AND is_dismissed = FALSE`,
+              [reminder.vehicle_id, type, reminder.date]
+            );
+            shouldCreateNew = existingNotificationResult.rows.length === 0;
+          }
           
-          if (existingNotificationResult.rows.length === 0) {
+          if (shouldCreateNew) {
             const message = `${reminder.name} for ${reminder.make} ${reminder.model} (${reminder.vehicle_id}) is due on ${new Date(reminder.date).toLocaleDateString()}.`;
             
             // Create notification
             const notificationResult = await db.query(
-              `INSERT INTO notifications (vehicle_id, type, title, message, due_date, priority)
-               VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+              `INSERT INTO notifications (vehicle_id, type, title, message, due_date, priority, created_at)
+               VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`,
               [reminder.vehicle_id, type, title, message, reminder.date, priority]
             );
             
@@ -93,6 +102,129 @@ async function generateNotifications() {
   }
 }
 
+/**
+ * Get notifications with pagination and filtering
+ * 
+ * @param {Object} options - Query options
+ * @param {number} options.limit - Max number of notifications to return
+ * @param {number} options.offset - Number of notifications to skip
+ * @param {boolean} options.unreadOnly - If true, returns only unread notifications
+ * @param {boolean} options.activeOnly - If true, returns only active (not dismissed) notifications
+ * @returns {Promise<Array>} Array of notifications
+ */
+async function getNotifications(options = {}) {
+  const {
+    limit = 50,
+    offset = 0,
+    unreadOnly = false,
+    activeOnly = true
+  } = options;
+  
+  try {
+    let query = `
+      SELECT n.*, v.make, v.model, v.reg_number 
+      FROM notifications n
+      JOIN vehicles v ON n.vehicle_id = v.id
+      WHERE 1=1
+    `;
+    
+    const params = [];
+    let paramIndex = 1;
+    
+    if (unreadOnly) {
+      query += ` AND n.is_read = FALSE`;
+    }
+    
+    if (activeOnly) {
+      query += ` AND n.is_dismissed = FALSE`;
+    }
+    
+    query += ` ORDER BY n.created_at DESC, n.priority DESC`;
+    
+    if (limit) {
+      query += ` LIMIT $${paramIndex++}`;
+      params.push(limit);
+    }
+    
+    if (offset) {
+      query += ` OFFSET $${paramIndex++}`;
+      params.push(offset);
+    }
+    
+    const result = await db.query(query, params);
+    return result.rows;
+  } catch (err) {
+    console.error('Error fetching notifications:', err);
+    throw err;
+  }
+}
+
+/**
+ * Mark a notification as read
+ * 
+ * @param {number} id - Notification ID
+ * @returns {Promise<Object>} Updated notification
+ */
+async function markNotificationAsRead(id) {
+  try {
+    const result = await db.query(
+      `UPDATE notifications SET is_read = TRUE WHERE id = $1 RETURNING *`,
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      throw new Error(`Notification with ID ${id} not found`);
+    }
+    
+    return result.rows[0];
+  } catch (err) {
+    console.error(`Error marking notification ${id} as read:`, err);
+    throw err;
+  }
+}
+
+/**
+ * Mark a notification as dismissed
+ * 
+ * @param {number} id - Notification ID
+ * @returns {Promise<Object>} Updated notification
+ */
+async function dismissNotification(id) {
+  try {
+    const result = await db.query(
+      `UPDATE notifications SET is_dismissed = TRUE WHERE id = $1 RETURNING *`,
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      throw new Error(`Notification with ID ${id} not found`);
+    }
+    
+    return result.rows[0];
+  } catch (err) {
+    console.error(`Error dismissing notification ${id}:`, err);
+    throw err;
+  }
+}
+
+/**
+ * Mark all notifications as read
+ * 
+ * @returns {Promise<number>} Number of updated notifications
+ */
+async function markAllNotificationsAsRead() {
+  try {
+    const result = await db.query(
+      `UPDATE notifications SET is_read = TRUE WHERE is_read = FALSE RETURNING id`
+    );
+    
+    return result.rows.length;
+  } catch (err) {
+    console.error('Error marking all notifications as read:', err);
+    throw err;
+  }
+}
+
 // Run the function if script is executed directly
 if (require.main === module) {
   generateNotifications()
@@ -106,4 +238,10 @@ if (require.main === module) {
     });
 }
 
-module.exports = { generateNotifications };
+module.exports = { 
+  generateNotifications,
+  getNotifications,
+  markNotificationAsRead,
+  dismissNotification,
+  markAllNotificationsAsRead
+};

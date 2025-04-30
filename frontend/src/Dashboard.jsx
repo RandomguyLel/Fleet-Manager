@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import NotificationBell from './components/NotificationBell';
@@ -19,6 +19,83 @@ const Dashboard = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   // API URL from environment variable
   const apiUrl = import.meta.env.VITE_API_URL;
+
+  // Format date to a readable format
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+  };
+
+  // Fetch notifications from API
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/notifications?unreadOnly=true`, {
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch notifications: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setNotifications(data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      throw error;
+    }
+  }, [apiUrl, getAuthHeader]);
+
+  // Mark notification as read
+  const markAsRead = async (id) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/notifications/${id}/read`, {
+        method: 'PUT',
+        headers: getAuthHeader()
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error! Status: ${response.status}`);
+      }
+      
+      // Update local state
+      setNotifications(prevNotifications => 
+        prevNotifications.map(notif => 
+          notif.id === id ? { ...notif, is_read: true } : notif
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  // Dismiss notification
+  const dismissNotification = async (id) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/notifications/${id}/dismiss`, {
+        method: 'PUT',
+        headers: getAuthHeader()
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error! Status: ${response.status}`);
+      }
+      
+      // Update local state by removing the dismissed notification
+      setNotifications(prevNotifications => 
+        prevNotifications.filter(notif => notif.id !== id)
+      );
+    } catch (error) {
+      console.error('Error dismissing notification:', error);
+    }
+  };
 
   // Fetch dashboard data
   useEffect(() => {
@@ -78,19 +155,7 @@ const Dashboard = () => {
         });
         
         // Fetch notifications
-        const notificationsResponse = await fetch(`${apiUrl}/api/notifications?unreadOnly=true`, {
-          headers: {
-            ...getAuthHeader(),
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!notificationsResponse.ok) {
-          throw new Error(`Failed to fetch notifications: ${notificationsResponse.status} ${notificationsResponse.statusText}`);
-        }
-        
-        const notificationsData = await notificationsResponse.json();
-        setNotifications(notificationsData);
+        await fetchNotifications();
         
         setError(null);
       } catch (err) {
@@ -102,7 +167,17 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, [getAuthHeader, apiUrl]);
+    
+    // Set up a periodic refresh interval (every 2 minutes)
+    const intervalId = setInterval(() => {
+      fetchNotifications().catch(err => {
+        console.error('Error in notification refresh interval:', err);
+      });
+    }, 2 * 60 * 1000);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, [fetchNotifications, getAuthHeader, apiUrl]);
 
   if (loading) {
     return (
@@ -159,7 +234,7 @@ const Dashboard = () => {
                 </button>
                 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                     <div className="py-2">
                       <p className="px-4 py-2 text-sm text-gray-700">
                         <span className="font-medium">{currentUser?.username || 'User'}</span>
@@ -257,9 +332,27 @@ const Dashboard = () => {
                 <h1 className="text-2xl text-gray-900">Dashboard</h1>
                 <div className="flex space-x-3">
                   <button className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
-                    <span className="mr-2">📅</span>April 27, 2025
+                    <span className="mr-2">📅</span>{formatDate(new Date())}
                   </button>
-                  <button className="px-4 py-2 text-sm bg-gray-900 text-white rounded-md shadow-sm hover:bg-gray-800">
+                  <button 
+                    className="px-4 py-2 text-sm bg-gray-900 text-white rounded-md shadow-sm hover:bg-gray-800"
+                    onClick={async () => {
+                      try {
+                        // Generate new notifications before creating report
+                        await fetch(`${apiUrl}/api/notifications/generate`, { 
+                          method: 'POST',
+                          headers: getAuthHeader()
+                        });
+                        await fetchNotifications();
+                        
+                        // Here you would generate your report
+                        alert('Report generated successfully!');
+                      } catch (error) {
+                        console.error('Error generating report:', error);
+                        alert('Failed to generate report. Please try again.');
+                      }
+                    }}
+                  >
                     <span className="mr-2">🔄</span>Generate Report
                   </button>
                 </div>
@@ -318,12 +411,32 @@ const Dashboard = () => {
                 {/* Recent Activity */}
                 <div className="lg:col-span-2 bg-white shadow rounded-lg">
                   <div className="px-4 py-5 sm:p-6">
-                    <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
+                      {notifications.length > 0 && (
+                        <button 
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                          onClick={async () => {
+                            try {
+                              await fetch(`${apiUrl}/api/notifications/read-all`, {
+                                method: 'PUT',
+                                headers: getAuthHeader()
+                              });
+                              await fetchNotifications();
+                            } catch (error) {
+                              console.error('Error marking all as read:', error);
+                            }
+                          }}
+                        >
+                          Mark All as Read
+                        </button>
+                      )}
+                    </div>
                     <div className="mt-4 overflow-y-auto max-h-64">
                       <div className="space-y-4">
                         {notifications.length > 0 ? (
-                          notifications.map((notification, idx) => (
-                            <div key={idx} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                          notifications.map((notification) => (
+                            <div key={notification.id} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
                               <div className="flex items-start">
                                 <div className="shrink-0">
                                   <span className={`inline-flex rounded-md p-2 ${
@@ -346,25 +459,60 @@ const Dashboard = () => {
                                   <p className="text-sm font-medium text-gray-900">{notification.title}</p>
                                   <p className="mt-1 text-sm text-gray-500">{notification.message}</p>
                                   <div className="mt-2 flex space-x-2">
-                                    <button className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700">
-                                      View Details
-                                    </button>
-                                    <button className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
+                                    {notification.vehicle_id && (
+                                      <Link 
+                                        to={`/vehicles/${notification.vehicle_id}`}
+                                        className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700"
+                                      >
+                                        View Vehicle
+                                      </Link>
+                                    )}
+                                    <button 
+                                      className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                                      onClick={() => dismissNotification(notification.id)}
+                                    >
                                       Dismiss
                                     </button>
                                   </div>
                                 </div>
                                 <div className="ml-3 shrink-0">
                                   <p className="text-xs text-gray-500">
-                                    {new Date(notification.created_at).toLocaleDateString()}
+                                    {notification.created_at ? formatDate(notification.created_at) : 'N/A'}
                                   </p>
+                                  {!notification.is_read && (
+                                    <button
+                                      className="mt-1 text-xs text-blue-500 hover:text-blue-700"
+                                      onClick={() => markAsRead(notification.id)}
+                                    >
+                                      Mark as read
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>
                           ))
                         ) : (
-                          <div className="text-center py-4">
+                          <div className="text-center py-8">
                             <p className="text-gray-500">No recent activity</p>
+                            <button 
+                              className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(`${apiUrl}/api/notifications/generate?force=true`, {
+                                    method: 'POST',
+                                    headers: getAuthHeader()
+                                  });
+                                  const data = await response.json();
+                                  if (data.success) {
+                                    fetchNotifications();
+                                  }
+                                } catch (error) {
+                                  console.error('Error generating notifications:', error);
+                                }
+                              }}
+                            >
+                              Generate Notifications
+                            </button>
                           </div>
                         )}
                       </div>
@@ -397,9 +545,23 @@ const Dashboard = () => {
                         <span className="block text-2xl">💬</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900">Messages</span>
                       </button>
-                      <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100">
-                        <span className="block text-2xl">⚙️</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900">Settings</span>
+                      <button 
+                        className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100"
+                        onClick={async () => {
+                          try {
+                            await fetch(`${apiUrl}/api/notifications/generate?force=true`, {
+                              method: 'POST',
+                              headers: getAuthHeader()
+                            });
+                            await fetchNotifications();
+                            alert('Notifications refreshed successfully!');
+                          } catch (error) {
+                            console.error('Error generating notifications:', error);
+                          }
+                        }}
+                      >
+                        <span className="block text-2xl">🔔</span>
+                        <span className="mt-2 block text-sm font-medium text-gray-900">Check Notifications</span>
                       </button>
                     </div>
                   </div>

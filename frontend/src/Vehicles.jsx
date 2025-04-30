@@ -32,6 +32,10 @@ const Vehicles = () => {
   const [showEditConfirmationModal, setShowEditConfirmationModal] = useState(false);
   // State for tracked changes
   const [vehicleChanges, setVehicleChanges] = useState(null);
+  // State for search query
+  const [searchQuery, setSearchQuery] = useState('');
+  // State for filtered vehicles
+  const [filteredVehicles, setFilteredVehicles] = useState([]);
   // Get auth context
   const { currentUser, logout, getAuthHeader } = useAuth();
   // State for user profile dropdown
@@ -61,6 +65,7 @@ const Vehicles = () => {
 
         const data = await response.json();
         setVehicles(data);
+        setFilteredVehicles(data); // Initialize filtered vehicles with all vehicles
         setError(null);
       } catch (err) {
         console.error('Error fetching vehicles:', err);
@@ -72,6 +77,27 @@ const Vehicles = () => {
 
     fetchVehicles();
   }, [getAuthHeader, apiUrl]);
+
+  // Add useEffect to handle search filtering
+  useEffect(() => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      // If search query is empty, use all vehicles
+      setFilteredVehicles(vehicles);
+    } else {
+      // Filter vehicles based on search query
+      const query = searchQuery.toLowerCase();
+      const filtered = vehicles.filter(vehicle => 
+        (vehicle.id && vehicle.id.toLowerCase().includes(query)) ||
+        (vehicle.make && vehicle.make.toLowerCase().includes(query)) ||
+        (vehicle.model && vehicle.model.toLowerCase().includes(query)) ||
+        (vehicle.type && vehicle.type.toLowerCase().includes(query)) ||
+        (vehicle.year && vehicle.year.toString().includes(query)) ||
+        (vehicle.vin && vehicle.vin.toLowerCase().includes(query)) ||
+        (vehicle.status && vehicle.status.toLowerCase().includes(query))
+      );
+      setFilteredVehicles(filtered);
+    }
+  }, [vehicles, searchQuery]);
 
   // Toggle expanded row
   const toggleExpandRow = (id) => {
@@ -194,7 +220,7 @@ const Vehicles = () => {
 
   // Handle confirmation of edit
   const handleConfirmEdit = () => {
-    if (vehicleChanges && vehicleChanges.updatedData) {
+    if (vehicleChanges) {
       updateVehicle(vehicleChanges.updatedData, vehicleChanges.changes);
     } else {
       setShowEditConfirmationModal(false);
@@ -707,8 +733,18 @@ const Vehicles = () => {
                         type="text" 
                         placeholder="Search vehicles..." 
                         className="pl-8 pr-4 py-2 border border-gray-300 rounded-md"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                       />
                       <span className="absolute left-3 top-3 text-gray-400">🔍</span>
+                      {searchQuery && (
+                        <button 
+                          className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                          onClick={() => setSearchQuery('')}
+                        >
+                          ✖️
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -728,7 +764,7 @@ const Vehicles = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {vehicles.map((vehicle) => (
+                        {filteredVehicles.map((vehicle) => (
                           <React.Fragment key={vehicle.id}>
                             <tr className="group hover:bg-gray-50">
                               <td className="px-6 py-4">
@@ -1854,6 +1890,8 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                                              <span className="text-blue-600 text-xl">🔑</span>
                       </span>
                       <div>
+                        
+                        
                         <h4 className="text-md font-medium text-gray-900">e.csdd.lv Connection</h4>
                         <p className="text-sm text-gray-500">Connect to the Latvian Road Traffic Safety Directorate portal</p>
                       </div>
@@ -1864,7 +1902,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                           Connected
                         </span>
                       ) : csddIntegration.connectionStatus === 'connecting' ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs fontmedium bg-yellow-100 text-yellow-800">
                           Connecting...
                         </span>
                       ) : (
@@ -1892,6 +1930,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                         </div>
                       </div>
                       
+
                       <div>
                         <h5 className="text-sm font-medium text-gray-900 mb-2">Available Actions</h5>
                         <ul className="space-y-2">
@@ -1978,3 +2017,4 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
 };
 
 export default Vehicles;
+

@@ -99,7 +99,7 @@ const Analytics = () => {
           <div className="py-6">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
-                <h1 className="text-2xl text-gray-900">Analytics</h1>
+                <h1 className="text-2xl text-gray-900">Analytics - visual demo</h1>
                 <div className="flex space-x-4">
                   <select 
                     className="px-4 py-2 border border-gray-300 rounded-md text-sm"

@@ -210,7 +210,7 @@ const AuditLog = () => {
           <div className="py-6">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
-                <h1 className="text-2xl text-gray-900 dark:text-white">Audit Log</h1>
+                <h1 className="text-2xl text-gray-900 dark:text-white">Audit Log - visual demo</h1>
                 <div className="flex space-x-3">
                   <button className="px-4 py-2 text-sm bg-gray-900 text-white rounded-md shadow-sm hover:bg-gray-800 dark:bg-blue-700 dark:hover:bg-blue-800">
                     <span className="mr-2">⬇️</span>Export Log

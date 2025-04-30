@@ -138,7 +138,7 @@ const Login = () => {
             </div>
 
             <div className="text-sm">
-              <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+              <a href="#" className="font-medium text-blue-600 hover:text-blue-500" onClick={() => {alert('Feature not implemented yet!');}}>
                 Forgot your password?
               </a>
             </div>
