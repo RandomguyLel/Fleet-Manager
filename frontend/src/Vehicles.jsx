@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import NotificationBell from './components/NotificationBell';
 import ProfileDropdown from './components/ProfileDropdown';
+import Sidebar from './components/Sidebar';
 
 const Vehicles = () => {
   // State for expanded row
@@ -596,65 +597,7 @@ const Vehicles = () => {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <nav className="hidden md:block w-64 bg-white border-r border-gray-200 overflow-y-auto shadow-sm dark:bg-gray-800 dark:border-gray-700">
-          <div className="py-6 px-4">
-            <div className="px-3 py-2 text-xs uppercase text-gray-500 dark:text-gray-400">Main</div>
-            <ul className="space-y-1 mt-2">
-              <li>
-                <Link to="/" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400">
-                  <span className="mr-3 text-gray-500 dark:text-gray-400">📊</span>
-                  Dashboard
-                </Link>
-              </li>
-              <li>
-                <Link to="/analytics" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400">
-                  <span className="mr-3 text-gray-500 dark:text-gray-400">📈</span>
-                  Analytics
-                </Link>
-              </li>
-              <li>
-                <Link to="/vehicles" className="flex items-center px-3 py-2 text-sm font-medium rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-                  <span className="mr-3 text-blue-500 dark:text-blue-400">🚗</span>
-                  Vehicles
-                </Link>
-              </li>
-              <li>
-                <a href="#" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400">
-                  <span className="mr-3 text-gray-500 dark:text-gray-400">🕒</span>
-                  Service History
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400">
-                  <span className="mr-3 text-gray-500 dark:text-gray-400">📄</span>
-                  Documents
-                </a>
-              </li>
-            </ul>
-
-            <div className="px-3 py-2 mt-6 text-xs uppercase text-gray-500 dark:text-gray-400">Admin</div>
-            <ul className="space-y-1 mt-2">
-              <li>
-                <a href="#" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400">
-                  <span className="mr-3 text-gray-500 dark:text-gray-400">⚙️</span>
-                  System Settings
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400">
-                  <span className="mr-3 text-gray-500 dark:text-gray-400">👥</span>
-                  User Management
-                </a>
-              </li>
-              <li>
-                <Link to="/audit-log" className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400">
-                  <span className="mr-3 text-gray-500 dark:text-gray-400">📋</span>
-                  Audit Log
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </nav>
+        <Sidebar />
 
         {/* Main content */}
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
