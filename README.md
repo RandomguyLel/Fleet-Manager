@@ -115,13 +115,10 @@ The Fleet Manager API provides the following endpoints:
 ## 🔄 Integrations WIP
 
 Fleet Manager can integrate with:
-- [NYI] Vehicle GPS location API's
+- [Soon™] Vehicle GPS location data
 
 - [X] E-CSDD vehicle registry *account required
 
-## 📄 License
-
-This project is licensed under the ISC License - see the LICENSE file for details.
 
 ## 👏 Acknowledgements
 
