@@ -56,6 +56,39 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
+// Middleware to ensure user is an admin
+const requireAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ error: 'Unauthorized: Admin access required' });
+  }
+};
+
+// Helper function to create a notification for disabled user login attempts
+const createDisabledUserLoginNotification = async (user) => {
+  try {
+    const now = new Date();
+    await db.query(
+      `INSERT INTO notifications 
+       (type, title, message, priority, is_read, is_dismissed, created_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        'security', 
+        'Disabled Account Login Attempt', 
+        `Disabled user ${user.username} (${user.email}) attempted to login at ${now.toLocaleString()}.`, 
+        'high',
+        false,
+        false,
+        now
+      ]
+    );
+    console.log(`Created security notification for disabled user login attempt: ${user.username}`);
+  } catch (error) {
+    console.error('Error creating notification for disabled user login:', error);
+  }
+};
+
 // Register a new user
 router.post('/register', async (req, res) => {
   try {
@@ -105,19 +138,37 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required' });
     }
     
-    // Get user by username or email
-    const userResult = await db.query(
-      'SELECT * FROM users WHERE (username = $1 OR email = $1) AND is_active = TRUE',
+    // First check if the user exists without filtering by is_active
+    const userExistsResult = await db.query(
+      'SELECT * FROM users WHERE (username = $1 OR email = $1)',
       [username]
     );
     
-    if (userResult.rows.length === 0) {
+    // If no user found at all, return generic error
+    if (userExistsResult.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
     
-    const user = userResult.rows[0];
+    const user = userExistsResult.rows[0];
     
-    // Check password
+    // Check if the user is disabled
+    if (!user.is_active) {
+      // Check password first to make sure it's the actual user
+      const passwordMatch = await bcrypt.compare(password, user.password_hash);
+      
+      if (passwordMatch) {
+        // Create a notification for admins that a disabled account attempted to login
+        await createDisabledUserLoginNotification(user);
+        
+        // Return a more specific error message
+        return res.status(401).json({ error: 'Your account has been disabled. Please contact an administrator.' });
+      } else {
+        // If password doesn't match, return generic error
+        return res.status(401).json({ error: 'Invalid username or password' });
+      }
+    }
+    
+    // Check password for active user
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     
     if (!passwordMatch) {
@@ -309,6 +360,308 @@ router.get('/profile', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error in get profile endpoint:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// =================== User Management Routes (Admin Only) ===================
+
+// Get all users (admin only)
+router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT id, username, email, first_name, last_name, role, is_active, created_at, last_login 
+       FROM users 
+       ORDER BY id`
+    );
+    
+    // Transform to camelCase
+    const users = result.rows.map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name, 
+      role: user.role,
+      isActive: user.is_active,
+      createdAt: user.created_at,
+      lastLogin: user.last_login
+    }));
+    
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get a specific user (admin only)
+router.get('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await db.query(
+      `SELECT id, username, email, first_name, last_name, role, is_active, created_at, last_login 
+       FROM users 
+       WHERE id = $1`,
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = result.rows[0];
+    
+    // Transform to camelCase
+    res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      role: user.role,
+      isActive: user.is_active,
+      createdAt: user.created_at,
+      lastLogin: user.last_login
+    });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create a new user (admin only)
+router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { firstName, lastName, email, password, role, username } = req.body;
+    
+    // Validate input
+    if (!username || !email || !password || !role) {
+      return res.status(400).json({ error: 'Username, email, password, and role are required' });
+    }
+
+    // Validate role
+    const validRoles = ['admin', 'manager', 'user'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be admin, manager, or user' });
+    }
+    
+    // Check if username or email already exists
+    const existingUserResult = await db.query(
+      'SELECT * FROM users WHERE username = $1 OR email = $2',
+      [username, email]
+    );
+    
+    if (existingUserResult.rows.length > 0) {
+      return res.status(409).json({ error: 'Username or email already in use' });
+    }
+    
+    // Hash password
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+    
+    // Insert new user
+    const result = await db.query(
+      `INSERT INTO users (username, email, password_hash, first_name, last_name, role, is_active, created_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, TRUE, NOW()) 
+       RETURNING id, username, email, first_name, last_name, role, is_active, created_at`,
+      [username, email, passwordHash, firstName || null, lastName || null, role]
+    );
+    
+    // Transform to camelCase
+    const newUser = result.rows[0];
+    res.status(201).json({
+      id: newUser.id,
+      username: newUser.username,
+      email: newUser.email,
+      firstName: newUser.first_name,
+      lastName: newUser.last_name,
+      role: newUser.role,
+      isActive: newUser.is_active,
+      createdAt: newUser.created_at
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update user (admin only)
+router.put('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { firstName, lastName, email, role } = req.body;
+    
+    // Get the existing user to ensure we're not modifying the last admin
+    const existingUserResult = await db.query(
+      'SELECT * FROM users WHERE id = $1',
+      [id]
+    );
+    
+    if (existingUserResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Check if email is already in use by another user
+    if (email) {
+      const emailCheck = await db.query(
+        'SELECT id FROM users WHERE email = $1 AND id != $2',
+        [email, id]
+      );
+      
+      if (emailCheck.rows.length > 0) {
+        return res.status(409).json({ error: 'Email is already in use by another user' });
+      }
+    }
+
+    // Validate role if it's being changed
+    if (role) {
+      const validRoles = ['admin', 'manager', 'user'];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ error: 'Invalid role. Must be admin, manager, or user' });
+      }
+    }
+    
+    // Update user
+    const result = await db.query(
+      `UPDATE users 
+       SET first_name = COALESCE($1, first_name),
+           last_name = COALESCE($2, last_name),
+           email = COALESCE($3, email),
+           role = COALESCE($4, role)
+       WHERE id = $5
+       RETURNING id, username, email, first_name, last_name, role, is_active, created_at, last_login`,
+      [
+        firstName !== undefined ? firstName : null,
+        lastName !== undefined ? lastName : null,
+        email || null,
+        role || null,
+        id
+      ]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Transform to camelCase
+    const updatedUser = result.rows[0];
+    res.json({
+      id: updatedUser.id,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      firstName: updatedUser.first_name,
+      lastName: updatedUser.last_name,
+      role: updatedUser.role,
+      isActive: updatedUser.is_active,
+      createdAt: updatedUser.created_at,
+      lastLogin: updatedUser.last_login
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Toggle user status (active/inactive) (admin only)
+router.patch('/users/:id/status', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+    
+    if (isActive === undefined || typeof isActive !== 'boolean') {
+      return res.status(400).json({ error: 'isActive boolean is required' });
+    }
+    
+    // Get the existing user
+    const existingUserResult = await db.query(
+      'SELECT * FROM users WHERE id = $1',
+      [id]
+    );
+    
+    if (existingUserResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const existingUser = existingUserResult.rows[0];
+    
+    // Prevent disabling the last active admin
+    if (!isActive && existingUser.role === 'admin') {
+      // Count active admins
+      const adminCountResult = await db.query(
+        'SELECT COUNT(*) FROM users WHERE role = $1 AND is_active = TRUE',
+        ['admin']
+      );
+      
+      const adminCount = parseInt(adminCountResult.rows[0].count);
+      
+      if (adminCount <= 1) {
+        return res.status(409).json({ error: 'Cannot disable the last active admin' });
+      }
+    }
+    
+    // Update user status
+    const result = await db.query(
+      `UPDATE users 
+       SET is_active = $1
+       WHERE id = $2
+       RETURNING id, username, email, first_name, last_name, role, is_active`,
+      [isActive, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Transform to camelCase
+    const updatedUser = result.rows[0];
+    res.json({
+      id: updatedUser.id,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      firstName: updatedUser.first_name,
+      lastName: updatedUser.last_name,
+      role: updatedUser.role,
+      isActive: updatedUser.is_active,
+      message: `User ${updatedUser.is_active ? 'activated' : 'deactivated'} successfully`
+    });
+  } catch (error) {
+    console.error('Error toggling user status:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Reset password for a user (admin only)
+router.post('/users/:id/reset-password', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+    
+    if (!password) {
+      return res.status(400).json({ error: 'New password is required' });
+    }
+    
+    // Check if user exists
+    const userCheck = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+    
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Hash new password
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+    
+    // Update password
+    await db.query(
+      'UPDATE users SET password_hash = $1 WHERE id = $2',
+      [passwordHash, id]
+    );
+    
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

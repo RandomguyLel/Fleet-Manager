@@ -261,18 +261,15 @@ const Sidebar = () => {
               </a>
             </li>
             <li>
-              <a 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Not yet implemented!');
-                }} 
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400 ${collapsed && window.innerWidth >= 768 ? "justify-center" : ""}`}
+              <Link 
+                to="/user-management" 
+                className={getLinkClass('/user-management')} 
                 title="User Management"
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/user-management') : null}
               >
-                <span className={`${collapsed && window.innerWidth >= 768 ? "text-xl" : "mr-3"} text-gray-500 dark:text-gray-400`}>👥</span>
-                {(!collapsed || window.innerWidth < 768) && "User Management - NYI"}
-              </a>
+                <span className={getIconClass('/user-management')}>👥</span>
+                {(!collapsed || window.innerWidth < 768) && "User Management"}
+              </Link>
             </li>
             <li>
               <Link 

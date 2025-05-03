@@ -8,6 +8,7 @@ import Analytics from './Analytics';
 import AuditLog from './AuditLog';
 import Login from './Login';
 import Profile from './Profile';
+import UserManagement from './UserManagement';
 import { AuthProvider, ProtectedRoute } from './AuthContext';
 
 // Layout wrapper component
@@ -66,6 +67,16 @@ const App = () => {
           <ProtectedRoute>
             <AppLayout>
               <Profile />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user-management"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <UserManagement />
             </AppLayout>
           </ProtectedRoute>
         }
