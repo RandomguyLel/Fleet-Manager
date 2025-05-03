@@ -41,6 +41,8 @@ async function setupDatabase() {
     await fleetManagerPool.query('DROP TABLE IF EXISTS reminders CASCADE');
     await fleetManagerPool.query('DROP TABLE IF EXISTS vehicles CASCADE');
     await fleetManagerPool.query('DROP TABLE IF EXISTS user_sessions CASCADE');
+    await fleetManagerPool.query('DROP TABLE IF EXISTS audit_logs CASCADE');
+    await fleetManagerPool.query('DROP TABLE IF EXISTS notifications CASCADE');
     await fleetManagerPool.query('DROP TABLE IF EXISTS users CASCADE');
     
     // Execute the schema
