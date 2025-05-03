@@ -278,3 +278,43 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+/* Tooltip container */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+/* Tooltip text */
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: 400px;
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: #1f2937;
+  color: #f3f4f6;
+  text-align: left;
+  padding: 16px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  white-space: pre-wrap !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  
+  /* Position the tooltip */
+  position: fixed;
+  z-index: 9999;
+  
+  /* Fade in tooltip */
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  opacity: 1;
+}

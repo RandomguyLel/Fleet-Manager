@@ -8,7 +8,8 @@ import Analytics from './Analytics';
 import AuditLog from './AuditLog';
 import Login from './Login';
 import Profile from './Profile';
-import { AuthProvider, ProtectedRoute } from './AuthContext';
+import UserManagement from './UserManagement';
+import { AuthProvider, ProtectedRoute, AdminProtectedRoute } from './AuthContext';
 
 // Layout wrapper component
 const AppLayout = ({ children }) => {
@@ -53,11 +54,11 @@ const App = () => {
       <Route
         path="/audit-log"
         element={
-          <ProtectedRoute>
+          <AdminProtectedRoute>
             <AppLayout>
               <AuditLog />
             </AppLayout>
-          </ProtectedRoute>
+          </AdminProtectedRoute>
         }
       />
       <Route
@@ -68,6 +69,16 @@ const App = () => {
               <Profile />
             </AppLayout>
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user-management"
+        element={
+          <AdminProtectedRoute>
+            <AppLayout>
+              <UserManagement />
+            </AppLayout>
+          </AdminProtectedRoute>
         }
       />
       <Route path="*" element={<Navigate to="/" />} />

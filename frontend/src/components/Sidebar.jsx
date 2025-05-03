@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 import ProfileDropdown from './ProfileDropdown';
+import { useAuth } from '../AuthContext';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -10,6 +11,10 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  // Get current user to check role
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'admin';
   
   // Check if sidebar state is saved in localStorage
   useEffect(() => {
@@ -240,63 +245,65 @@ const Sidebar = () => {
                 {(!collapsed || window.innerWidth < 768) && "Documents - NYI"}
               </a>
             </li>
+            <li>
+                  <Link 
+                    to="/profile" 
+                    className={getLinkClass('/profile')} 
+                    title="Profile"
+                    onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/profile') : null}
+                  >
+                    <span className={getIconClass('/profile')}>👤</span>
+                    {(!collapsed || window.innerWidth < 768) && "Profile"}
+                  </Link>
+                </li>
           </ul>
 
-          <div className={`px-3 py-2 mt-6 text-xs uppercase text-gray-500 dark:text-gray-400 ${collapsed && window.innerWidth >= 768 ? "text-center" : ""}`}>
-            {(!collapsed || window.innerWidth < 768) && "Admin"}
-          </div>
-          <ul className="space-y-1 mt-2">
-            <li>
-              <a 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Not yet implemented!');
-                }} 
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400 ${collapsed && window.innerWidth >= 768 ? "justify-center" : ""}`}
-                title="System Settings"
-              >
-                <span className={`${collapsed && window.innerWidth >= 768 ? "text-xl" : "mr-3"} text-gray-500 dark:text-gray-400`}>⚙️</span>
-                {(!collapsed || window.innerWidth < 768) && "System Settings - NYI"}
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Not yet implemented!');
-                }} 
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400 ${collapsed && window.innerWidth >= 768 ? "justify-center" : ""}`}
-                title="User Management"
-              >
-                <span className={`${collapsed && window.innerWidth >= 768 ? "text-xl" : "mr-3"} text-gray-500 dark:text-gray-400`}>👥</span>
-                {(!collapsed || window.innerWidth < 768) && "User Management - NYI"}
-              </a>
-            </li>
-            <li>
-              <Link 
-                to="/audit-log" 
-                className={getLinkClass('/audit-log')} 
-                title="Audit Log"
-                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/audit-log') : null}
-              >
-                <span className={getIconClass('/audit-log')}>📋</span>
-                {(!collapsed || window.innerWidth < 768) && "Audit Log"}
-              </Link>
-            </li>
-            <li>
-              <Link 
-                to="/profile" 
-                className={getLinkClass('/profile')} 
-                title="Profile"
-                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/profile') : null}
-              >
-                <span className={getIconClass('/profile')}>👤</span>
-                {(!collapsed || window.innerWidth < 768) && "Profile"}
-              </Link>
-            </li>
-          </ul>
+          {isAdmin && (
+            <>
+              <div className={`px-3 py-2 mt-6 text-xs uppercase text-gray-500 dark:text-gray-400 ${collapsed && window.innerWidth >= 768 ? "text-center" : ""}`}>
+                {(!collapsed || window.innerWidth < 768) && "Admin"}
+              </div>
+              <ul className="space-y-1 mt-2">
+                <li>
+                  <a 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      alert('Not yet implemented!');
+                    }} 
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400 ${collapsed && window.innerWidth >= 768 ? "justify-center" : ""}`}
+                    title="System Settings"
+                  >
+                    <span className={`${collapsed && window.innerWidth >= 768 ? "text-xl" : "mr-3"} text-gray-500 dark:text-gray-400`}>⚙️</span>
+                    {(!collapsed || window.innerWidth < 768) && "System Settings - NYI"}
+                  </a>
+                </li>
+                <li>
+                  <Link 
+                    to="/user-management" 
+                    className={getLinkClass('/user-management')} 
+                    title="User Management"
+                    onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/user-management') : null}
+                  >
+                    <span className={getIconClass('/user-management')}>👥</span>
+                    {(!collapsed || window.innerWidth < 768) && "User Management"}
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/audit-log" 
+                    className={getLinkClass('/audit-log')} 
+                    title="Audit Log"
+                    onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/audit-log') : null}
+                  >
+                    <span className={getIconClass('/audit-log')}>📋</span>
+                    {(!collapsed || window.innerWidth < 768) && "Audit Log"}
+                  </Link>
+                </li>
+                
+              </ul>
+            </>
+          )}
         </div>
       </nav>
     </div>
