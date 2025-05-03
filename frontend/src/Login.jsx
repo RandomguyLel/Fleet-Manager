@@ -198,7 +198,7 @@ const Login = () => {
             &copy; {new Date().getFullYear()} Fleet Manager. Developed by RandomguyLel
           </p>
           <p className="text-center text-xs text-gray-400 mt-1">
-            Version something alpha | Last updated: April 30, 2025
+            Version something alpha | Last updated: May 3rd, 2025
           </p>
         </div>
       </div>
