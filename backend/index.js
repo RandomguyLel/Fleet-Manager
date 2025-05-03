@@ -12,6 +12,8 @@ const {
   dismissNotification,
   markAllNotificationsAsRead
 } = require('./generate-notifications');
+// Import audit log functions
+const { createAuditLog, getAuditLogs } = require('./audit-logger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -140,6 +142,23 @@ app.post('/api/vehicles', authenticateToken, async (req, res) => {
       // Commit transaction
       await db.query('COMMIT');
       
+      // Create audit log for vehicle creation
+      await createAuditLog({
+        user_id: req.user.id,
+        username: req.user.username,
+        action: 'Create',
+        page: 'Vehicles',
+        new_value: JSON.stringify({
+          id,
+          make,
+          model,
+          type,
+          status
+        }),
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent']
+      });
+      
       res.status(201).json(createdVehicle);
     } catch (err) {
       // Rollback transaction on error
@@ -158,6 +177,15 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { status, type, lastService, documents, make, model, year, license, regaplnr, mileage, reminders } = req.body;
     
+    // First, get the existing vehicle data for the audit log
+    const existingVehicleResult = await db.query('SELECT * FROM vehicles WHERE id = $1', [id]);
+    
+    if (existingVehicleResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+    
+    const existingVehicle = existingVehicleResult.rows[0];
+    
     // Begin transaction
     await db.query('BEGIN');
     
@@ -168,26 +196,58 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
         [status, type, lastService, documents, make, model, year, license, regaplnr, mileage, id]
       );
       
-      if (vehicleResult.rows.length === 0) {
-        throw new Error('Vehicle not found');
-      }
-      
       // Process reminders if provided
       if (reminders && Array.isArray(reminders)) {
-        // First, delete all existing reminders for this vehicle
+        // First, get existing reminders for audit log
+        const existingRemindersResult = await db.query('SELECT * FROM reminders WHERE vehicle_id = $1', [id]);
+        const existingReminders = existingRemindersResult.rows;
+        
+        // Delete all existing reminders for this vehicle
         await db.query('DELETE FROM reminders WHERE vehicle_id = $1', [id]);
         
         // Insert new reminders
+        const insertedReminders = [];
         for (const reminder of reminders) {
           if (!reminder.name || !reminder.date) {
             continue; // Skip invalid reminders
           }
           
-          await db.query(
-            'INSERT INTO reminders (vehicle_id, name, date, enabled) VALUES ($1, $2, $3, $4)',
+          const result = await db.query(
+            'INSERT INTO reminders (vehicle_id, name, date, enabled) VALUES ($1, $2, $3, $4) RETURNING *',
             [id, reminder.name, reminder.date, reminder.enabled !== undefined ? reminder.enabled : true]
           );
+          
+          insertedReminders.push(result.rows[0]);
         }
+        
+        // Create a separate audit log entry for reminder changes
+        await createAuditLog({
+          user_id: req.user.id,
+          username: req.user.username,
+          action: 'Update',
+          page: 'Reminders',
+          field: 'vehicle_reminders',
+          old_value: JSON.stringify({
+            vehicle_id: id,
+            reminders: existingReminders.map(r => ({
+              id: r.id,
+              name: r.name,
+              date: r.date,
+              enabled: r.enabled
+            }))
+          }),
+          new_value: JSON.stringify({
+            vehicle_id: id,
+            reminders: insertedReminders.map(r => ({
+              id: r.id,
+              name: r.name,
+              date: r.date,
+              enabled: r.enabled
+            }))
+          }),
+          ip_address: req.ip,
+          user_agent: req.headers['user-agent']
+        }).catch(err => console.error('Failed to create reminder audit log:', err));
       }
       
       // Fetch updated vehicle with reminders
@@ -200,6 +260,47 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
       
       // Commit transaction
       await db.query('COMMIT');
+      
+      // Create audit log for vehicle update only if vehicle data actually changed
+      const oldVehicleData = {
+        id: existingVehicle.id,
+        make: existingVehicle.make,
+        model: existingVehicle.model,
+        type: existingVehicle.type,
+        status: existingVehicle.status,
+        mileage: existingVehicle.mileage,
+        year: existingVehicle.year,
+        regaplnr: existingVehicle.regaplnr
+      };
+      
+      const newVehicleData = {
+        id,
+        make,
+        model,
+        type,
+        status,
+        mileage,
+        year,
+        regaplnr
+      };
+      
+      // Check if any vehicle properties actually changed
+      const vehicleDataChanged = JSON.stringify(oldVehicleData) !== JSON.stringify(newVehicleData);
+      
+      if (vehicleDataChanged) {
+        // Only create vehicle audit log if vehicle data actually changed
+        await createAuditLog({
+          user_id: req.user.id,
+          username: req.user.username,
+          action: 'Update',
+          page: 'Vehicles',
+          field: 'vehicle',
+          old_value: JSON.stringify(oldVehicleData),
+          new_value: JSON.stringify(newVehicleData),
+          ip_address: req.ip,
+          user_agent: req.headers['user-agent']
+        });
+      }
       
       res.json(updatedVehicle);
     } catch (err) {
@@ -227,6 +328,18 @@ app.delete('/api/vehicles/:id', authenticateToken, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
+    
+    // Create audit log for vehicle deletion
+    await createAuditLog({
+      user_id: req.user.id,
+      username: req.user.username,
+      action: 'Delete',
+      page: 'Vehicles',
+      field: 'vehicle',
+      old_value: JSON.stringify(result.rows[0]),
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
     
     res.json({ message: 'Vehicle deleted successfully' });
   } catch (err) {
@@ -281,6 +394,24 @@ app.post('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
       [id, name, date, enabled !== undefined ? enabled : true]
     );
     
+    // Create audit log for new reminder
+    await createAuditLog({
+      user_id: req.user.id,
+      username: req.user.username,
+      action: 'Create',
+      page: 'Reminders',
+      field: 'reminder',
+      new_value: JSON.stringify({
+        vehicle_id: id,
+        reminder_id: result.rows[0].id,
+        name: name,
+        date: date,
+        enabled: enabled !== undefined ? enabled : true
+      }),
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
+    
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -299,14 +430,40 @@ app.put('/api/reminders/:id', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Name and date are required' });
     }
     
+    const existingReminderResult = await db.query('SELECT * FROM reminders WHERE id = $1', [id]);
+    if (existingReminderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Reminder not found' });
+    }
+    
+    const existingReminder = existingReminderResult.rows[0];
+    
     const result = await db.query(
       'UPDATE reminders SET name = $1, date = $2, enabled = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
       [name, date, enabled !== undefined ? enabled : true, id]
     );
     
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Reminder not found' });
-    }
+    // Create audit log for reminder update
+    await createAuditLog({
+      user_id: req.user.id,
+      username: req.user.username,
+      action: 'Update',
+      page: 'Reminders',
+      field: 'reminder',
+      old_value: JSON.stringify({
+        reminder_id: existingReminder.id,
+        name: existingReminder.name,
+        date: existingReminder.date,
+        enabled: existingReminder.enabled
+      }),
+      new_value: JSON.stringify({
+        reminder_id: result.rows[0].id,
+        name: name,
+        date: date,
+        enabled: enabled !== undefined ? enabled : true
+      }),
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
     
     res.json(result.rows[0]);
   } catch (err) {
@@ -319,11 +476,32 @@ app.put('/api/reminders/:id', authenticateToken, async (req, res) => {
 app.delete('/api/reminders/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db.query('DELETE FROM reminders WHERE id = $1 RETURNING *', [id]);
     
-    if (result.rows.length === 0) {
+    const existingReminderResult = await db.query('SELECT * FROM reminders WHERE id = $1', [id]);
+    if (existingReminderResult.rows.length === 0) {
       return res.status(404).json({ error: 'Reminder not found' });
     }
+    
+    const existingReminder = existingReminderResult.rows[0];
+    
+    const result = await db.query('DELETE FROM reminders WHERE id = $1 RETURNING *', [id]);
+    
+    // Create audit log for reminder deletion
+    await createAuditLog({
+      user_id: req.user.id,
+      username: req.user.username,
+      action: 'Delete',
+      page: 'Reminders',
+      field: 'reminder',
+      old_value: JSON.stringify({
+        reminder_id: existingReminder.id,
+        name: existingReminder.name,
+        date: existingReminder.date,
+        enabled: existingReminder.enabled
+      }),
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
     
     res.json({ message: 'Reminder deleted successfully' });
   } catch (err) {
@@ -353,6 +531,9 @@ app.put('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
     
     try {
       // Delete all existing reminders for this vehicle
+      const existingRemindersResult = await db.query('SELECT * FROM reminders WHERE vehicle_id = $1', [id]);
+      const existingReminders = existingRemindersResult.rows;
+      
       await db.query('DELETE FROM reminders WHERE vehicle_id = $1', [id]);
       
       // Insert new reminders
@@ -372,6 +553,33 @@ app.put('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
       
       // Commit transaction
       await db.query('COMMIT');
+      
+      // Create audit log for reminder batch update
+      await createAuditLog({
+        user_id: req.user.id,
+        username: req.user.username,
+        action: 'Update',
+        page: 'Reminders',
+        field: 'vehicle_reminders',
+        old_value: JSON.stringify({
+          vehicle_id: id,
+          reminders: existingReminders.map(r => ({
+            name: r.name,
+            date: r.date,
+            enabled: r.enabled
+          }))
+        }),
+        new_value: JSON.stringify({
+          vehicle_id: id,
+          reminders: insertedReminders.map(r => ({
+            name: r.name,
+            date: r.date,
+            enabled: r.enabled
+          }))
+        }),
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent']
+      });
       
       res.json(insertedReminders);
     } catch (err) {
@@ -473,6 +681,64 @@ app.post('/api/notifications/generate', authenticateToken, async (req, res) => {
     });
   } catch (err) {
     console.error('Error generating notifications:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Audit Log API Routes
+// Create an audit log entry
+app.post('/api/audit-logs', authenticateToken, async (req, res) => {
+  try {
+    const { action, details } = req.body;
+    
+    if (!action || !details) {
+      return res.status(400).json({ error: 'Action and details are required' });
+    }
+    
+    const auditLog = await createAuditLog(action, details);
+    res.status(201).json(auditLog);
+  } catch (err) {
+    console.error('Error creating audit log:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get all audit logs
+app.get('/api/audit-logs', authenticateToken, async (req, res) => {
+  try {
+    const { 
+      limit, 
+      offset, 
+      action, 
+      page, 
+      user_id, 
+      username,
+      startDate,
+      endDate,
+      search
+    } = req.query;
+    
+    const options = {
+      limit: limit ? parseInt(limit) : 50,
+      offset: offset ? parseInt(offset) : 0,
+      action,
+      page,
+      user_id: user_id ? parseInt(user_id) : undefined,
+      username,
+      startDate,
+      endDate,
+      search
+    };
+    
+    // Filter out undefined options
+    Object.keys(options).forEach(key => 
+      options[key] === undefined && delete options[key]
+    );
+    
+    const auditLogs = await getAuditLogs(options);
+    res.json(auditLogs);
+  } catch (err) {
+    console.error('Error fetching audit logs:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

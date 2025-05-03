@@ -238,3 +238,38 @@ export const ProtectedRoute = ({ children }) => {
   // If authenticated, render the children
   return isAuthenticated ? children : null;
 };
+
+// Admin Protected Route component
+export const AdminProtectedRoute = ({ children }) => {
+  const { currentUser, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isAdmin = currentUser?.role === 'admin';
+  
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        // Redirect to login if not authenticated
+        navigate('/login', { state: { from: location } });
+      } else if (!isAdmin) {
+        // Redirect to dashboard if authenticated but not an admin
+        navigate('/', { replace: true });
+      }
+    }
+  }, [isAuthenticated, isAdmin, isLoading, navigate, location]);
+  
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-3 text-gray-700 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Only render if authenticated and an admin
+  return (isAuthenticated && isAdmin) ? children : null;
+};

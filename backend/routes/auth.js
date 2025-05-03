@@ -4,6 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const { createAuditLog } = require('../audit-logger');
 
 // Secret key for JWT signing - in production, this should be in an environment variable
 const JWT_SECRET = 'fleet-manager-secret-key';
@@ -172,6 +173,18 @@ router.post('/login', async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     
     if (!passwordMatch) {
+      // Log failed login attempt
+      await createAuditLog({
+        username: username,
+        action: 'FailedLogin',
+        page: 'Auth',
+        field: 'password',
+        new_value: 'Invalid password attempt',
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+        details: { reason: 'Invalid password' }
+      });
+      
       return res.status(401).json({ error: 'Invalid username or password' });
     }
     
@@ -190,6 +203,16 @@ router.post('/login', async (req, res) => {
     
     // Update last login date
     await db.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
+    
+    // Log successful login
+    await createAuditLog({
+      user_id: user.id,
+      username: user.username,
+      action: 'Login',
+      page: 'Auth',
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
     
     // Return user data and token
     res.json({
@@ -218,6 +241,16 @@ router.post('/logout', authenticateToken, async (req, res) => {
     
     // Delete the token from the database
     await db.query('DELETE FROM user_sessions WHERE token = $1', [token]);
+    
+    // Log logout action
+    await createAuditLog({
+      user_id: req.user.id,
+      username: req.user.username,
+      action: 'Logout',
+      page: 'Auth',
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
     
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
@@ -469,6 +502,26 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
       [username, email, passwordHash, firstName || null, lastName || null, role]
     );
     
+    // Create audit log for user creation
+    await createAuditLog({
+      user_id: req.user.id,
+      username: req.user.username,
+      action: 'Create',
+      page: 'User Management',
+      field: 'user',
+      new_value: JSON.stringify({
+        id: result.rows[0].id,
+        username,
+        email,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        role,
+        isActive: true
+      }),
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
+    
     // Transform to camelCase
     const newUser = result.rows[0];
     res.status(201).json({
@@ -502,6 +555,8 @@ router.put('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
     if (existingUserResult.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
+    
+    const existingUser = existingUserResult.rows[0];
     
     // Check if email is already in use by another user
     if (email) {
@@ -544,6 +599,35 @@ router.put('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
+    
+    // Create audit log for user update
+    await createAuditLog({
+      user_id: req.user.id,
+      username: req.user.username,
+      action: 'Update',
+      page: 'User Management',
+      field: 'user',
+      old_value: JSON.stringify({
+        id: existingUser.id,
+        username: existingUser.username,
+        email: existingUser.email,
+        firstName: existingUser.first_name,
+        lastName: existingUser.last_name,
+        role: existingUser.role,
+        isActive: existingUser.is_active
+      }),
+      new_value: JSON.stringify({
+        id: result.rows[0].id,
+        username: result.rows[0].username,
+        email: result.rows[0].email,
+        firstName: result.rows[0].first_name,
+        lastName: result.rows[0].last_name,
+        role: result.rows[0].role,
+        isActive: result.rows[0].is_active
+      }),
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
     
     // Transform to camelCase
     const updatedUser = result.rows[0];
@@ -614,6 +698,27 @@ router.patch('/users/:id/status', authenticateToken, requireAdmin, async (req, r
       return res.status(404).json({ error: 'User not found' });
     }
     
+    // Create audit log for user status change
+    await createAuditLog({
+      user_id: req.user.id,
+      username: req.user.username,
+      action: 'Update',
+      page: 'User Management',
+      field: 'user_status',
+      old_value: JSON.stringify({
+        id: existingUser.id,
+        username: existingUser.username,
+        isActive: existingUser.is_active
+      }),
+      new_value: JSON.stringify({
+        id: result.rows[0].id,
+        username: result.rows[0].username,
+        isActive: result.rows[0].is_active
+      }),
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
+    
     // Transform to camelCase
     const updatedUser = result.rows[0];
     res.json({
@@ -649,6 +754,8 @@ router.post('/users/:id/reset-password', authenticateToken, requireAdmin, async 
       return res.status(404).json({ error: 'User not found' });
     }
     
+    const user = userCheck.rows[0];
+    
     // Hash new password
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
@@ -658,6 +765,24 @@ router.post('/users/:id/reset-password', authenticateToken, requireAdmin, async 
       'UPDATE users SET password_hash = $1 WHERE id = $2',
       [passwordHash, id]
     );
+    
+    // Create audit log for password reset
+    await createAuditLog({
+      user_id: req.user.id,
+      username: req.user.username,
+      action: 'Update',
+      page: 'User Management',
+      field: 'user_password',
+      new_value: JSON.stringify({
+        id: user.id,
+        username: user.username,
+        passwordReset: true,
+        resetBy: req.user.username,
+        resetAt: new Date().toISOString()
+      }),
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
     
     res.json({ message: 'Password reset successfully' });
   } catch (error) {

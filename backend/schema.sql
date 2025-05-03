@@ -61,6 +61,22 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create audit_logs table
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id SERIAL PRIMARY KEY,
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  user_id INTEGER REFERENCES users(id),
+  username VARCHAR(50), -- For storing username even if user is later deleted
+  action VARCHAR(50) NOT NULL, -- Create, Update, Delete, Login, Logout, FailedLogin, etc.
+  page VARCHAR(50) NOT NULL, -- Vehicles, Users, Documents, Auth, etc.
+  field VARCHAR(50), -- Specific field that was changed (if applicable)
+  old_value TEXT, -- Previous value (if applicable)
+  new_value TEXT, -- New value (if applicable)
+  ip_address VARCHAR(50), -- IP address of the user
+  user_agent TEXT, -- User agent of the browser
+  details JSONB -- Additional details in JSON format
+);
+
 -- Insert sample users with freshly generated bcrypt hashes
 INSERT INTO users (username, email, password_hash, first_name, last_name, role)
 VALUES 
