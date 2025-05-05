@@ -9,6 +9,7 @@ import AuditLog from './AuditLog';
 import Login from './Login';
 import Profile from './Profile';
 import UserManagement from './UserManagement';
+import ServiceHistory from './ServiceHistory';
 import { AuthProvider, ProtectedRoute, AdminProtectedRoute } from './AuthContext';
 
 // Layout wrapper component
@@ -79,6 +80,26 @@ const App = () => {
               <UserManagement />
             </AppLayout>
           </AdminProtectedRoute>
+        }
+      />
+      <Route
+        path="/service-history"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ServiceHistory />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/service-history/:vehicleId"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ServiceHistory />
+            </AppLayout>
+          </ProtectedRoute>
         }
       />
       <Route path="*" element={<Navigate to="/" />} />

@@ -14,6 +14,14 @@ const {
 } = require('./generate-notifications');
 // Import audit log functions
 const { createAuditLog, getAuditLogs } = require('./audit-logger');
+// Import service history functions
+const {
+  getServiceHistory,
+  getServiceHistoryById,
+  createServiceHistory,
+  updateServiceHistory,
+  deleteServiceHistory
+} = require('./service-history');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -739,6 +747,226 @@ app.get('/api/audit-logs', authenticateToken, async (req, res) => {
     res.json(auditLogs);
   } catch (err) {
     console.error('Error fetching audit logs:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Service History API Routes
+// Get all service history records or filter by vehicle
+app.get('/api/service-history', authenticateToken, async (req, res) => {
+  try {
+    const { vehicleId, limit, offset, sort, order } = req.query;
+    
+    const options = {
+      vehicleId,
+      limit: limit ? parseInt(limit) : 50,
+      offset: offset ? parseInt(offset) : 0,
+      sort,
+      order
+    };
+    
+    const serviceRecords = await getServiceHistory(options);
+    res.json(serviceRecords);
+  } catch (err) {
+    console.error('Error fetching service history:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get service history for a specific vehicle
+app.get('/api/vehicles/:id/service-history', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { limit, offset, sort, order } = req.query;
+    
+    // First check if vehicle exists
+    const vehicleCheck = await db.query('SELECT id FROM vehicles WHERE id = $1', [id]);
+    if (vehicleCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+    
+    const options = {
+      vehicleId: id,
+      limit: limit ? parseInt(limit) : 50,
+      offset: offset ? parseInt(offset) : 0,
+      sort,
+      order
+    };
+    
+    const serviceRecords = await getServiceHistory(options);
+    res.json(serviceRecords);
+  } catch (err) {
+    console.error('Error fetching service history for vehicle:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get a specific service history record
+app.get('/api/service-history/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    try {
+      const serviceRecord = await getServiceHistoryById(id);
+      res.json(serviceRecord);
+    } catch (err) {
+      if (err.message.includes('not found')) {
+        return res.status(404).json({ error: 'Service history record not found' });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error fetching service history record:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create a new service history record
+app.post('/api/service-history', authenticateToken, async (req, res) => {
+  try {
+    const data = req.body;
+    
+    // Add user information for audit log
+    const user = {
+      id: req.user.id,
+      username: req.user.username,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    };
+    
+    try {
+      const serviceRecord = await createServiceHistory(data, user);
+      res.status(201).json(serviceRecord);
+    } catch (err) {
+      if (err.message.includes('required') || err.message.includes('not found')) {
+        return res.status(400).json({ error: err.message });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error creating service history record:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update a service history record
+app.put('/api/service-history/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    
+    // Add user information for audit log
+    const user = {
+      id: req.user.id,
+      username: req.user.username,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    };
+    
+    try {
+      const serviceRecord = await updateServiceHistory(id, data, user);
+      res.json(serviceRecord);
+    } catch (err) {
+      if (err.message.includes('not found')) {
+        return res.status(404).json({ error: 'Service history record not found' });
+      }
+      if (err.message.includes('required')) {
+        return res.status(400).json({ error: err.message });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error updating service history record:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Delete a service history record
+app.delete('/api/service-history/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Add user information for audit log
+    const user = {
+      id: req.user.id,
+      username: req.user.username,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    };
+    
+    try {
+      const serviceRecord = await deleteServiceHistory(id, user);
+      res.json({ 
+        message: 'Service history record deleted successfully',
+        record: serviceRecord
+      });
+    } catch (err) {
+      if (err.message.includes('not found')) {
+        return res.status(404).json({ error: 'Service history record not found' });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error deleting service history record:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create a service record directly from a reminder
+app.post('/api/reminders/:id/complete', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { service_type, service_date, mileage, cost, technician, location, notes, documents } = req.body;
+    
+    // First, get the reminder details
+    const reminderResult = await db.query('SELECT * FROM reminders WHERE id = $1', [id]);
+    
+    if (reminderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Reminder not found' });
+    }
+    
+    const reminder = reminderResult.rows[0];
+    
+    // Add user information for audit log
+    const user = {
+      id: req.user.id,
+      username: req.user.username,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    };
+    
+    // Create service record from reminder
+    const serviceData = {
+      vehicle_id: reminder.vehicle_id,
+      service_type: service_type || reminder.name,
+      service_date: service_date || new Date().toISOString().split('T')[0],
+      mileage,
+      cost,
+      technician,
+      location,
+      notes,
+      reminder_id: id,
+      documents
+    };
+    
+    try {
+      const serviceRecord = await createServiceHistory(serviceData, user);
+      
+      // Since createServiceHistory already marks the reminder as completed,
+      // we don't need to do it here again
+      
+      res.status(201).json({
+        message: 'Reminder marked as completed and service record created',
+        serviceRecord
+      });
+    } catch (err) {
+      if (err.message.includes('required') || err.message.includes('not found')) {
+        return res.status(400).json({ error: err.message });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error completing reminder as service:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
