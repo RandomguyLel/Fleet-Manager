@@ -1,9 +1,12 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const db = require('./db');
 // Import routes
 const integrationsRoutes = require('./routes/integrations');
 const { router: authRoutes, authenticateToken } = require('./routes/auth');
+const debugRoutes = require('./routes/debug');
 // Import the enhanced notification service functions
 const { 
   generateNotifications, 
@@ -28,7 +31,60 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
+app.use(helmet({
+  contentSecurityPolicy: false // Disable CSP for local development
+}));
+
+// Rate limiting for API endpoints
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Max 1000 requests per windowMs
+  message: { error: 'Too many requests, please try again later.' }
+});
+app.use('/api/', apiLimiter);
+
 app.use(express.json());
+
+// Add middleware to ensure proper JSON responses for /api routes
+app.use('/api', (req, res, next) => {
+  // Force JSON content type for all API responses
+  res.setHeader('Content-Type', 'application/json');
+  
+  // Store the original res.send and res.json to wrap them
+  const originalSend = res.send;
+  const originalJson = res.json;
+  
+  // Override res.send to ensure it sends valid JSON
+  res.send = function(body) {
+    try {
+      // If body is not a string already, just use original
+      if (typeof body !== 'string') {
+        return originalSend.call(this, body);
+      }
+      
+      // Try to parse body as JSON to see if it's already JSON
+      JSON.parse(body);
+      // If no error, it's valid JSON, use original send
+      return originalSend.call(this, body);
+    } catch (e) {
+      // If it's not valid JSON, convert it to JSON
+      console.log('Converting non-JSON response to JSON for API route');
+      return originalJson.call(this, { data: body });
+    }
+  };
+  
+  // Override res.json to ensure it handles empty values
+  res.json = function(body) {
+    // If body is undefined or null, send empty array for API routes
+    if (body === undefined || body === null) {
+      console.log('Empty response detected, sending empty array');
+      return originalJson.call(this, []);
+    }
+    return originalJson.call(this, body);
+  };
+  
+  next();
+});
 
 // Routes
 app.get('/', (req, res) => {
@@ -40,6 +96,18 @@ app.use('/api/auth', authRoutes);
 
 // Register the integrations routes
 app.use('/api/integrations', integrationsRoutes);
+
+// Admin access middleware for debug routes
+const requireAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ error: 'Admin access required' });
+  }
+};
+
+// Register debug routes with authentication and admin requirement
+app.use('/api/debug', authenticateToken, requireAdmin, debugRoutes);
 
 // Vehicle API Routes
 // Get all vehicles
@@ -755,6 +823,9 @@ app.get('/api/audit-logs', authenticateToken, async (req, res) => {
 // Get all service history records or filter by vehicle
 app.get('/api/service-history', authenticateToken, async (req, res) => {
   try {
+    // Explicitly set content type to application/json
+    res.setHeader('Content-Type', 'application/json');
+    
     const { vehicleId, limit, offset, sort, order } = req.query;
     
     const options = {
@@ -765,11 +836,23 @@ app.get('/api/service-history', authenticateToken, async (req, res) => {
       order
     };
     
+    // Get service history data
     const serviceRecords = await getServiceHistory(options);
-    res.json(serviceRecords);
+    
+    // Ensure we return an array
+    if (!serviceRecords || !Array.isArray(serviceRecords)) {
+      console.log('Invalid service records format, returning empty array');
+      // Return JSON directly to avoid middleware interference
+      return res.end(JSON.stringify([]));
+    }
+    
+    // Return response directly as JSON string to avoid middleware processing
+    return res.end(JSON.stringify(serviceRecords));
   } catch (err) {
     console.error('Error fetching service history:', err);
-    res.status(500).json({ error: 'Server error' });
+    // Ensure error response is proper JSON
+    res.status(500);
+    res.end(JSON.stringify({ error: 'Server error' }));
   }
 });
 
@@ -778,6 +861,9 @@ app.get('/api/vehicles/:id/service-history', authenticateToken, async (req, res)
   try {
     const { id } = req.params;
     const { limit, offset, sort, order } = req.query;
+    
+    // Set the content type explicitly
+    res.setHeader('Content-Type', 'application/json');
     
     // First check if vehicle exists
     const vehicleCheck = await db.query('SELECT id FROM vehicles WHERE id = $1', [id]);
@@ -794,7 +880,9 @@ app.get('/api/vehicles/:id/service-history', authenticateToken, async (req, res)
     };
     
     const serviceRecords = await getServiceHistory(options);
-    res.json(serviceRecords);
+    
+    // Ensure we return an array, even if empty
+    res.json(serviceRecords || []);
   } catch (err) {
     console.error('Error fetching service history for vehicle:', err);
     res.status(500).json({ error: 'Server error' });
@@ -805,6 +893,9 @@ app.get('/api/vehicles/:id/service-history', authenticateToken, async (req, res)
 app.get('/api/service-history/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Set the content type explicitly
+    res.setHeader('Content-Type', 'application/json');
     
     try {
       const serviceRecord = await getServiceHistoryById(id);
@@ -969,6 +1060,19 @@ app.post('/api/reminders/:id/complete', authenticateToken, async (req, res) => {
     console.error('Error completing reminder as service:', err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+// Test endpoint for debugging JSON responses
+app.get('/api/test', authenticateToken, (req, res) => {
+  console.log('Test endpoint called');
+  res.json({
+    success: true,
+    message: 'API is working',
+    testData: [
+      { id: 1, name: 'Test Item 1' },
+      { id: 2, name: 'Test Item 2' }
+    ]
+  });
 });
 
 // Start server

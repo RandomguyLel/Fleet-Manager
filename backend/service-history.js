@@ -10,6 +10,20 @@ async function getServiceHistory(options = {}) {
   try {
     const { vehicleId, limit = 50, offset = 0, sort = 'service_date', order = 'DESC' } = options;
     
+    // First check if the service_history_with_vehicles view exists
+    try {
+      const checkViewQuery = "SELECT to_regclass('public.service_history_with_vehicles') as view_exists";
+      const viewCheck = await db.query(checkViewQuery);
+      
+      if (!viewCheck.rows[0].view_exists) {
+        console.error('Service history view does not exist!');
+        return []; // Return empty array if view doesn't exist
+      }
+    } catch (viewCheckError) {
+      console.error('Error checking if service history view exists:', viewCheckError);
+      return []; // Return empty array on error
+    }
+    
     let query = 'SELECT * FROM service_history_with_vehicles';
     const params = [];
     
@@ -18,14 +32,22 @@ async function getServiceHistory(options = {}) {
       params.push(vehicleId);
     }
     
-    query += ` ORDER BY ${sort} ${order} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    // Validate sort and order parameters to prevent SQL injection
+    const allowedSortFields = ['service_date', 'service_type', 'vehicle_id', 'cost', 'mileage', 'id', 'created_at'];
+    const allowedOrderTypes = ['ASC', 'DESC'];
+    
+    // Default to safe values if invalid parameters are provided
+    const safeSort = allowedSortFields.includes(sort) ? sort : 'service_date';
+    const safeOrder = allowedOrderTypes.includes(order.toUpperCase()) ? order.toUpperCase() : 'DESC';
+    
+    query += ` ORDER BY ${safeSort} ${safeOrder} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limit, offset);
     
     const result = await db.query(query, params);
-    return result.rows;
+    return result.rows || []; // Ensure we always return an array, even if empty
   } catch (error) {
     console.error('Error getting service history:', error);
-    throw error;
+    return []; // Return empty array on error instead of throwing
   }
 }
 
