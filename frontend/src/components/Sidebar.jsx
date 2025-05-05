@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 import ProfileDropdown from './ProfileDropdown';
 import { useAuth } from '../AuthContext';
+import DebugUtils from './DebugUtils';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -11,6 +12,7 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showDebugTools, setShowDebugTools] = useState(false);
   
   // Get current user to check role
   const { currentUser } = useAuth();
@@ -109,6 +111,11 @@ const Sidebar = () => {
     return isActive(path)
       ? `${collapsed ? "text-xl" : "mr-3"} text-blue-500 dark:text-blue-400`
       : `${collapsed ? "text-xl" : "mr-3"} text-gray-500 dark:text-gray-400`;
+  };
+
+  // Toggle debug tools modal
+  const toggleDebugTools = () => {
+    setShowDebugTools(!showDebugTools);
   };
 
   return (
@@ -218,18 +225,15 @@ const Sidebar = () => {
               </Link>
             </li>
             <li>
-              <a 
-                href="#" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('Not yet implemented!');
-                }} 
-                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400 ${collapsed && window.innerWidth >= 768 ? "justify-center" : ""}`}
+              <Link 
+                to="/service-history" 
+                className={getLinkClass('/service-history')} 
                 title="Service History"
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/service-history') : null}
               >
-                <span className={`${collapsed && window.innerWidth >= 768 ? "text-xl" : "mr-3"} text-gray-500 dark:text-gray-400`}>🕒</span>
-                {(!collapsed || window.innerWidth < 768) && "Service History - NYI"}
-              </a>
+                <span className={getIconClass('/service-history')}>🔧</span>
+                {(!collapsed || window.innerWidth < 768) && "Service History"}
+              </Link>
             </li>
             <li>
               <a 
@@ -301,11 +305,31 @@ const Sidebar = () => {
                   </Link>
                 </li>
                 
+                {/* Debug section for admins */}
+                <li>
+                  <a 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleDebugTools();
+                    }} 
+                    className={`flex items-center px-3 py-2 mt-4 text-sm font-medium rounded-md bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/40 ${collapsed && window.innerWidth >= 768 ? "justify-center" : ""}`}
+                    title="Debug Tools"
+                  >
+                    <span className={`${collapsed && window.innerWidth >= 768 ? "text-xl" : "mr-3"} text-purple-500 dark:text-purple-400`}>🐞</span>
+                    {(!collapsed || window.innerWidth < 768) && "Debug Tools"}
+                  </a>
+                </li>
               </ul>
             </>
           )}
         </div>
       </nav>
+
+      {/* Debug tools modal */}
+      {showDebugTools && (
+        <DebugUtils onClose={() => setShowDebugTools(false)} />
+      )}
     </div>
   );
 };

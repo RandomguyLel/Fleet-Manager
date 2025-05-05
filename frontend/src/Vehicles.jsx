@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import NotificationBell from './components/NotificationBell';
 import ProfileDropdown from './components/ProfileDropdown';
 import Sidebar from './components/Sidebar';
 
 const Vehicles = () => {
+  // Add useNavigate for redirection
+  const navigate = useNavigate();
   // State for expanded row
   const [expandedRow, setExpandedRow] = useState(null);
   // State for showing/hiding add vehicle modal
@@ -46,6 +48,8 @@ const Vehicles = () => {
   const [insuranceLoading, setInsuranceLoading] = useState(false);
   // Add fetchingData state for overall data loading
   const [fetchingData, setFetchingData] = useState(false);
+  // Add redirecting state to prevent multiple redirects
+  const [redirecting, setRedirecting] = useState(false);
 
   // Fetch vehicles from API
   useEffect(() => {
@@ -58,6 +62,24 @@ const Vehicles = () => {
             'Content-Type': 'application/json'
           }
         });
+
+        // Handle authentication and authorization errors
+        if (response.status === 401 || response.status === 403) {
+          if (!redirecting) {
+            setRedirecting(true);
+            console.log('Session expired or invalid. Redirecting to login page...');
+            // Clear the invalid session
+            await logout(true);
+            // Redirect to login page with a return URL
+            navigate('/login', { 
+              state: { 
+                from: window.location.pathname,
+                message: 'Your session has expired. Please log in again.' 
+              } 
+            });
+            return;
+          }
+        }
 
         if (!response.ok) {
           throw new Error(`Failed to fetch vehicles: ${response.status} ${response.statusText}`);
@@ -76,7 +98,7 @@ const Vehicles = () => {
     };
 
     fetchVehicles();
-  }, [getAuthHeader, apiUrl]);
+  }, [getAuthHeader, apiUrl, logout, navigate]);
 
   // Add useEffect to handle search filtering
   useEffect(() => {

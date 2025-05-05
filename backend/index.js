@@ -1,9 +1,12 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const db = require('./db');
 // Import routes
 const integrationsRoutes = require('./routes/integrations');
 const { router: authRoutes, authenticateToken } = require('./routes/auth');
+const debugRoutes = require('./routes/debug');
 // Import the enhanced notification service functions
 const { 
   generateNotifications, 
@@ -14,13 +17,74 @@ const {
 } = require('./generate-notifications');
 // Import audit log functions
 const { createAuditLog, getAuditLogs } = require('./audit-logger');
+// Import service history functions
+const {
+  getServiceHistory,
+  getServiceHistoryById,
+  createServiceHistory,
+  updateServiceHistory,
+  deleteServiceHistory
+} = require('./service-history');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
+app.use(helmet({
+  contentSecurityPolicy: false // Disable CSP for local development
+}));
+
+// Rate limiting for API endpoints
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Max 1000 requests per windowMs
+  message: { error: 'Too many requests, please try again later.' }
+});
+app.use('/api/', apiLimiter);
+
 app.use(express.json());
+
+// Add middleware to ensure proper JSON responses for /api routes
+app.use('/api', (req, res, next) => {
+  // Force JSON content type for all API responses
+  res.setHeader('Content-Type', 'application/json');
+  
+  // Store the original res.send and res.json to wrap them
+  const originalSend = res.send;
+  const originalJson = res.json;
+  
+  // Override res.send to ensure it sends valid JSON
+  res.send = function(body) {
+    try {
+      // If body is not a string already, just use original
+      if (typeof body !== 'string') {
+        return originalSend.call(this, body);
+      }
+      
+      // Try to parse body as JSON to see if it's already JSON
+      JSON.parse(body);
+      // If no error, it's valid JSON, use original send
+      return originalSend.call(this, body);
+    } catch (e) {
+      // If it's not valid JSON, convert it to JSON
+      console.log('Converting non-JSON response to JSON for API route');
+      return originalJson.call(this, { data: body });
+    }
+  };
+  
+  // Override res.json to ensure it handles empty values
+  res.json = function(body) {
+    // If body is undefined or null, send empty array for API routes
+    if (body === undefined || body === null) {
+      console.log('Empty response detected, sending empty array');
+      return originalJson.call(this, []);
+    }
+    return originalJson.call(this, body);
+  };
+  
+  next();
+});
 
 // Routes
 app.get('/', (req, res) => {
@@ -32,6 +96,18 @@ app.use('/api/auth', authRoutes);
 
 // Register the integrations routes
 app.use('/api/integrations', integrationsRoutes);
+
+// Admin access middleware for debug routes
+const requireAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ error: 'Admin access required' });
+  }
+};
+
+// Register debug routes with authentication and admin requirement
+app.use('/api/debug', authenticateToken, requireAdmin, debugRoutes);
 
 // Vehicle API Routes
 // Get all vehicles
@@ -741,6 +817,262 @@ app.get('/api/audit-logs', authenticateToken, async (req, res) => {
     console.error('Error fetching audit logs:', err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+// Service History API Routes
+// Get all service history records or filter by vehicle
+app.get('/api/service-history', authenticateToken, async (req, res) => {
+  try {
+    // Explicitly set content type to application/json
+    res.setHeader('Content-Type', 'application/json');
+    
+    const { vehicleId, limit, offset, sort, order } = req.query;
+    
+    const options = {
+      vehicleId,
+      limit: limit ? parseInt(limit) : 50,
+      offset: offset ? parseInt(offset) : 0,
+      sort,
+      order
+    };
+    
+    // Get service history data
+    const serviceRecords = await getServiceHistory(options);
+    
+    // Ensure we return an array
+    if (!serviceRecords || !Array.isArray(serviceRecords)) {
+      console.log('Invalid service records format, returning empty array');
+      // Return JSON directly to avoid middleware interference
+      return res.end(JSON.stringify([]));
+    }
+    
+    // Return response directly as JSON string to avoid middleware processing
+    return res.end(JSON.stringify(serviceRecords));
+  } catch (err) {
+    console.error('Error fetching service history:', err);
+    // Ensure error response is proper JSON
+    res.status(500);
+    res.end(JSON.stringify({ error: 'Server error' }));
+  }
+});
+
+// Get service history for a specific vehicle
+app.get('/api/vehicles/:id/service-history', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { limit, offset, sort, order } = req.query;
+    
+    // Set the content type explicitly
+    res.setHeader('Content-Type', 'application/json');
+    
+    // First check if vehicle exists
+    const vehicleCheck = await db.query('SELECT id FROM vehicles WHERE id = $1', [id]);
+    if (vehicleCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+    
+    const options = {
+      vehicleId: id,
+      limit: limit ? parseInt(limit) : 50,
+      offset: offset ? parseInt(offset) : 0,
+      sort,
+      order
+    };
+    
+    const serviceRecords = await getServiceHistory(options);
+    
+    // Ensure we return an array, even if empty
+    res.json(serviceRecords || []);
+  } catch (err) {
+    console.error('Error fetching service history for vehicle:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get a specific service history record
+app.get('/api/service-history/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Set the content type explicitly
+    res.setHeader('Content-Type', 'application/json');
+    
+    try {
+      const serviceRecord = await getServiceHistoryById(id);
+      res.json(serviceRecord);
+    } catch (err) {
+      if (err.message.includes('not found')) {
+        return res.status(404).json({ error: 'Service history record not found' });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error fetching service history record:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create a new service history record
+app.post('/api/service-history', authenticateToken, async (req, res) => {
+  try {
+    const data = req.body;
+    
+    // Add user information for audit log
+    const user = {
+      id: req.user.id,
+      username: req.user.username,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    };
+    
+    try {
+      const serviceRecord = await createServiceHistory(data, user);
+      res.status(201).json(serviceRecord);
+    } catch (err) {
+      if (err.message.includes('required') || err.message.includes('not found')) {
+        return res.status(400).json({ error: err.message });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error creating service history record:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Update a service history record
+app.put('/api/service-history/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    
+    // Add user information for audit log
+    const user = {
+      id: req.user.id,
+      username: req.user.username,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    };
+    
+    try {
+      const serviceRecord = await updateServiceHistory(id, data, user);
+      res.json(serviceRecord);
+    } catch (err) {
+      if (err.message.includes('not found')) {
+        return res.status(404).json({ error: 'Service history record not found' });
+      }
+      if (err.message.includes('required')) {
+        return res.status(400).json({ error: err.message });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error updating service history record:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Delete a service history record
+app.delete('/api/service-history/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Add user information for audit log
+    const user = {
+      id: req.user.id,
+      username: req.user.username,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    };
+    
+    try {
+      const serviceRecord = await deleteServiceHistory(id, user);
+      res.json({ 
+        message: 'Service history record deleted successfully',
+        record: serviceRecord
+      });
+    } catch (err) {
+      if (err.message.includes('not found')) {
+        return res.status(404).json({ error: 'Service history record not found' });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error deleting service history record:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create a service record directly from a reminder
+app.post('/api/reminders/:id/complete', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { service_type, service_date, mileage, cost, technician, location, notes, documents } = req.body;
+    
+    // First, get the reminder details
+    const reminderResult = await db.query('SELECT * FROM reminders WHERE id = $1', [id]);
+    
+    if (reminderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Reminder not found' });
+    }
+    
+    const reminder = reminderResult.rows[0];
+    
+    // Add user information for audit log
+    const user = {
+      id: req.user.id,
+      username: req.user.username,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    };
+    
+    // Create service record from reminder
+    const serviceData = {
+      vehicle_id: reminder.vehicle_id,
+      service_type: service_type || reminder.name,
+      service_date: service_date || new Date().toISOString().split('T')[0],
+      mileage,
+      cost,
+      technician,
+      location,
+      notes,
+      reminder_id: id,
+      documents
+    };
+    
+    try {
+      const serviceRecord = await createServiceHistory(serviceData, user);
+      
+      // Since createServiceHistory already marks the reminder as completed,
+      // we don't need to do it here again
+      
+      res.status(201).json({
+        message: 'Reminder marked as completed and service record created',
+        serviceRecord
+      });
+    } catch (err) {
+      if (err.message.includes('required') || err.message.includes('not found')) {
+        return res.status(400).json({ error: err.message });
+      }
+      throw err;
+    }
+  } catch (err) {
+    console.error('Error completing reminder as service:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Test endpoint for debugging JSON responses
+app.get('/api/test', authenticateToken, (req, res) => {
+  console.log('Test endpoint called');
+  res.json({
+    success: true,
+    message: 'API is working',
+    testData: [
+      { id: 1, name: 'Test Item 1' },
+      { id: 2, name: 'Test Item 2' }
+    ]
+  });
 });
 
 // Start server

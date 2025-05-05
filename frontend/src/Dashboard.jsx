@@ -15,10 +15,12 @@ const Dashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Get auth context
+  const [upcomingReminders, setUpcomingReminders] = useState([]);
   const { getAuthHeader, darkMode } = useAuth();
+
   // API URL from environment variable
   const apiUrl = import.meta.env.VITE_API_URL;
+
 
   // Format date to a readable format
   const formatDate = (dateString) => {
@@ -64,7 +66,7 @@ const Dashboard = () => {
       if (!response.ok) {
         throw new Error(`HTTP Error! Status: ${response.status}`);
       }
-      
+
       // Update local state
       setNotifications(prevNotifications => 
         prevNotifications.map(notif => 
@@ -73,6 +75,7 @@ const Dashboard = () => {
       );
     } catch (error) {
       console.error('Error marking notification as read:', error);
+
     }
   };
 
@@ -86,7 +89,7 @@ const Dashboard = () => {
       
       if (!response.ok) {
         throw new Error(`HTTP Error! Status: ${response.status}`);
-      }
+   }
       
       // Update local state by removing the dismissed notification
       setNotifications(prevNotifications => 
@@ -97,7 +100,163 @@ const Dashboard = () => {
     }
   };
 
-  // Fetch dashboard data
+  const markReminderAsCompleted = async (vehicleId, reminderId, reminderName) => {
+    try {
+      // Determine reminder type for better messaging
+      let reminderType = 'general';
+      if (reminderName.toLowerCase().includes('service')) {
+        reminderType = 'service';
+      } else if (reminderName.toLowerCase().includes('insurance')) {
+        reminderType = 'insurance';
+      } else if (reminderName.toLowerCase().includes('worthiness') || reminderName.toLowerCase().includes('certificate')) {
+        reminderType = 'document';
+      }
+      
+      // For service reminders, offer to reschedule
+      if (reminderType === 'service') {
+        const reschedule = confirm('Would you like to create a new service reminder after marking this one as completed?');
+        
+        if (reschedule) {
+          // Ask for new date - default to 6 months from now for service
+          const today = new Date();
+          const nextServiceDate = new Date(today.setMonth(today.getMonth() + 6));
+          const dateStr = nextServiceDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+          
+          const newDate = prompt('Enter the date for the next service reminder:', dateStr);
+          if (newDate) {
+            try {
+              // FIXED: Use the complete endpoint to create service history record
+              const completeResponse = await fetch(`${apiUrl}/api/reminders/${reminderId}/complete`, {
+                method: 'POST',
+                headers: {
+                  ...getAuthHeader(),
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  service_type: reminderName,
+                  service_date: new Date().toISOString().split('T')[0]
+                })
+              });
+              
+              if (!completeResponse.ok) {
+                throw new Error(`Failed to complete reminder: ${completeResponse.status}`);
+              }
+              
+              // Create a new reminder
+              const createResponse = await fetch(`${apiUrl}/api/vehicles/${vehicleId}/reminders`, {
+                method: 'POST',
+                headers: {
+                  ...getAuthHeader(),
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  name: reminderName,
+                  date: newDate,
+                  enabled: true
+                })
+              });
+              
+              if (!createResponse.ok) {
+                throw new Error(`Failed to create new reminder: ${createResponse.status}`);
+              }
+              
+              // Update UI by filtering out the completed reminder
+              setUpcomingReminders(prevReminders => 
+                prevReminders.filter(reminder => reminder.id !== reminderId)
+              );
+              
+              // Refresh data to include the new reminder
+              const vehiclesResponse = await fetch(`${apiUrl}/api/vehicles`, {
+                headers: {
+                  ...getAuthHeader()
+                }
+              });
+              
+              if (vehiclesResponse.ok) {
+                const vehiclesData = await vehiclesResponse.json();
+                const today = new Date();
+                const allReminders = [];
+                
+                for (const vehicle of vehiclesData) {
+                  if (vehicle.reminders && vehicle.reminders.length > 0) {
+                    for (const reminder of vehicle.reminders) {
+                      if (!reminder.enabled) continue;
+                      
+                      const dueDate = new Date(reminder.date);
+                      const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                      
+                      allReminders.push({
+                        ...reminder,
+                        vehicle: {
+                          id: vehicle.id,
+                          make: vehicle.make,
+                          model: vehicle.model
+                        },
+                        daysUntilDue
+                      });
+                    }
+                  }
+                }
+                
+                allReminders.sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+                setUpcomingReminders(allReminders.slice(0, 10));
+              }
+              
+              alert(`Reminder marked as completed and new reminder scheduled for ${new Date(newDate).toLocaleDateString()}`);
+            } catch (error) {
+              console.error('Error handling reminder completion:', error);
+              alert(`Error: ${error.message}`);
+            }
+            return;
+          }
+        }
+      }
+      
+      // For non-service reminders or if user declined to reschedule
+      try {
+        // FIXED: Use the complete endpoint to create service history record for all reminder types
+        const completeResponse = await fetch(`${apiUrl}/api/reminders/${reminderId}/complete`, {
+          method: 'POST',
+          headers: {
+            ...getAuthHeader(),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            service_type: reminderName,
+            service_date: new Date().toISOString().split('T')[0]
+          })
+        });
+        
+        if (!completeResponse.ok) {
+          throw new Error(`Failed to complete reminder: ${completeResponse.status}`);
+        }
+        
+        // Update UI by filtering out the completed reminder
+        setUpcomingReminders(prevReminders => 
+          prevReminders.filter(reminder => reminder.id !== reminderId)
+        );
+        
+        // Use better terminology based on reminder type
+        let completionMessage = 'Reminder marked as completed!';
+        if (reminderType === 'service') {
+          completionMessage = 'Service marked as completed!';
+        } else if (reminderType === 'insurance') {
+          completionMessage = 'Insurance renewal marked as completed!';
+        } else if (reminderType === 'document') {
+          completionMessage = 'Document renewal marked as completed!';
+        }
+        
+        alert(completionMessage);
+      } catch (error) {
+        console.error('Error marking reminder as completed:', error);
+        alert(`Error: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error in markReminderAsCompleted:', error);
+      alert(`Error: ${error.message}`);
+    }
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -125,6 +284,8 @@ const Dashboard = () => {
         const today = new Date();
         let upcomingMaintenances = 0;
         let expiringDocuments = 0;
+
+        const allReminders = [];
         
         for (const vehicle of vehiclesData) {
           if (vehicle.reminders && vehicle.reminders.length > 0) {
@@ -134,7 +295,17 @@ const Dashboard = () => {
               const dueDate = new Date(reminder.date);
               const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
               
-              if (daysUntilDue <= 30 && daysUntilDue > 0) {
+allReminders.push({
+                ...reminder,
+                vehicle: {
+                  id: vehicle.id,
+                  make: vehicle.make,
+                  model: vehicle.model
+                },
+                daysUntilDue
+              });
+              
+              if (daysUntilDue <= 30 && daysUntilDue > -30) {
                 if (reminder.name.toLowerCase().includes('service')) {
                   upcomingMaintenances++;
                 } else if (reminder.name.toLowerCase().includes('insurance') || 
@@ -146,6 +317,10 @@ const Dashboard = () => {
             }
           }
         }
+
+        allReminders.sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+        
+        setUpcomingReminders(allReminders.slice(0, 10));
         
         setStats({
           activeVehicles,
@@ -507,94 +682,62 @@ const Dashboard = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                        <tr>
+                        {upcomingReminders.length > 0 ? (
+                          upcomingReminders.map((reminder) => {
+                            let statusClass = "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+                            let statusText = "On Track";
+                            
+                            if (reminder.daysUntilDue < 0) {
+                              statusClass = "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+                              statusText = "Overdue";
+                            } else if (reminder.daysUntilDue <= 7) {
+                              statusClass = "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+                              statusText = "Due This Week";
+                            } else if (reminder.daysUntilDue <= 14) {
+                              statusClass = "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
+                              statusText = "Due Soon";
+                            }
+                            
+                            return (
+                              <tr key={reminder.id}>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">XYZ-123</div>
-                              <div className="ml-2 text-xs text-gray-500 dark:text-gray-400">Toyota Hino 300</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">{reminder.vehicle.id}</div>
+                              <div className="ml-2 text-xs text-gray-500 dark:text-gray-400">{reminder.vehicle.make} {reminder.vehicle.model}</div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">Insurance Renewal</div>
+                            <div className="text-sm text-gray-900 dark:text-white">{reminder.name}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">Dec 15, 2025</div>
+                            <div className="text-sm text-gray-900 dark:text-white">{formatDate(reminder.date)}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                              On Track
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}`}>
+                                    {statusText}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Mark Complete</button>
+                            <button 
+                                    onClick={() => markReminderAsCompleted(reminder.vehicle.id, reminder.id, reminder.name)}
+className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                  >
+{reminder.name.toLowerCase().includes('service') ? 'Mark Serviced' :
+                               reminder.name.toLowerCase().includes('insurance') ? 'Mark Renewed' :
+                               reminder.name.toLowerCase().includes('worthiness') || reminder.name.toLowerCase().includes('certificate') ? 'Mark Renewed' :
+                               'Mark Complete'}
+</button>
                           </td>
                         </tr>
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">ABC-789</div>
-                              <div className="ml-2 text-xs text-gray-500 dark:text-gray-400">Mercedes Sprinter</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">Road Worthiness Certificate</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">Jun 30, 2025</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                              On Track
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Mark Complete</button>
+                        );
+                          })
+                        ) : (
+                          <tr>
+                              <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                              No upcoming reminders found
                           </td>
                         </tr>
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">DEF-456</div>
-                              <div className="ml-2 text-xs text-gray-500 dark:text-gray-400">Ford Transit</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">Service Due</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">May 15, 2025</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-                              Due Soon
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Mark Complete</button>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">DEF-456</div>
-                              <div className="ml-2 text-xs text-gray-500 dark:text-gray-400">Ford Transit</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">Road Worthiness Certificate</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">Apr 30, 2025</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                              Overdue
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Mark Complete</button>
-                          </td>
-                        </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
