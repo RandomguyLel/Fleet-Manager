@@ -4,8 +4,10 @@ import { useAuth } from './AuthContext';
 import ProfileDropdown from './components/ProfileDropdown';
 import NotificationBell from './components/NotificationBell';
 import Sidebar from './components/Sidebar';
+import { useTranslation } from 'react-i18next';
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { currentUser, logout, getAuthHeader, refreshUserData } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -211,7 +213,7 @@ const Profile = () => {
                 onClick={() => navigate(-1)}
                 className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded-md dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                Back
+                {t('profile.back')}
               </button>
               <NotificationBell />
               <div className="ml-4">
@@ -230,7 +232,7 @@ const Profile = () => {
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <div className="py-6">
             <div className="px-4 sm:px-6 lg:px-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">User Profile</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">{t('profile.title')}</h1>
               
               {/* Success message */}
               {success && (
@@ -248,13 +250,12 @@ const Profile = () => {
               
               <div className="bg-white shadow rounded-lg mb-6 dark:bg-gray-800">
                 <div className="px-4 py-5 sm:p-6">
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Account Information</h2>
-                  
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('profile.personalInfo')}</h3>
                   <form onSubmit={handleUpdateProfile}>
-                    <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                       <div>
                         <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          First Name
+                          {t('profile.firstName')}
                         </label>
                         <input
                           type="text"
@@ -268,7 +269,7 @@ const Profile = () => {
                       
                       <div>
                         <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Last Name
+                          {t('profile.lastName')}
                         </label>
                         <input
                           type="text"
@@ -282,7 +283,7 @@ const Profile = () => {
                       
                       <div className="sm:col-span-2">
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Email
+                          {t('profile.email')}
                         </label>
                         <input
                           type="email"
@@ -306,7 +307,7 @@ const Profile = () => {
                           disabled
                           className="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm p-2 border dark:bg-gray-600 dark:border-gray-700 dark:text-gray-300"
                         />
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Username cannot be changed</p>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('profile.usernameCannotBeChanged')}</p>
                       </div>
                     </div>
                     
@@ -316,7 +317,7 @@ const Profile = () => {
                         className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
                         disabled={loading}
                       >
-                        {loading ? 'Updating...' : 'Update Profile'}
+                        {loading ? t('common.loading') : t('profile.updateProfile')}
                       </button>
                     </div>
                   </form>
@@ -325,13 +326,12 @@ const Profile = () => {
               
               <div className="bg-white shadow rounded-lg dark:bg-gray-800">
                 <div className="px-4 py-5 sm:p-6">
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Change Password</h2>
-                  
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{t('profile.changePassword')}</h3>
                   <form onSubmit={handleChangePassword}>
                     <div className="space-y-4">
                       <div>
                         <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Current Password
+                          {t('profile.currentPassword')}
                         </label>
                         <input
                           type="password"
@@ -346,7 +346,7 @@ const Profile = () => {
                       
                       <div>
                         <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          New Password
+                          {t('profile.newPassword')}
                         </label>
                         <input
                           type="password"
@@ -361,7 +361,7 @@ const Profile = () => {
                       
                       <div>
                         <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Confirm New Password
+                          {t('profile.confirmPassword')}
                         </label>
                         <input
                           type="password"
@@ -381,7 +381,7 @@ const Profile = () => {
                         className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
                         disabled={loading}
                       >
-                        {loading ? 'Changing...' : 'Change Password'}
+                        {loading ? t('common.loading') : t('profile.updatePassword')}
                       </button>
                     </div>
                   </form>

@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const ProfileDropdown = () => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const { currentUser, logout, darkMode, setDarkMode } = useAuth();
@@ -44,7 +46,7 @@ const ProfileDropdown = () => {
             <hr className="border-gray-200 dark:border-gray-700" />
             
             <div className="px-4 py-2 flex items-center justify-between">
-              <span className="text-sm text-gray-700 dark:text-gray-200">Dark Mode</span>
+              <span className="text-sm text-gray-700 dark:text-gray-200">{t('profile.darkMode')}</span>
               <button 
                 className={`relative inline-flex h-6 w-11 items-center rounded-full ${darkMode ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}`}
                 onClick={() => setDarkMode(!darkMode)}
@@ -64,7 +66,7 @@ const ProfileDropdown = () => {
               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left dark:text-gray-200 dark:hover:bg-gray-700"
               onClick={() => setIsOpen(false)}
             >
-              Profile
+              {t('common.profile')}
             </Link>
             <button 
               className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left dark:text-gray-200 dark:hover:bg-gray-700"
@@ -73,7 +75,7 @@ const ProfileDropdown = () => {
                 logout();
               }}
             >
-              Logout
+              {t('common.logout')}
             </button>
           </div>
         </div>

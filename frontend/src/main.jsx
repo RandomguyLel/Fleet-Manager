@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
+import './i18n/i18n';  // Import i18n configuration
 import Dashboard from './Dashboard';
 import Vehicles from './Vehicles';
 import Analytics from './Analytics';
