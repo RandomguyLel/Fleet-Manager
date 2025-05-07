@@ -4,8 +4,34 @@ import { useAuth } from './AuthContext';
 import NotificationBell from './components/NotificationBell';
 import ProfileDropdown from './components/ProfileDropdown';
 import Sidebar from './components/Sidebar';
+import { useTranslation } from 'react-i18next';
+
+// Vehicle type mapping
+const typeValueToKey = {
+  "Vieglais auto": "car",
+  "Car": "car",
+  "Kravas auto": "truck",
+  "Truck": "truck",
+  "Piekabe": "trailer",
+  "Trailer": "trailer",
+  "Autobuss": "bus",
+  "Bus": "bus",
+  "Mopēds": "moped",
+  "Moped": "moped",
+  "Motocikls": "motorcycle",
+  "Motorcycle": "motorcycle",
+  "Tricikls": "tricycle",
+  "Tricycle": "tricycle",
+  "Laiva": "boat",
+  "Boat": "boat",
+  "Kuģis": "ship",
+  "Ship": "ship",
+  "Cits": "other",
+  "Other": "other"
+};
 
 const Vehicles = () => {
+  const { t } = useTranslation();
   // Add useNavigate for redirection
   const navigate = useNavigate();
   // State for expanded row
@@ -567,7 +593,7 @@ const Vehicles = () => {
       <div className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-3 text-gray-700 dark:text-gray-300">Loading vehicles...</p>
+          <p className="mt-3 text-gray-700 dark:text-gray-300">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -579,16 +605,13 @@ const Vehicles = () => {
       <div className="min-h-screen flex justify-center items-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md max-w-md">
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Error Loading Vehicles</h2>
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-4">{t('common.error')}</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-            This could be because the backend server is not running or there was a database error.
-          </p>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            Try Again
+            {t('common.retry')}
           </button>
         </div>
       </div>
@@ -626,16 +649,16 @@ const Vehicles = () => {
           <div className="py-6">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
-                <h1 className="text-2xl text-gray-900 dark:text-white">Vehicles</h1>
+                <h1 className="text-2xl text-gray-900 dark:text-white">{t('common.vehicles')}</h1>
                 <div className="flex space-x-3">
                   <button className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
-                    <span className="mr-2">⬆️</span>Import
+                    <span className="mr-2">⬆️</span>{t('common.import')}
                   </button>
                   <button 
                     className="px-4 py-2 text-sm bg-gray-900 text-white rounded-md shadow-sm hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600"
                     onClick={() => setShowAddVehicleModal(true)}
                   >
-                    <span className="mr-2">➕</span>Add Vehicle
+                    <span className="mr-2">➕</span>{t('vehicles.addVehicle')}
                   </button>
                 </div>
               </div>
@@ -653,19 +676,19 @@ const Vehicles = () => {
                         className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
                         onClick={() => alert('Export functionality not implemented')}
                       >
-                        <span className="mr-1">⬇️</span>Export
+                        <span className="mr-1">⬇️</span>{t('common.export')}
                       </button>
                       <button 
                         className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
                         onClick={openBulkDeleteConfirmation}
                       >
-                        <span className="mr-1">🗑️</span>Delete
+                        <span className="mr-1">🗑️</span>{t('common.delete')}
                       </button>
                     </div>
                     <div className="relative">
                       <input 
                         type="text" 
-                        placeholder="Search vehicles..." 
+                        placeholder={t('vehicles.searchVehicles')} 
                         className="pl-8 pr-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -689,12 +712,12 @@ const Vehicles = () => {
                           <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider w-8 dark:text-gray-400">
                             <input type="checkbox" className="rounded border-gray-300 dark:border-gray-700" />
                           </th>
-                          <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Vehicle ID</th>
-                          <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Status</th>
-                          <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Type</th>
-                          <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Last Service</th>
-                          <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Documents</th>
-                          <th className="px-6 py-3 text-right text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Actions</th>
+                          <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.licensePlate')}</th>
+                          <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.status')}</th>
+                          <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.type')}</th>
+                          <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.lastService')}</th>
+                          <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.documents')}</th>
+                          <th className="px-6 py-3 text-right text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('common.actions')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -724,14 +747,30 @@ const Vehicles = () => {
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                                 <span className={getStatusBadgeClass(vehicle.status)}>
-                                  {vehicle.status}
+                                  {t('vehicles.statusOptions.' + (vehicle.status ? vehicle.status.toLowerCase() : 'unknown'))}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{vehicle.type}</td>
+                              <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                {t('vehicles.vehicleTypes.' + (typeValueToKey[vehicle.type] || 'other'))}
+                              </td>
                               <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{vehicle.lastService}</td>
                               <td className="px-6 py-4">
-                                <span className={`px-2 py-1 text-xs rounded-full ${getDocumentStatusClass(vehicle.documents)}`}>
-                                  {vehicle.documents}
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  getDocumentStatusClass(
+                                    typeof vehicle.documents === 'string'
+                                      ? vehicle.documents
+                                      : (vehicle.documents && typeof vehicle.documents.status === 'string'
+                                          ? vehicle.documents.status
+                                          : 'unknown')
+                                  )
+                                }`}>
+                                  {
+                                    typeof vehicle.documents === 'string'
+                                      ? t('vehicles.documentStatus.' + vehicle.documents.toLowerCase())
+                                      : (vehicle.documents && typeof vehicle.documents.status === 'string'
+                                          ? t('vehicles.documentStatus.' + vehicle.documents.status.toLowerCase())
+                                          : t('vehicles.documentStatus.unknown'))
+                                  }
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-right">
@@ -757,24 +796,24 @@ const Vehicles = () => {
                                   <div className="space-y-4">
                                     <div className="flex space-x-4">
                                       <div className="flex-1 bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                        <h4 className="text-sm text-gray-900 dark:text-white mb-3">Vehicle Details</h4>
+                                        <h4 className="text-sm text-gray-900 dark:text-white mb-3">{t('vehicles.vehicleDetails')}</h4>
                                         <div className="grid grid-cols-2 gap-4 text-sm">
                                           <div>
-                                            <p className="text-gray-500 dark:text-gray-400">Make: {vehicle.make}</p>
-                                            <p className="text-gray-500 dark:text-gray-400">Model: {vehicle.model}</p>
-                                            <p className="text-gray-500 dark:text-gray-400">Year: {vehicle.year}</p>
+                                            <p className="text-gray-500 dark:text-gray-400">{t('vehicles.make')}: {vehicle.make}</p>
+                                            <p className="text-gray-500 dark:text-gray-400">{t('vehicles.model')}: {vehicle.model}</p>
+                                            <p className="text-gray-500 dark:text-gray-400">{t('vehicles.year')}: {vehicle.year}</p>
                                           </div>
                                           <div>
-                                            <p className="text-gray-500 dark:text-gray-400">License: {vehicle.id}</p>
-                                            <p className="text-gray-500 dark:text-gray-400">Registration Certificate Number: {vehicle.regaplnr}</p>
-                                            <p className="text-gray-500 dark:text-gray-400">Mileage: {vehicle.mileage}</p>
+                                            <p className="text-gray-500 dark:text-gray-400">{t('vehicles.licensePlate')}: {vehicle.id}</p>
+                                            <p className="text-gray-500 dark:text-gray-400">{t('vehicles.registrationCertificate')}: {vehicle.regaplnr}</p>
+                                            <p className="text-gray-500 dark:text-gray-400">{t('vehicles.mileage')}: {vehicle.mileage}</p>
                                           </div>
                                         </div>
                                       </div>
                                       <div className="flex-1 bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                        <h4 className="text-sm text-gray-900 dark:text-white mb-3">Last Known Location</h4>
+                                        <h4 className="text-sm text-gray-900 dark:text-white mb-3">{t('vehicles.location.title')}</h4>
                                         <div className="bg-gray-200 dark:bg-gray-600 h-40 rounded flex items-center justify-center">
-                                          <span className="text-gray-600 dark:text-gray-300">Map View</span>
+                                          <span className="text-gray-600 dark:text-gray-300">{t('vehicles.location.mapView')}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -782,7 +821,7 @@ const Vehicles = () => {
                                     {/* Due Dates & Reminders Section */}
                                     <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
                                       <div className="flex justify-between items-center mb-3">
-                                        <h4 className="text-sm text-gray-900 dark:text-white">Due Dates & Reminders</h4>
+                                        <h4 className="text-sm text-gray-900 dark:text-white">{t('vehicles.reminders.title')}</h4>
                                         {csddIntegration.connectionStatus === 'connected' && (
                                           <button 
                                             className="px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 dark:bg-blue-900 dark:text-blue-400 dark:hover:bg-blue-800 flex items-center"
@@ -804,14 +843,14 @@ const Vehicles = () => {
                                             
                                             // Determine status class based on days remaining
                                             let statusClass = "bg-green-100 text-green-800"; // Default: > 30 days
-                                            let statusText = "On Track";
+                                            let statusText = t('vehicles.reminders.onTrack');
                                             
                                             if (daysRemaining < 0) {
                                               statusClass = "bg-red-100 text-red-800";
-                                              statusText = "Overdue";
+                                              statusText = t('vehicles.reminders.overdue', { days: Math.abs(daysRemaining) });
                                             } else if (daysRemaining <= 30) {
                                               statusClass = "bg-amber-100 text-amber-800";
-                                              statusText = "Due Soon";
+                                              statusText = t('vehicles.reminders.dueSoon');
                                             }
                                             
                                             // Format due date
@@ -820,6 +859,18 @@ const Vehicles = () => {
                                               day: 'numeric', 
                                               year: 'numeric' 
                                             });
+                                            
+                                            const reminderTranslationMap = {
+                                              "Service Due": "dashboard.serviceDue",
+                                              "Insurance Renewal": "dashboard.insuranceRenewal",
+                                              "Road Worthiness Certificate": "vehicles.reminders.roadWorthinessCertificate"
+                                              // Add more if needed
+                                            };
+
+                                            const getReminderLabel = (name) => {
+                                              const key = reminderTranslationMap[name];
+                                              return key ? t(key) : name;
+                                            };
                                             
                                             return (
                                               <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -830,17 +881,17 @@ const Vehicles = () => {
                                                      reminder.name.includes('Worthiness') ? '📝' : '🔔'}
                                                   </span>
                                                   <div>
-                                                    <p className="text-sm font-medium text-gray-900 dark:text-white">{reminder.name}</p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400">Due: {formattedDate}</p>
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-white">{getReminderLabel(reminder.name)}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('vehicles.reminders.dueDate')}: {formattedDate}</p>
                                                   </div>
                                                 </div>
                                                 <div className="flex items-center">
                                                   <span className={`px-2 py-1 text-xs rounded-full ${statusClass}`}>
                                                     {daysRemaining < 0 
-                                                      ? `${Math.abs(daysRemaining)} days overdue` 
+                                                      ? t('vehicles.reminders.overdue', { days: Math.abs(daysRemaining) })
                                                       : daysRemaining === 0 
-                                                        ? "Due today"
-                                                        : `${daysRemaining} days left`}
+                                                        ? t('vehicles.reminders.dueToday')
+                                                        : t('vehicles.reminders.daysLeft', { days: daysRemaining })}
                                                   </span>
                                                 </div>
                                               </div>
@@ -848,12 +899,12 @@ const Vehicles = () => {
                                           })
                                         ) : (
                                           <div className="text-center py-4">
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">No active reminders</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">{t('vehicles.reminders.noReminders')}</p>
                                             <button 
                                               className="mt-2 px-3 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
                                               onClick={() => openEditVehicleModal(vehicle)}
                                             >
-                                              <span className="mr-1">➕</span>Add Reminder
+                                              <span className="mr-1">➕</span>{t('vehicles.reminders.addReminder')}
                                             </button>
                                           </div>
                                         )}
@@ -861,12 +912,12 @@ const Vehicles = () => {
                                     </div>
 
                                     <div className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                                      <h4 className="text-sm text-gray-900 dark:text-white mb-3">Documents</h4>
+                                      <h4 className="text-sm text-gray-900 dark:text-white mb-3">{t('vehicles.documentsSection.title')}</h4>
                                       <div className="space-y-2">
                                         <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
                                           <div className="flex items-center">
                                             <span className="text-gray-400 dark:text-gray-500 mr-2">📄</span>
-                                            <span className="text-sm text-gray-900 dark:text-white">Insurance Policy</span>
+                                            <span className="text-sm text-gray-900 dark:text-white">{t('vehicles.documentsSection.insurancePolicy')}</span>
                                           </div>
                                           <div className="flex space-x-2">
                                             <button className="p-1 hover:bg-gray-200 rounded dark:hover:bg-gray-700">
@@ -880,7 +931,7 @@ const Vehicles = () => {
                                         <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
                                           <div className="flex items-center">
                                             <span className="text-gray-400 dark:text-gray-500 mr-2">📄</span>
-                                            <span className="text-sm text-gray-900 dark:text-white">Registration Certificate</span>
+                                            <span className="text-sm text-gray-900 dark:text-white">{t('vehicles.documentsSection.registrationCertificate')}</span>
                                           </div>
                                           <div className="flex space-x-2">
                                             <button className="p-1 hover:bg-gray-200 rounded dark:hover:bg-gray-700">
@@ -892,7 +943,7 @@ const Vehicles = () => {
                                           </div>
                                         </div>
                                         <button className="w-full mt-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-                                          <span className="mr-2">➕</span>Add Document
+                                          <span className="mr-2">➕</span>{t('vehicles.documentsSection.addDocument')}
                                         </button>
                                       </div>
                                     </div>
@@ -968,7 +1019,7 @@ const Vehicles = () => {
         <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-[400px] dark:bg-gray-800">
             <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-800 dark:border-gray-700">
-              <h2 className="text-lg text-gray-900 dark:text-white">Confirm Deletion</h2>
+              <h2 className="text-lg text-gray-900 dark:text-white">{t('common.warning')}</h2>
               <button 
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                 onClick={() => setShowDeleteModal(false)}
@@ -979,8 +1030,8 @@ const Vehicles = () => {
             <div className="px-6 py-4">
               <p className="text-gray-700 dark:text-gray-300">
                 {vehicleToDelete 
-                  ? `Are you sure you want to delete vehicle ${vehicleToDelete.id}?`
-                  : `Are you sure you want to delete ${selectedVehicles.length} vehicles?`}
+                  ? t('vehicles.confirmDelete')
+                  : t('vehicles.confirmDeleteMultiple', { count: selectedVehicles.length })}
               </p>
             </div>
             <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-end space-x-2 dark:bg-gray-700 dark:border-gray-600">
@@ -988,13 +1039,13 @@ const Vehicles = () => {
                 className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-md dark:text-gray-300 dark:hover:bg-gray-600"
                 onClick={() => setShowDeleteModal(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button 
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-500 dark:bg-red-700 dark:hover:bg-red-600"
                 onClick={handleDeleteConfirm}
               >
-                Delete
+                {t('common.delete')}
               </button>
             </div>
           </div>
@@ -1006,6 +1057,7 @@ const Vehicles = () => {
 
 // Add Vehicle Modal Component
 const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration, vehicleToEdit }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('details');
   const [initialData, setInitialData] = useState(vehicleToEdit || {});
   const [vehicleData, setVehicleData] = useState(vehicleToEdit || {
@@ -1525,7 +1577,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
     <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-[800px] flex flex-col max-h-[90vh] my-4 dark:bg-gray-800">
         <div className="border-b border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center bg-white z-10 rounded-t-lg sticky top-0 dark:bg-gray-800 dark:border-gray-700">
-          <h2 className="text-lg text-gray-900 dark:text-white">{vehicleToEdit ? 'Edit Vehicle' : 'Add New Vehicle'}</h2>
+          <h2 className="text-lg text-gray-900 dark:text-white">{vehicleToEdit ? t('vehicles.editVehicle') : t('vehicles.addVehicle')}</h2>
           <button 
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             onClick={onClose}
@@ -1537,7 +1589,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-6">
             <div className="w-full">
-              <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Registration Number</label>
+              <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.licensePlate')}</label>
               <div className="relative">
                 <input 
                   type="text" 
@@ -1546,7 +1598,7 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                   onChange={handleChange}
                   placeholder="XYZ-123" 
                   className="w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
-                  disabled={vehicleToEdit} // Don't allow changing registration number when editing (used as ID)
+                  disabled={vehicleToEdit}
                 />
                 {!vehicleToEdit && !fetchingData && (
                   <button 
@@ -1554,26 +1606,26 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                     onClick={handleAutoFill}
                     disabled={!vehicleData.id}
                   >
-                    <span className="mr-1">🔍</span>Auto-fill Data
+                    <span className="mr-1">🔍</span>{t('vehicles.csddIntegration.autoFill')}
                   </button>
                 )}
                 {fetchingData && (
                   <div className="absolute right-2 top-2 flex items-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-2"></div>
-                    <span className="text-xs text-blue-600">Fetching data...</span>
+                    <span className="text-xs text-blue-600">{t('common.loading')}</span>
                   </div>
                 )}
               </div>
               {!vehicleToEdit && (
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {csddIntegration.connectionStatus === 'connected' 
-                    ? "Connected to e.csdd.lv. Will auto-fill from CSDD and check insurance info."
-                    : "Enter Registration Number and Certificate Number to check insurance info."}
+                    ? t('vehicles.csddIntegration.connectedMessage')
+                    : t('vehicles.csddIntegration.disconnectedMessage')}
                 </p>
               )}
             </div>
             <div className="w-full">
-              <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Registration Certificate Number</label>
+              <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.registrationCertificate')}</label>
               <div className="relative">
                 <input 
                   type="text" 
@@ -1588,17 +1640,17 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                     className="absolute right-2 top-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
                     onClick={() => fetchInsuranceInfo(vehicleData.id, vehicleData.regaplnr)}
                   >
-                    <span className="mr-1">🔍</span>Check Insurance
+                    <span className="mr-1">🔍</span>{t('vehicles.csddIntegration.checkInsurance')}
                   </button>
                 )}
                 {insuranceLoading && (
                   <div className="absolute right-2 top-2 flex items-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500 mr-2"></div>
-                    <span className="text-xs text-blue-600">Fetching insurance data...</span>
+                    <span className="text-xs text-blue-600">{t('vehicles.csddIntegration.fetchingInsurance')}</span>
                   </div>
                 )}
               </div>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">This field and Registration Number will be used to obtain insurance certificate data.</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{t('vehicles.csddIntegration.certificateInfo')}</p>
             </div>
           </div>
 
@@ -1608,31 +1660,31 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                 className={`px-3 py-2 text-sm rounded-md ${activeTab === 'details' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}
                 onClick={() => setActiveTab('details')}
               >
-                Vehicle Details
+                {t('vehicles.vehicleDetails')}
               </button>
               <button 
                 className={`px-3 py-2 text-sm rounded-md ${activeTab === 'tracking' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}
                 onClick={() => setActiveTab('tracking')}
               >
-                Tracking
+                {t('vehicles.tracking.title')}
               </button>
               <button 
                 className={`px-3 py-2 text-sm rounded-md ${activeTab === 'integrations' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}
                 onClick={() => setActiveTab('integrations')}
               >
-                Integrations
+                {t('common.integrations')}
               </button>
               <button 
                 className={`px-3 py-2 text-sm rounded-md ${activeTab === 'documents' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}
                 onClick={() => setActiveTab('documents')}
               >
-                Documents
+                {t('common.documents')}
               </button>
               <button 
                 className={`px-3 py-2 text-sm rounded-md ${activeTab === 'notifications' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'}`}
                 onClick={() => setActiveTab('notifications')}
               >
-                Notifications
+                {t('common.notifications')}
               </button>
             </div>
 
@@ -1640,79 +1692,74 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Make</label>
+                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.make')}</label>
                     <input 
                       type="text" 
                       name="make"
                       value={vehicleData.make}
                       onChange={handleChange}
-                      placeholder="Manufacturer" 
+                      placeholder={t('vehicles.placeholders.make')}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Model</label>
+                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.model')}</label>
                     <input 
                       type="text" 
                       name="model"
                       value={vehicleData.model}
                       onChange={handleChange}
-                      placeholder="Model" 
+                      placeholder={t('vehicles.placeholders.model')}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Year</label>
+                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.year')}</label>
                     <input 
                       type="text" 
                       name="year"
                       value={vehicleData.year}
                       onChange={handleChange}
-                      placeholder="2023" 
+                      placeholder={t('vehicles.placeholders.year')}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Type</label>
+                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.type')}</label>
                     <select 
                       name="type"
                       value={vehicleData.type}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                     >
-                      <option>Vieglais auto</option>
-                      <option>Kravas auto</option>
-                      <option>Piekabe</option>
-                      <option>Autobuss</option>
-                      <option>Mopēds</option>
-                      <option>Motocikls</option>
-                      <option>Tricikls</option>
-                      <option>Laiva</option>
-                      <option>Kuģis</option>
-                      <option>Cits</option>
+                      {Object.entries(typeValueToKey).map(([key, value]) => (
+                        <option key={value} value={key}>
+                          {t(`vehicles.vehicleTypes.${value}`)}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Status</label>
+                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.status')}</label>
                     <select 
                       name="status"
                       value={vehicleData.status}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                     >
-                      <option>Active</option>
-                      <option>Inactive</option>
-                      <option>Maintenance</option>
+                      <option value="Active">{t('vehicles.statusOptions.active')}</option>
+                      <option value="Inactive">{t('vehicles.statusOptions.inactive')}</option>
+                      <option value="Maintenance">{t('vehicles.statusOptions.maintenance')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Current Mileage (KM)</label>
+                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.mileage')} (KM)</label>
                     <input 
                       type="text" 
                       name="mileage"
                       value={vehicleData.mileage}
                       onChange={handleChange}
-                      placeholder="45,000" 
+                      placeholder={t('vehicles.placeholders.mileage')}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
                     />
                   </div>
@@ -1721,29 +1768,31 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                 <div className="mt-4">
                   <label className="flex items-center space-x-2">
                     <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600" defaultChecked />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">Enable GPS Tracking</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{t('vehicles.tracking.enableGPS')}</span>
                   </label>
-                  <input type="text" placeholder="API Endpoint URL" className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                  <input 
+                    type="text" 
+                    placeholder={t('vehicles.tracking.apiEndpoint')} 
+                    className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
+                  />
                 </div>
 
                 <div className="mt-4">
                   <button className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600">
-                    <span className="mr-2">☁️</span>Import Third-party Data
+                    <span className="mr-2">☁️</span>{t('common.import')}
                   </button>
                 </div>
 
                 <div className="mt-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-                    <h4 className="text-sm text-gray-900 dark:text-white">Reminder Settings</h4>
+                    <h4 className="text-sm text-gray-900 dark:text-white">{t('vehicles.reminders.title')}</h4>
                     <div className="flex gap-2">
                       {csddIntegration.connectionStatus === 'connected' && vehicleToEdit && (
                         <button 
                           className="px-2 py-1 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 flex items-center dark:bg-blue-900 dark:text-blue-400 dark:hover:bg-blue-800"
                           onClick={async () => {
-                            // Use the vehicleToEdit ID since we're in edit mode
                             const updatedVehicle = await window.syncVehicleRemindersWithCsdd(vehicleToEdit.id);
                             if (updatedVehicle) {
-                              // Update local state with the synced data
                               setVehicleData({
                                 ...vehicleData,
                                 reminders: updatedVehicle.reminders,
@@ -1753,18 +1802,18 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                                 regaplnr: updatedVehicle.regaplnr,
                                 mileage: updatedVehicle.mileage
                               });
-                              alert('Reminders successfully updated from e.csdd.lv');
+                              alert(t('vehicles.csddIntegration.remindersSynced'));
                             }
                           }}
                         >
-                          <span className="mr-1">🔄</span>Sync with CSDD
+                          <span className="mr-1">🔄</span>{t('vehicles.csddIntegration.syncWithCsdd')}
                         </button>
                       )}
                       <button 
                         className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 flex items-center self-start sm:self-auto dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                         onClick={addReminder}
                       >
-                        <span className="text-sm mr-1">➕</span>Add Reminder
+                        <span className="text-sm mr-1">➕</span>{t('vehicles.reminders.addReminder')}
                       </button>
                     </div>
                   </div>
@@ -1809,39 +1858,37 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
             {/* Other tabs remain the same */}
             {activeTab === 'tracking' && (
               <div className="py-4">
-                <p className="text-gray-700 dark:text-gray-300">Configure vehicle tracking options here.</p>
+                <p className="text-gray-700 dark:text-gray-300">{t('vehicles.tracking.configureMessage')}</p>
               </div>
             )}
 
             {activeTab === 'integrations' && (
               <div className="py-4">
-                <h3 className="text-lg text-gray-900 mb-3 dark:text-white">Third-Party Integrations</h3>
+                <h3 className="text-lg text-gray-900 mb-3 dark:text-white">{t('vehicles.csddIntegration.title')}</h3>
                 
                 <div className="bg-white p-4 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
                     <div className="flex items-center">
                       <span className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mr-3 flex-shrink-0 dark:bg-blue-900">
-                                             <span className="text-blue-600 text-xl dark:text-blue-400">🔑</span>
+                        <span className="text-blue-600 text-xl dark:text-blue-400">🔑</span>
                       </span>
                       <div>
-                        
-                        
-                        <h4 className="text-md font-medium text-gray-900 dark:text-white">e.csdd.lv Connection</h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Connect to the Latvian Road Traffic Safety Directorate portal</p>
+                        <h4 className="text-md font-medium text-gray-900 dark:text-white">{t('vehicles.csddIntegration.title')}</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{t('vehicles.csddIntegration.description')}</p>
                       </div>
                     </div>
                     <div>
-                    {csddIntegration.connectionStatus === 'connected' ? (
+                      {csddIntegration.connectionStatus === 'connected' ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-400">
-                          Connected
+                          {t('vehicles.csddIntegration.statusConnected')}
                         </span>
                       ) : csddIntegration.connectionStatus === 'connecting' ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs fontmedium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-400">
-                          Connecting...
+                          {t('vehicles.csddIntegration.statusConnecting')}
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                          Disconnected
+                          {t('vehicles.csddIntegration.statusDisconnected')}
                         </span>
                       )}
                     </div>
@@ -1852,33 +1899,34 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                       <div className="bg-gray-50 p-4 rounded border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div>
-                            <p className="text-sm text-gray-900 dark:text-white">Connected as: <span className="font-medium">{csddIntegration.userInfo?.firstName} {csddIntegration.userInfo?.lastName}</span></p>
-                            <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">You can now auto-fill vehicle details using the registration number</p>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {t('vehicles.csddIntegration.connectedAs')}: <span className="font-medium">{csddIntegration.userInfo?.firstName} {csddIntegration.userInfo?.lastName}</span>
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">{t('vehicles.csddIntegration.autoFillEnabled')}</p>
                           </div>
                           <button 
                             className="px-3 py-1 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50 self-start sm:self-auto dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900"
                             onClick={disconnectFromCsdd}
                           >
-                            Disconnect
+                            {t('vehicles.csddIntegration.disconnect')}
                           </button>
                         </div>
                       </div>
-                      
 
                       <div>
-                        <h5 className="text-sm font-medium text-gray-900 mb-2 dark:text-white">Available Actions</h5>
+                        <h5 className="text-sm font-medium text-gray-900 mb-2 dark:text-white">{t('vehicles.csddIntegration.availableActions')}</h5>
                         <ul className="space-y-2">
                           <li className="flex items-center text-sm text-gray-700 dark:text-gray-300">
                             <span className="mr-2 text-green-500 dark:text-green-400">✓</span>
-                            Auto-fill vehicle details using registration number
+                            {t('vehicles.csddIntegration.action1')}
                           </li>
                           <li className="flex items-center text-sm text-gray-700 dark:text-gray-300">
                             <span className="mr-2 text-green-500 dark:text-green-400">✓</span>
-                            Import vehicle due dates and reminders
+                            {t('vehicles.csddIntegration.action2')}
                           </li>
                           <li className="flex items-center text-sm text-gray-700 dark:text-gray-300">
                             <span className="mr-2 text-green-500 dark:text-green-400">✓</span>
-                            Update vehicle reminders from csdd.lv
+                            {t('vehicles.csddIntegration.action3')}
                           </li>
                         </ul>
                       </div>
@@ -1893,35 +1941,34 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
                       
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">E-mail</label>
+                          <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.csddIntegration.email')}</label>
                           <input 
                             type="email" 
                             name="email"
                             value={csddCredentials.email}
                             onChange={handleCsddCredentialsChange}
-                            placeholder="your.email@example.com" 
+                            placeholder={t('vehicles.csddIntegration.emailPlaceholder')}
                             className="w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
                           />
                         </div>
                         <div>
-                          <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Password</label>
+                          <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.csddIntegration.password')}</label>
                           <input 
                             type="password" 
                             name="password"
                             value={csddCredentials.password}
                             onChange={handleCsddCredentialsChange}
-                            placeholder="••••••••" 
+                            placeholder={t('vehicles.csddIntegration.passwordPlaceholder')}
                             className="w-full px-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" 
                           />
                         </div>
                       </div>
                       
-                      
                       <button 
                         className="w-full px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-500 dark:bg-blue-700 dark:hover:bg-blue-600"
                         onClick={connectToCsdd}
                       >
-                        Connect to e.csdd.lv
+                        {t('vehicles.csddIntegration.connect')}
                       </button>
                     </div>
                   )}
@@ -1936,13 +1983,13 @@ const AddVehicleModal = ({ onClose, onSave, csddIntegration, setCsddIntegration,
             className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-md dark:text-gray-300 dark:hover:bg-gray-600"
             onClick={onClose}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button 
             className="px-4 py-2 text-sm bg-gray-900 text-white rounded-md hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600"
             onClick={handleSave}
           >
-            {vehicleToEdit ? 'Save Changes' : 'Save Vehicle'}
+            {vehicleToEdit ? t('common.saveChanges') : t('common.save')}
           </button>
         </div>
       </div>

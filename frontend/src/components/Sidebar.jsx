@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 import ProfileDropdown from './ProfileDropdown';
+import LanguageSwitcher from './LanguageSwitcher';
 import { useAuth } from '../AuthContext';
 import DebugUtils from './DebugUtils';
+import { useTranslation } from 'react-i18next';
 
 const Sidebar = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
@@ -120,6 +123,10 @@ const Sidebar = () => {
 
   return (
     <div className={`relative ${collapsed ? "w-16" : "w-64"} transition-all duration-300 ease-in-out`}>
+      {/* Desktop Language Switcher */}
+      <div className="hidden md:flex justify-center py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <LanguageSwitcher />
+      </div>
       {/* Mobile header with the app name, hamburger menu, notification bell, and profile dropdown */}
       <div className="md:hidden fixed top-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-gray-800 border-b border-gray-700">
         <div className="flex items-center">
@@ -135,6 +142,7 @@ const Sidebar = () => {
           <span className="text-xl font-medium text-white">Fleet Manager</span>
         </div>
         <div className="flex items-center space-x-2">
+          <LanguageSwitcher />
           <NotificationBell />
           <ProfileDropdown />
         </div>
@@ -188,51 +196,51 @@ const Sidebar = () => {
           </div>
           
           <div className={`px-3 py-2 text-xs uppercase text-gray-500 dark:text-gray-400 ${collapsed && window.innerWidth >= 768 ? "text-center" : ""}`}>
-            {(!collapsed || window.innerWidth < 768) && "Main"}
+            {(!collapsed || window.innerWidth < 768) && t('common.main')}
           </div>
           <ul className="space-y-1 mt-2">
             <li>
               <Link 
                 to="/" 
                 className={getLinkClass('/')} 
-                title="Dashboard"
+                title={t('common.dashboard')}
                 onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/') : null}
               >
                 <span className={getIconClass('/')}>📊</span>
-                {(!collapsed || window.innerWidth < 768) && "Dashboard"}
+                {(!collapsed || window.innerWidth < 768) && t('common.dashboard')}
               </Link>
             </li>
             <li>
               <Link 
                 to="/analytics" 
                 className={getLinkClass('/analytics')} 
-                title="Analytics"
+                title={t('common.analytics')}
                 onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/analytics') : null}
               >
                 <span className={getIconClass('/analytics')}>📈</span>
-                {(!collapsed || window.innerWidth < 768) && "Analytics"}
+                {(!collapsed || window.innerWidth < 768) && t('common.analytics')}
               </Link>
             </li>
             <li>
               <Link 
                 to="/vehicles" 
                 className={getLinkClass('/vehicles')} 
-                title="Vehicles"
+                title={t('common.vehicles')}
                 onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/vehicles') : null}
               >
                 <span className={getIconClass('/vehicles')}>🚗</span>
-                {(!collapsed || window.innerWidth < 768) && "Vehicles"}
+                {(!collapsed || window.innerWidth < 768) && t('common.vehicles')}
               </Link>
             </li>
             <li>
               <Link 
                 to="/service-history" 
                 className={getLinkClass('/service-history')} 
-                title="Service History"
+                title={t('common.serviceHistory')}
                 onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/service-history') : null}
               >
                 <span className={getIconClass('/service-history')}>🔧</span>
-                {(!collapsed || window.innerWidth < 768) && "Service History"}
+                {(!collapsed || window.innerWidth < 768) && t('common.serviceHistory')}
               </Link>
             </li>
             <li>
@@ -250,22 +258,22 @@ const Sidebar = () => {
               </a>
             </li>
             <li>
-                  <Link 
-                    to="/profile" 
-                    className={getLinkClass('/profile')} 
-                    title="Profile"
-                    onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/profile') : null}
-                  >
-                    <span className={getIconClass('/profile')}>👤</span>
-                    {(!collapsed || window.innerWidth < 768) && "Profile"}
-                  </Link>
-                </li>
+              <Link 
+                to="/profile" 
+                className={getLinkClass('/profile')} 
+                title={t('common.profile')}
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/profile') : null}
+              >
+                <span className={getIconClass('/profile')}>👤</span>
+                {(!collapsed || window.innerWidth < 768) && t('common.profile')}
+              </Link>
+            </li>
           </ul>
 
           {isAdmin && (
             <>
               <div className={`px-3 py-2 mt-6 text-xs uppercase text-gray-500 dark:text-gray-400 ${collapsed && window.innerWidth >= 768 ? "text-center" : ""}`}>
-                {(!collapsed || window.innerWidth < 768) && "Admin"}
+                {(!collapsed || window.innerWidth < 768) && t('common.admin')}
               </div>
               <ul className="space-y-1 mt-2">
                 <li>
@@ -286,22 +294,22 @@ const Sidebar = () => {
                   <Link 
                     to="/user-management" 
                     className={getLinkClass('/user-management')} 
-                    title="User Management"
+                    title={t('common.userManagement')}
                     onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/user-management') : null}
                   >
                     <span className={getIconClass('/user-management')}>👥</span>
-                    {(!collapsed || window.innerWidth < 768) && "User Management"}
+                    {(!collapsed || window.innerWidth < 768) && t('common.userManagement')}
                   </Link>
                 </li>
                 <li>
                   <Link 
                     to="/audit-log" 
                     className={getLinkClass('/audit-log')} 
-                    title="Audit Log"
+                    title={t('common.auditLog')}
                     onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/audit-log') : null}
                   >
                     <span className={getIconClass('/audit-log')}>📋</span>
-                    {(!collapsed || window.innerWidth < 768) && "Audit Log"}
+                    {(!collapsed || window.innerWidth < 768) && t('common.auditLog')}
                   </Link>
                 </li>
                 

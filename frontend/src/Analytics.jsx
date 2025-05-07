@@ -20,6 +20,7 @@ import {
 import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
 import 'chartjs-adapter-luxon';
 import { DateTime } from 'luxon';
+import { useTranslation } from 'react-i18next';
 
 // Register Chart.js components
 ChartJS.register(
@@ -45,6 +46,7 @@ const Analytics = () => {
   const { getAuthHeader, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
+  const { t } = useTranslation();
 
   // Check authentication
   useEffect(() => {
@@ -491,17 +493,17 @@ const Analytics = () => {
           <div className="py-6">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
-                <h1 className="text-2xl text-gray-900 dark:text-white">Analytics</h1>
+                <h1 className="text-2xl text-gray-900 dark:text-white">{t('analytics.pageTitle')}</h1>
                 <div className="flex space-x-4">
                   <select 
                     className="px-4 py-2 border border-gray-300 rounded-md text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
                     value={timeRange}
                     onChange={handleTimeRangeChange}
                   >
-                    <option value="7d">Last 7 days</option>
-                    <option value="30d">Last 30 days</option>
-                    <option value="3m">Last 3 months</option>
-                    <option value="1y">Last year</option>
+                    <option value="7d">{t('analytics.timeRange.last7Days')}</option>
+                    <option value="30d">{t('analytics.timeRange.last30Days')}</option>
+                    <option value="3m">{t('analytics.timeRange.last3Months')}</option>
+                    <option value="1y">{t('analytics.timeRange.lastYear')}</option>
                   </select>
                   <button 
                     className="px-4 py-2 bg-gray-800 text-white rounded-md text-sm dark:bg-gray-700"
@@ -510,7 +512,7 @@ const Analytics = () => {
                       alert('Data export functionality will be implemented in a future update.');
                     }}
                   >
-                    Export Data
+                    {t('analytics.exportData')}
                   </button>
                 </div>
               </div>
@@ -535,7 +537,7 @@ const Analytics = () => {
                         }}
                         className="px-2 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200"
                       >
-                        Retry
+                        {t('analytics.retry')}
                       </button>
                     </div>
                   </div>
@@ -545,7 +547,7 @@ const Analytics = () => {
               <div className="mt-6">
                 <div className="bg-white p-6 rounded-lg shadow dark:bg-gray-800">
                   <div className="flex items-center space-x-4 mb-6">
-                    <h3 className="text-lg text-gray-900 dark:text-white">Vehicle Selection</h3>
+                    <h3 className="text-lg text-gray-900 dark:text-white">{t('analytics.vehicleSelection')}</h3>
                     <div className="flex space-x-2 flex-wrap">
                       {vehicles.map(vehicle => (
                         <button 
@@ -563,7 +565,7 @@ const Analytics = () => {
                     <div className="h-96 flex items-center justify-center">
                       <div className="flex flex-col items-center">
                         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
-                        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading analytics data...</p>
+                        <p className="mt-4 text-gray-600 dark:text-gray-400">{t('analytics.loadingData')}</p>
                       </div>
                     </div>
                   ) : !hasServiceRecords ? (
@@ -572,14 +574,14 @@ const Analytics = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">No service history data</h3>
-                        <p className="mt-2 text-gray-600 dark:text-gray-400">There are no service records available for the selected vehicles in this time period.</p>
+                        <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">{t('analytics.noServiceHistory')}</h3>
+                        <p className="mt-2 text-gray-600 dark:text-gray-400">{t('analytics.noServiceHistoryDescription')}</p>
                         <div className="mt-6">
                           <Link
                             to="/service-history"
                             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
                           >
-                            Add Service Record
+                            {t('analytics.addServiceRecord')}
                           </Link>
                         </div>
                       </div>
@@ -587,7 +589,7 @@ const Analytics = () => {
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-900">
-                        <h4 className="text-sm text-gray-700 mb-4 dark:text-gray-200">Total Expense Trend</h4>
+                        <h4 className="text-sm text-gray-700 mb-4 dark:text-gray-200">{t('analytics.totalExpenseTrend')}</h4>
                         {Object.keys(chartData.recordsByMonth).length > 0 ? (
                           <div className="h-64">
                             <Line 
@@ -608,13 +610,13 @@ const Analytics = () => {
                           </div>
                         ) : (
                           <div className="h-64 bg-gray-200 rounded flex items-center justify-center dark:bg-gray-700">
-                            <span className="text-gray-600 dark:text-gray-400">No data available for the selected period</span>
+                            <span className="text-gray-600 dark:text-gray-400">{t('analytics.noDataAvailable')}</span>
                           </div>
                         )}
                       </div>
 
                       <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-900">
-                        <h4 className="text-sm text-gray-700 mb-4 dark:text-gray-200">Maintenance Cost by Service Type</h4>
+                        <h4 className="text-sm text-gray-700 mb-4 dark:text-gray-200">{t('analytics.maintenanceCostByServiceType')}</h4>
                         {Object.keys(chartData.costByServiceType).length > 0 ? (
                           <div className="h-64">
                             <Doughnut 
@@ -638,14 +640,14 @@ const Analytics = () => {
                           </div>
                         ) : (
                           <div className="h-64 bg-gray-200 rounded flex items-center justify-center dark:bg-gray-700">
-                            <span className="text-gray-600 dark:text-gray-400">No data available for the selected period</span>
+                            <span className="text-gray-600 dark:text-gray-400">{t('analytics.noDataAvailable')}</span>
                           </div>
                         )}
                       </div>
 
                       <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-900">
                         <div className="flex justify-between items-center mb-4">
-                          <h4 className="text-sm text-gray-700 dark:text-gray-200">Mileage Tracking</h4>
+                          <h4 className="text-sm text-gray-700 dark:text-gray-200">{t('analytics.mileageTracking')}</h4>
                         </div>
                         {chartData.totalMileage.length > 0 && chartData.totalMileage.some(v => v.data.length > 0) ? (
                           <div className="h-64">
@@ -681,13 +683,13 @@ const Analytics = () => {
                           </div>
                         ) : (
                           <div className="h-64 bg-gray-200 rounded flex items-center justify-center dark:bg-gray-700">
-                            <span className="text-gray-600 dark:text-gray-400">No mileage data available</span>
+                            <span className="text-gray-600 dark:text-gray-400">{t('analytics.noMileageDataAvailable')}</span>
                           </div>
                         )}
                       </div>
 
                       <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-900">
-                        <h4 className="text-sm text-gray-700 mb-4 dark:text-gray-200">Cost by Vehicle</h4>
+                        <h4 className="text-sm text-gray-700 mb-4 dark:text-gray-200">{t('analytics.costByVehicle')}</h4>
                         {Object.keys(chartData.costByVehicle).length > 0 ? (
                           <div className="h-64">
                             <Bar 
@@ -708,7 +710,7 @@ const Analytics = () => {
                           </div>
                         ) : (
                           <div className="h-64 bg-gray-200 rounded flex items-center justify-center dark:bg-gray-700">
-                            <span className="text-gray-600 dark:text-gray-400">No data available for the selected period</span>
+                            <span className="text-gray-600 dark:text-gray-400">{t('analytics.noDataAvailable')}</span>
                           </div>
                         )}
                       </div>
@@ -720,15 +722,15 @@ const Analytics = () => {
               {hasServiceRecords && (
                 <div className="mt-8">
                   <div className="bg-white p-6 rounded-lg shadow dark:bg-gray-800">
-                    <h3 className="text-lg text-gray-900 mb-6 dark:text-white">Cost Breakdown</h3>
+                    <h3 className="text-lg text-gray-900 mb-6 dark:text-white">{t('analytics.costBreakdown')}</h3>
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead>
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase dark:text-gray-400">Category</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase dark:text-gray-400">This Month</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase dark:text-gray-400">Last Month</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase dark:text-gray-400">YTD</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase dark:text-gray-400">{t('analytics.category')}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase dark:text-gray-400">{t('analytics.thisMonth')}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase dark:text-gray-400">{t('analytics.lastMonth')}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase dark:text-gray-400">{t('analytics.ytd')}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -741,7 +743,7 @@ const Analytics = () => {
                             </tr>
                           ))}
                           <tr className="bg-gray-50 dark:bg-gray-700">
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">Total</td>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{t('analytics.total')}</td>
                             <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                               {formatCurrency(Object.values(monthlyCosts).reduce((sum, category) => sum + category.thisMonth, 0))}
                             </td>

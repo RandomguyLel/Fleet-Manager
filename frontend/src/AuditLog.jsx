@@ -4,10 +4,12 @@ import NotificationBell from './components/NotificationBell';
 import ProfileDropdown from './components/ProfileDropdown';
 import Sidebar from './components/Sidebar';
 import { useAuth } from './AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const AuditLog = () => {
   // Get auth context for API calls
   const { darkMode, getAuthHeader, currentUser } = useAuth();
+  const { t } = useTranslation();
 
   // State for audit logs
   const [auditLogs, setAuditLogs] = useState([]);
@@ -295,10 +297,10 @@ const AuditLog = () => {
           <div className="py-6">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
-                <h1 className="text-2xl text-gray-900 dark:text-white">Audit Log</h1>
+                <h1 className="text-2xl text-gray-900 dark:text-white">{t('audit.auditLog')}</h1>
                 <div className="flex space-x-3">
                   <button className="px-4 py-2 text-sm bg-gray-900 text-white rounded-md shadow-sm hover:bg-gray-800 dark:bg-blue-700 dark:hover:bg-blue-800">
-                    <span className="mr-2">⬇️</span>Export Log
+                    <span className="mr-2">⬇️</span>{t('audit.exportLog')}
                   </button>
                 </div>
               </div>
@@ -307,21 +309,21 @@ const AuditLog = () => {
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1 dark:text-gray-400">Action Type</label>
+                      <label className="block text-sm text-gray-600 mb-1 dark:text-gray-400">{t('audit.actionType')}</label>
                       <select
                         name="action"
                         value={filters.action}
                         onChange={handleFilterChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                       >
-                        <option value="all">All Actions</option>
-                        <option value="Create">Create</option>
-                        <option value="Update">Update</option>
-                        <option value="Delete">Delete</option>
+                        <option value="all">{t('audit.allActions')}</option>
+                        <option value="Create">{t('audit.create')}</option>
+                        <option value="Update">{t('audit.update')}</option>
+                        <option value="Delete">{t('audit.delete')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1 dark:text-gray-400">User</label>
+                      <label className="block text-sm text-gray-600 mb-1 dark:text-gray-400">{t('audit.user')}</label>
                       <select
                         name="username"
                         value={filters.username}
@@ -329,7 +331,7 @@ const AuditLog = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         disabled={isLoadingUsers}
                       >
-                        <option value="all">All Users</option>
+                        <option value="all">{t('audit.allUsers')}</option>
                         {users.map(user => (
                           <option key={user.id} value={user.username}>
                             {user.firstName && user.lastName 
@@ -340,24 +342,24 @@ const AuditLog = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1 dark:text-gray-400">Page/Section</label>
+                      <label className="block text-sm text-gray-600 mb-1 dark:text-gray-400">{t('audit.pageSection')}</label>
                       <select
                         name="page"
                         value={filters.page}
                         onChange={handleFilterChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                       >
-                        <option value="all">All Pages</option>
-                        <option value="Vehicles">Vehicles</option>
-                        <option value="Reminders">Reminders</option>
-                        <option value="Service History">Service History</option>
-                        <option value="Documents">Documents</option>
-                        <option value="User Management">User Management</option>
-                        <option value="System Settings">System Settings</option>
+                        <option value="all">{t('audit.allPages')}</option>
+                        <option value="Vehicles">{t('common.vehicles')}</option>
+                        <option value="Reminders">{t('common.reminders')}</option>
+                        <option value="Service History">{t('common.serviceHistory')}</option>
+                        <option value="Documents">{t('common.documents')}</option>
+                        <option value="User Management">{t('common.userManagement')}</option>
+                        <option value="System Settings">{t('common.systemSettings')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1 dark:text-gray-400">Date Range</label>
+                      <label className="block text-sm text-gray-600 mb-1 dark:text-gray-400">{t('audit.dateRange')}</label>
                       <input
                         type="date"
                         name="startDate"
@@ -370,20 +372,20 @@ const AuditLog = () => {
 
                   <div className="overflow-x-auto">
                     {isLoading ? (
-                      <div className="text-center text-gray-600 dark:text-gray-300">Loading...</div>
+                      <div className="text-center text-gray-600 dark:text-gray-300">{t('audit.loading')}</div>
                     ) : error ? (
-                      <div className="text-center text-red-600 dark:text-red-300">{error}</div>
+                      <div className="text-center text-red-600 dark:text-red-300">{t('audit.errorLoading', { error })}</div>
                     ) : (
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead>
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Timestamp</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">User</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Action</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Page</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Field</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">Old Value</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">New Value</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('audit.timestamp')}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('audit.user')}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('audit.action')}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('audit.page')}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('audit.field')}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('audit.oldValue')}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('audit.newValue')}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -436,7 +438,7 @@ const AuditLog = () => {
 
                   <div className="mt-4 flex items-center justify-between">
                     <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalCount)} to {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} entries
+                      {t('audit.showingEntries', { start: Math.min((currentPage - 1) * itemsPerPage + 1, totalCount), end: Math.min(currentPage * itemsPerPage, totalCount), total: totalCount })}
                     </div>
                     <div className="flex space-x-2">
                       <button
@@ -444,7 +446,7 @@ const AuditLog = () => {
                         disabled={currentPage === 1}
                         className="px-3 py-1 border border-gray-300 rounded-md text-sm dark:border-gray-600 dark:text-gray-300"
                       >
-                        Previous
+                        {t('audit.previous')}
                       </button>
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                         <button
@@ -464,7 +466,7 @@ const AuditLog = () => {
                         disabled={currentPage === totalPages}
                         className="px-3 py-1 border border-gray-300 rounded-md text-sm dark:border-gray-600 dark:text-gray-300"
                       >
-                        Next
+                        {t('audit.next')}
                       </button>
                     </div>
                   </div>

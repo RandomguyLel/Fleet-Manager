@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const NotificationBell = () => {
+  const { t } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -229,7 +231,7 @@ const NotificationBell = () => {
       <button 
         className="relative p-2 rounded-full text-gray-600 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-700"
         onClick={() => setShowNotifications(!showNotifications)}
-        aria-label={`Notifications - ${unreadCount} unread`}
+        aria-label={`${t('notifications.title')} - ${unreadCount} unread`}
       >
         <span className="text-xl">🔔</span>
         {unreadCount > 0 && (
@@ -243,94 +245,87 @@ const NotificationBell = () => {
         <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 dark:bg-gray-800 dark:border-gray-700">
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm text-gray-900 font-medium dark:text-white">Notifications</h3>
+              <h3 className="text-sm text-gray-900 font-medium dark:text-white">{t('notifications.title')}</h3>
               <div className="flex space-x-2">
                 {unreadCount > 0 && (
                   <button 
                     className="text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
                     onClick={markAllAsRead}
                   >
-                    Mark All Read
+                    {t('notifications.markAllAsRead')}
                   </button>
                 )}
+                <button
+                  className="text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                  onClick={generateNotifications}
+                  disabled={generatingNotifications}
+                >
+                  {generatingNotifications ? t('notifications.generating') : t('notifications.generateNotifications')}
+                </button>
               </div>
             </div>
             
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-900/30">
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              </div>
-            )}
-            
             {loading ? (
-              <div className="py-4 text-center">
-                <div className="inline-block animate-spin h-5 w-5 border-2 border-gray-300 border-t-blue-500 rounded-full dark:border-gray-600 dark:border-t-blue-400"></div>
-                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Loading notifications...</p>
+              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                {t('notifications.loading')}
               </div>
-            ) : notifications.length > 0 ? (
-              <div className="max-h-96 overflow-y-auto space-y-3">
+            ) : error ? (
+              <div className="text-center py-4 text-red-500">
+                {t('notifications.error')}
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                {t('notifications.noNotifications')}
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
                 {notifications.map(notification => (
-                  <div 
-                    key={notification.id} 
-                    className={`flex p-3 rounded-lg border border-gray-200 dark:border-gray-700 ${getNotificationBackground(notification.priority, notification.is_read)}`}
+                  <div
+                    key={notification.id}
+                    className={`p-3 rounded-lg ${getNotificationBackground(notification.priority, notification.is_read)}`}
                   >
-                    <span className="text-gray-600 mr-3 flex-shrink-0 mt-0.5 dark:text-gray-400">{getNotificationIcon(notification.type)}</span>
-                    <div className="flex-grow min-w-0 pr-2">
-                      <p className="text-sm text-gray-800 font-medium break-words dark:text-white">{notification.title}</p>
-                      <p className="mt-1 text-xs text-gray-500 break-words dark:text-gray-400">{notification.message}</p>
-                      {notification.due_date && (
-                        <p className="mt-1 text-xs text-gray-400">
-                          Due: {formatDate(notification.due_date)}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col space-y-1 flex-shrink-0">
-                      {!notification.is_read && (
-                        <button 
-                          className="text-gray-400 hover:text-gray-600 text-xs w-5 h-5 flex items-center justify-center dark:hover:text-gray-200"
-                          onClick={() => markAsRead(notification.id)}
-                          title="Mark as read"
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-2">
+                        <span className="text-lg">{getNotificationIcon(notification.type)}</span>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {notification.title || t(`notifications.types.${notification.type.toLowerCase()}`)}
+                          </p>
+                          {notification.message && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 break-words">
+                              {notification.message}
+                            </p>
+                          )}
+                          {notification.due_date && (
+                            <p className="text-xs text-gray-400">
+                              Due: {formatDate(notification.due_date)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        {!notification.is_read && (
+                          <button
+                            onClick={() => markAsRead(notification.id)}
+                            className="p-1 text-gray-500 hover:text-green-600 dark:hover:text-green-400"
+                            title={t('notifications.markAsRead')}
+                          >
+                            ✓
+                          </button>
+                        )}
+                        <button
+                          onClick={() => dismissNotification(notification.id)}
+                          className="p-1 text-gray-500 hover:text-red-600 dark:hover:text-red-400"
+                          title={t('notifications.dismiss')}
                         >
-                          <span>✓</span>
+                          ×
                         </button>
-                      )}
-                      <button 
-                        className="text-gray-400 hover:text-red-500 text-xs w-5 h-5 flex items-center justify-center dark:hover:text-red-400"
-                        onClick={() => dismissNotification(notification.id)}
-                        title="Dismiss"
-                      >
-                        <span>×</span>
-                      </button>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="py-8 text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">No notifications</p>
-              </div>
             )}
-          </div>
-          
-          <div className="border-t border-gray-200 p-3 bg-gray-50 text-xs text-center rounded-b-lg text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400">
-            <button
-              className={`text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 ${generatingNotifications ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={async () => {
-                const message = await generateNotifications();
-                if (message) {
-                  // We could show a toast or some other visual feedback here
-                  console.log(message);
-                }
-              }}
-              disabled={generatingNotifications}
-            >
-              {generatingNotifications ? (
-                <>
-                  <span className="inline-block mr-1 h-3 w-3 border-2 border-blue-300 border-t-blue-500 rounded-full animate-spin dark:border-blue-600 dark:border-t-blue-400"></span>
-                  Checking...
-                </>
-              ) : 'Check for new notifications'}
-            </button>
           </div>
         </div>
       )}

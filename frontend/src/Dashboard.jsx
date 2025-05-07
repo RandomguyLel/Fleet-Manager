@@ -4,14 +4,19 @@ import { useAuth } from './AuthContext';
 import NotificationBell from './components/NotificationBell';
 import ProfileDropdown from './components/ProfileDropdown';
 import Sidebar from './components/Sidebar';
+import { useTranslation } from 'react-i18next';
+import i18n from './i18n/i18n';
 
 const Dashboard = () => {
+  // Get translations
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     activeVehicles: 0,
     inactiveVehicles: 0,
     upcomingMaintenances: 0,
     expiringDocuments: 0
   });
+
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,7 +30,7 @@ const Dashboard = () => {
   // Format date to a readable format
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
+    return new Intl.DateTimeFormat(i18n.language, { 
       month: 'short', 
       day: 'numeric',
       year: 'numeric'
@@ -417,7 +422,7 @@ allReminders.push({
           <div className="py-6">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
-                <h1 className="text-2xl text-gray-900 dark:text-white">Dashboard</h1>
+                <h1 className="text-2xl text-gray-900 font-bold dark:text-white">{t('common.dashboard')}</h1>
                 <div className="flex space-x-3">
                   <button className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600">
                     <span className="mr-2">📅</span>{formatDate(new Date())}
@@ -454,7 +459,7 @@ allReminders.push({
                       <span className="h-6 w-6 text-green-600 dark:text-green-400 text-2xl">🚚</span>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Active Vehicles</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.activeVehicles')}</p>
                       <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.activeVehicles}</p>
                     </div>
                   </div>
@@ -465,7 +470,7 @@ allReminders.push({
                       <span className="h-6 w-6 text-gray-600 dark:text-gray-400 text-2xl">🚫</span>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Inactive Vehicles</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.inactiveVehicles')}</p>
                       <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.inactiveVehicles}</p>
                     </div>
                   </div>
@@ -476,7 +481,7 @@ allReminders.push({
                       <span className="h-6 w-6 text-blue-600 dark:text-blue-400 text-2xl">🔧</span>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Upcoming Maintenance</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.upcomingMaintenance')}</p>
                       <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.upcomingMaintenances}</p>
                     </div>
                   </div>
@@ -487,7 +492,7 @@ allReminders.push({
                       <span className="h-6 w-6 text-amber-600 dark:text-amber-400 text-2xl">📄</span>
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Expiring Documents</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.expiringDocuments')}</p>
                       <p className="text-2xl font-semibold text-gray-900 dark:text-white">{stats.expiringDocuments}</p>
                     </div>
                   </div>
@@ -500,7 +505,7 @@ allReminders.push({
                 <div className="lg:col-span-2 bg-white shadow rounded-lg dark:bg-gray-800 dark:border dark:border-gray-700">
                   <div className="px-4 py-5 sm:p-6">
                     <div className="flex justify-between items-center">
-                      <h2 className="text-lg font-medium text-gray-900 dark:text-white">Recent Activity</h2>
+                      <h2 className="text-lg font-medium text-gray-900 dark:text-white">{t('dashboard.recentActivity')}</h2>
                       {notifications.length > 0 && (
                         <button 
                           className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
@@ -516,7 +521,7 @@ allReminders.push({
                             }
                           }}
                         >
-                          Mark All as Read
+                          {t('dashboard.markAllAsRead')}
                         </button>
                       )}
                     </div>
@@ -544,22 +549,43 @@ allReminders.push({
                                   </span>
                                 </div>
                                 <div className="ml-3 flex-1">
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white">{notification.title}</p>
-                                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{notification.message}</p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white">{
+                                    (() => {
+                                      // Try to map notification type to a translation key
+                                      const notificationTypeMap = {
+                                        'maintenance': 'dashboard.serviceDue',
+                                        'insurance': 'dashboard.insuranceRenewal',
+                                        'roadworthiness': 'vehicles.reminders.roadWorthinessCertificate',
+                                      };
+                                      // If the notification has a type and a known translation, use it
+                                      if (notification.type && notificationTypeMap[notification.type]) {
+                                        return t(notificationTypeMap[notification.type]);
+                                      }
+                                      // Otherwise, fallback to the notification title
+                                      return notification.title;
+                                    })()
+                                  }</p>
+                                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{
+                                    (() => {
+                                      // Try to map notification type to a translation key for the message if needed
+                                      // If not, fallback to the notification message
+                                      return notification.message;
+                                    })()
+                                  }</p>
                                   <div className="mt-2 flex space-x-2">
                                     {notification.vehicle_id && (
                                       <Link 
                                         to={`/vehicles/${notification.vehicle_id}`}
                                         className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
                                       >
-                                        View Vehicle
+                                        {t('dashboard.viewVehicle')}
                                       </Link>
                                     )}
                                     <button 
                                       className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
                                       onClick={() => dismissNotification(notification.id)}
                                     >
-                                      Dismiss
+                                      {t('dashboard.dismiss')}
                                     </button>
                                   </div>
                                 </div>
@@ -572,7 +598,7 @@ allReminders.push({
                                       className="mt-1 text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                                       onClick={() => markAsRead(notification.id)}
                                     >
-                                      Mark as read
+                                      {t('dashboard.markAsRead')}
                                     </button>
                                   )}
                                 </div>
@@ -581,7 +607,7 @@ allReminders.push({
                           ))
                         ) : (
                           <div className="text-center py-8">
-                            <p className="text-gray-500 dark:text-gray-400">No recent activity</p>
+                            <p className="text-gray-500 dark:text-gray-400">{t('dashboard.noRecentActivity')}</p>
                             <button 
                               className="mt-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                               onClick={async () => {
@@ -599,7 +625,7 @@ allReminders.push({
                                 }
                               }}
                             >
-                              Generate Notifications
+                              {t('dashboard.generateNotifications')}
                             </button>
                           </div>
                         )}
@@ -611,27 +637,27 @@ allReminders.push({
                 {/* Quick Access */}
                 <div className="bg-white shadow rounded-lg dark:bg-gray-800 dark:border dark:border-gray-700">
                   <div className="px-4 py-5 sm:p-6">
-                    <h2 className="text-lg font-medium text-gray-900 dark:text-white">Quick Access</h2>
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-white">{t('dashboard.quickAccess')}</h2>
                     <div className="mt-4 grid grid-cols-2 gap-4">
                       <Link to="/vehicles" className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">🚗</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">Vehicles</span>
+                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('common.vehicles')}</span>
                       </Link>
                       <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">🔍</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">Placeholder 1</span>
+                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.placeholder1')}</span>
                       </button>
                       <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">📄</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">Documents</span>
+                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.documents')}</span>
                       </button>
                       <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">📅</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">Scheduler</span>
+                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.scheduler')}</span>
                       </button>
                       <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">💬</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">Placeholder 2</span>
+                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.placeholder2')}</span>
                       </button>
                       <button 
                         className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60"
@@ -649,7 +675,7 @@ allReminders.push({
                         }}
                       >
                         <span className="block text-2xl">🔔</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">Check Notifications</span>
+                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.checkNotifications')}</span>
                       </button>
                     </div>
                   </div>
@@ -659,25 +685,25 @@ allReminders.push({
               {/* Reminders Section */}
               <div className="mt-6 bg-white shadow rounded-lg dark:bg-gray-800 dark:border dark:border-gray-700">
                 <div className="px-4 py-5 sm:p-6">
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Upcoming Reminders</h2>
+                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">{t('dashboard.upcomingReminders')}</h2>
                   <div className="mt-4 overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                       <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Vehicle
+                            {t('dashboard.vehicle')}
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Reminder
+                            {t('dashboard.reminder')}
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Due Date
+                            {t('dashboard.dueDate')}
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Status
+                            {t('dashboard.status')}
                           </th>
                           <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Actions
+                            {t('dashboard.actions')}
                           </th>
                         </tr>
                       </thead>
@@ -685,17 +711,17 @@ allReminders.push({
                         {upcomingReminders.length > 0 ? (
                           upcomingReminders.map((reminder) => {
                             let statusClass = "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-                            let statusText = "On Track";
+                            let statusText = t('dashboard.onTrack');
                             
                             if (reminder.daysUntilDue < 0) {
                               statusClass = "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-                              statusText = "Overdue";
+                              statusText = t('dashboard.overdue');
                             } else if (reminder.daysUntilDue <= 7) {
                               statusClass = "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-                              statusText = "Due This Week";
+                              statusText = t('dashboard.dueThisWeek');
                             } else if (reminder.daysUntilDue <= 14) {
                               statusClass = "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
-                              statusText = "Due Soon";
+                              statusText = t('dashboard.dueSoon');
                             }
                             
                             return (
@@ -707,7 +733,17 @@ allReminders.push({
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">{reminder.name}</div>
+                            <div className="text-sm text-gray-900 dark:text-white">{
+                              (() => {
+                                const reminderTranslationMap = {
+                                  'Service Due': 'dashboard.serviceDue',
+                                  'Insurance Renewal': 'dashboard.insuranceRenewal',
+                                  'Road Worthiness Certificate': 'vehicles.reminders.roadWorthinessCertificate',
+                                };
+                                const key = reminderTranslationMap[reminder.name];
+                                return key ? t(key) : reminder.name;
+                              })()
+                            }</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900 dark:text-white">{formatDate(reminder.date)}</div>
@@ -722,10 +758,10 @@ allReminders.push({
                                     onClick={() => markReminderAsCompleted(reminder.vehicle.id, reminder.id, reminder.name)}
 className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                                   >
-{reminder.name.toLowerCase().includes('service') ? 'Mark Serviced' :
-                               reminder.name.toLowerCase().includes('insurance') ? 'Mark Renewed' :
-                               reminder.name.toLowerCase().includes('worthiness') || reminder.name.toLowerCase().includes('certificate') ? 'Mark Renewed' :
-                               'Mark Complete'}
+{reminder.name.toLowerCase().includes('service') ? t('dashboard.markServiced') :
+                               reminder.name.toLowerCase().includes('insurance') ? t('dashboard.markRenewed') :
+                               reminder.name.toLowerCase().includes('worthiness') || reminder.name.toLowerCase().includes('certificate') ? t('dashboard.markRenewed') :
+                               t('dashboard.markComplete')}
 </button>
                           </td>
                         </tr>
@@ -734,7 +770,7 @@ className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-
                         ) : (
                           <tr>
                               <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                              No upcoming reminders found
+                              {t('dashboard.noUpcomingReminders')}
                           </td>
                         </tr>
                         )}

@@ -4,9 +4,12 @@ import { useAuth } from './AuthContext';
 import Sidebar from './components/Sidebar';
 import NotificationBell from './components/NotificationBell';
 import ProfileDropdown from './components/ProfileDropdown';
+import { useTranslation } from 'react-i18next';
+import i18n from './i18n/i18n';
 
 // Service Modal Component
 const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedVehicle, apiUrl, getAuthHeader }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     vehicle_id: '',
     service_type: '',
@@ -101,7 +104,7 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-            {editRecord ? 'Edit Service Record' : 'Add Service Record'}
+            {editRecord ? t('service.editServiceRecord') : t('service.addServiceRecord')}
           </h3>
         </div>
         
@@ -110,7 +113,7 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="vehicle_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Vehicle
+                  {t('common.vehicle')}
                 </label>
                 <select
                   id="vehicle_id"
@@ -120,7 +123,7 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
                   onChange={handleFormChange}
                   required
                 >
-                  <option value="">Select a vehicle</option>
+                  <option value="">{t('common.selectVehicle')}</option>
                   {vehicles.map(vehicle => (
                     <option key={vehicle.id} value={vehicle.id}>
                       {vehicle.id} - {vehicle.make} {vehicle.model}
@@ -131,7 +134,7 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
               
               <div>
                 <label htmlFor="service_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Service Type
+                  {t('service.serviceType')}
                 </label>
                 <select
                   id="service_type"
@@ -141,19 +144,19 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
                   onChange={handleFormChange}
                   required
                 >
-                  <option value="">Select service type</option>
-                  <option value="Oil Change">Oil Change</option>
-                  <option value="Tire Rotation">Tire Rotation</option>
-                  <option value="Brake Service">Brake Service</option>
-                  <option value="Engine Service">Engine Service</option>
-                  <option value="Transmission Service">Transmission Service</option>
-                  <option value="Battery Replacement">Battery Replacement</option>
-                  <option value="Air Filter Replacement">Air Filter Replacement</option>
-                  <option value="Fluid Service">Fluid Service</option>
-                  <option value="Inspection">Inspection</option>
-                  <option value="Insurance Renewal">Insurance Renewal</option>
-                  <option value="Road Worthiness Certificate">Road Worthiness Certificate</option>
-                  <option value="Other">Other</option>
+                  <option value="">{t('common.selectServiceType')}</option>
+                  <option value="Oil Change">{t('service.types.oilChange')}</option>
+                  <option value="Tire Rotation">{t('service.types.tireRotation')}</option>
+                  <option value="Brake Service">{t('service.types.brakeService')}</option>
+                  <option value="Engine Service">{t('service.types.engineService')}</option>
+                  <option value="Transmission Service">{t('service.types.transmissionService')}</option>
+                  <option value="Battery Replacement">{t('service.types.batteryReplacement')}</option>
+                  <option value="Air Filter Replacement">{t('service.types.airFilterReplacement')}</option>
+                  <option value="Fluid Service">{t('service.types.fluidService')}</option>
+                  <option value="Inspection">{t('service.types.inspection')}</option>
+                  <option value="Insurance Renewal">{t('service.types.insuranceRenewal')}</option>
+                  <option value="Road Worthiness Certificate">{t('service.types.roadWorthinessCertificate')}</option>
+                  <option value="Other">{t('common.other')}</option>
                 </select>
               </div>
             </div>
@@ -161,7 +164,7 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="service_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Service Date
+                  {t('service.serviceDate')}
                 </label>
                 <input
                   type="date"
@@ -176,7 +179,7 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
               
               <div>
                 <label htmlFor="mileage" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Mileage (km)
+                  {t('vehicles.mileage')} (km)
                 </label>
                 <input
                   type="number"
@@ -185,7 +188,7 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   value={formData.mileage}
                   onChange={handleFormChange}
-                  placeholder="e.g. 45000"
+                  placeholder={t('service.placeholders.mileage')}
                 />
               </div>
             </div>
@@ -193,7 +196,7 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="cost" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Cost (€)
+                  {t('service.cost')} (€)
                 </label>
                 <input
                   type="number"
@@ -203,13 +206,13 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   value={formData.cost}
                   onChange={handleFormChange}
-                  placeholder="e.g. 150.75"
+                  placeholder={t('service.placeholders.cost')}
                 />
               </div>
               
               <div>
                 <label htmlFor="technician" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Technician
+                  {t('service.technician')}
                 </label>
                 <input
                   type="text"
@@ -218,14 +221,14 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   value={formData.technician}
                   onChange={handleFormChange}
-                  placeholder="e.g. John Smith"
+                  placeholder={t('service.placeholders.technician')}
                 />
               </div>
             </div>
             
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Service Location
+                {t('service.location')}
               </label>
               <input
                 type="text"
@@ -234,13 +237,13 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 value={formData.location}
                 onChange={handleFormChange}
-                placeholder="e.g. City Service Center"
+                placeholder={t('service.placeholders.location')}
               />
             </div>
             
             <div>
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Notes
+                {t('common.notes')}
               </label>
               <textarea
                 id="notes"
@@ -249,24 +252,24 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 value={formData.notes}
                 onChange={handleFormChange}
-                placeholder="Enter any additional notes or details here..."
-              ></textarea>
+                placeholder={t('service.placeholders.notes')}
+              />
             </div>
           </div>
           
-          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
+          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600 flex justify-end space-x-3">
             <button
               type="button"
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
               onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
-              {editRecord ? 'Update' : 'Save'}
+              {t('common.save')}
             </button>
           </div>
         </form>
@@ -276,6 +279,7 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
 };
 
 const ServiceHistory = () => {
+  const { t } = useTranslation();
   const { vehicleId } = useParams();
   const [serviceRecords, setServiceRecords] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -290,13 +294,34 @@ const ServiceHistory = () => {
   // API URL from environment variable
   const apiUrl = import.meta.env.VITE_API_URL;
   
-  // Format date to a readable format
+  // Helper to map service type string to translation key
+  const serviceTypeToKey = {
+    'Oil Change': 'oilChange',
+    'Tire Rotation': 'tireRotation',
+    'Brake Service': 'brakeService',
+    'Engine Service': 'engineService',
+    'Transmission Service': 'transmissionService',
+    'Battery Replacement': 'batteryReplacement',
+    'Air Filter Replacement': 'airFilterReplacement',
+    'Fluid Service': 'fluidService',
+    'Inspection': 'inspection',
+    'Insurance Renewal': 'insuranceRenewal',
+    'Road Worthiness Certificate': 'roadWorthinessCertificate',
+    'Other': 'other',
+    'Spark Plugs Replacement': 'sparkPlugReplacement',
+    'Wheel Alignment': 'wheelAlignment',
+    'Brake Inspection': 'brakeInspection',
+    'Coolant Flush': 'coolantFlush',
+    'Engine Tune-up': 'engineTuneUp'
+  };
+  
+  // Format date to a readable format using current language
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
+    return new Intl.DateTimeFormat(i18n.language, {
+      month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     }).format(date);
   };
   
@@ -482,13 +507,13 @@ const ServiceHistory = () => {
           <div className="py-6">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
-                <h1 className="text-2xl text-gray-900 dark:text-white">Service History</h1>
+                <h1 className="text-2xl text-gray-900 dark:text-white">{t('service.serviceHistory')}</h1>
                 <div className="flex space-x-3">
                   <button
                     onClick={openAddModal}
                     className="px-4 py-2 text-sm bg-blue-600 text-white rounded shadow hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
                   >
-                    <span className="mr-2">➕</span>Add Service Record
+                    <span className="mr-2">➕</span>{t('service.addServiceRecord')}
                   </button>
                 </div>
               </div>
@@ -497,7 +522,7 @@ const ServiceHistory = () => {
               <div className="mt-6 bg-white rounded-lg shadow p-4 dark:bg-gray-800 dark:border dark:border-gray-700">
                 <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4">
                   <label htmlFor="vehicleFilter" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Filter by Vehicle:
+                    {t('service.filterByVehicle')}:
                   </label>
                   <select
                     id="vehicleFilter"
@@ -505,7 +530,7 @@ const ServiceHistory = () => {
                     value={selectedVehicle}
                     onChange={handleVehicleChange}
                   >
-                    <option value="">All Vehicles</option>
+                    <option value="">{t('common.allVehicles')}</option>
                     {vehicles.map(vehicle => (
                       <option key={vehicle.id} value={vehicle.id}>
                         {vehicle.id} - {vehicle.make} {vehicle.model}
@@ -519,10 +544,10 @@ const ServiceHistory = () => {
               <div className="mt-6 bg-white rounded-lg shadow dark:bg-gray-800 dark:border dark:border-gray-700">
                 <div className="px-4 py-5 sm:px-6">
                   <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                    Service Records {selectedVehicle ? `for ${selectedVehicle}` : ''}
+                    {t('service.serviceRecords')} {selectedVehicle ? `${t('common.for')} ${selectedVehicle}` : ''}
                   </h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {serviceRecords.length} records found
+                    {serviceRecords.length} {t('common.recordsFound')}
                   </p>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700">
@@ -531,22 +556,22 @@ const ServiceHistory = () => {
                       <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Vehicle
+                            {t('common.vehicle')}
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Service Type
+                            {t('service.serviceType')}
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Date
+                            {t('common.date')}
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Mileage
+                            {t('vehicles.mileage')}
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Cost
+                            {t('service.cost')}
                           </th>
                           <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                            Actions
+                            {t('common.actions')}
                           </th>
                         </tr>
                       </thead>
@@ -567,7 +592,11 @@ const ServiceHistory = () => {
                                   </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                  {record.service_type}
+                                  {t(
+                                    serviceTypeToKey[record.service_type]
+                                      ? `service.types.${serviceTypeToKey[record.service_type]}`
+                                      : record.service_type || t('common.other')
+                                  )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                   {formatDate(record.service_date)}
@@ -586,7 +615,7 @@ const ServiceHistory = () => {
                                     }}
                                     className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4"
                                   >
-                                    Edit
+                                    {t('common.edit')}
                                   </button>
                                   <button
                                     onClick={(e) => {
@@ -595,7 +624,7 @@ const ServiceHistory = () => {
                                     }}
                                     className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                                   >
-                                    Delete
+                                    {t('common.delete')}
                                   </button>
                                 </td>
                               </tr>
@@ -605,26 +634,26 @@ const ServiceHistory = () => {
                                   <td colSpan="6" className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-b border-gray-200 dark:border-gray-700">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div>
-                                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Details</h4>
+                                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('common.details')}</h4>
                                         <dl className="mt-2 text-sm">
                                           <div className="flex justify-between py-1">
-                                            <dt className="text-gray-500 dark:text-gray-400">Mileage:</dt>
-                                            <dd className="text-gray-900 dark:text-white">{record.mileage ? `${record.mileage.toLocaleString()} km` : 'Not recorded'}</dd>
+                                            <dt className="text-gray-500 dark:text-gray-400">{t('vehicles.mileage')}:</dt>
+                                            <dd className="text-gray-900 dark:text-white">{record.mileage ? `${record.mileage.toLocaleString()} km` : t('common.notRecorded')}</dd>
                                           </div>
                                           <div className="flex justify-between py-1">
-                                            <dt className="text-gray-500 dark:text-gray-400">Technician:</dt>
-                                            <dd className="text-gray-900 dark:text-white">{record.technician || 'Not recorded'}</dd>
+                                            <dt className="text-gray-500 dark:text-gray-400">{t('service.technician')}:</dt>
+                                            <dd className="text-gray-900 dark:text-white">{record.technician || t('common.notRecorded')}</dd>
                                           </div>
                                           <div className="flex justify-between py-1">
-                                            <dt className="text-gray-500 dark:text-gray-400">Location:</dt>
-                                            <dd className="text-gray-900 dark:text-white">{record.location || 'Not recorded'}</dd>
+                                            <dt className="text-gray-500 dark:text-gray-400">{t('service.location')}:</dt>
+                                            <dd className="text-gray-900 dark:text-white">{record.location || t('common.notRecorded')}</dd>
                                           </div>
                                         </dl>
                                       </div>
                                       
                                       {record.notes && (
                                         <div>
-                                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</h4>
+                                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('common.notes')}</h4>
                                           <div className="mt-2 p-3 bg-gray-100 rounded dark:bg-gray-600/50">
                                             <p className="text-sm text-gray-700 whitespace-pre-wrap dark:text-gray-300">{record.notes}</p>
                                           </div>
@@ -638,7 +667,7 @@ const ServiceHistory = () => {
                                         className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                                         onClick={(e) => e.stopPropagation()}
                                       >
-                                        View Vehicle
+                                        {t('common.viewVehicle')}
                                       </Link>
                                       <button 
                                         onClick={(e) => {
@@ -647,7 +676,7 @@ const ServiceHistory = () => {
                                         }}
                                         className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                                       >
-                                        Edit Details
+                                        {t('common.editDetails')}
                                       </button>
                                     </div>
                                   </td>
@@ -658,7 +687,7 @@ const ServiceHistory = () => {
                         ) : (
                           <tr>
                             <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                              No service records found
+                              {t('service.noServiceRecords')}
                             </td>
                           </tr>
                         )}
