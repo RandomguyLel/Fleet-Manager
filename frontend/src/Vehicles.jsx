@@ -5,6 +5,7 @@ import NotificationBell from './components/NotificationBell';
 import ProfileDropdown from './components/ProfileDropdown';
 import Sidebar from './components/Sidebar';
 import { useTranslation } from 'react-i18next';
+import PDFPreviewModal from './components/PDFPreviewModal';
 
 // Vehicle type mapping
 const typeValueToKey = {
@@ -46,6 +47,8 @@ const Vehicles = () => {
   const [error, setError] = useState(null);
   // State for selected vehicles (for delete)
   const [selectedVehicles, setSelectedVehicles] = useState([]);
+  // Add state for tracking if all vehicles are selected
+  const [allSelected, setAllSelected] = useState(false);
   // State for delete confirmation modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   // State for vehicle to delete
@@ -76,6 +79,8 @@ const Vehicles = () => {
   const [fetchingData, setFetchingData] = useState(false);
   // Add redirecting state to prevent multiple redirects
   const [redirecting, setRedirecting] = useState(false);
+  // Add state for PDF preview modal
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
 
   // Fetch vehicles from API
   useEffect(() => {
@@ -278,18 +283,25 @@ const Vehicles = () => {
   // Handle vehicle selection for delete
   const handleVehicleSelection = (vehicleId, isSelected) => {
     if (isSelected) {
-      setSelectedVehicles([...selectedVehicles, vehicleId]);
+      const newSelected = [...selectedVehicles, vehicleId];
+      setSelectedVehicles(newSelected);
+      // Update allSelected state based on if all filtered vehicles are now selected
+      setAllSelected(newSelected.length === filteredVehicles.length);
     } else {
-      setSelectedVehicles(selectedVehicles.filter(id => id !== vehicleId));
+      const newSelected = selectedVehicles.filter(id => id !== vehicleId);
+      setSelectedVehicles(newSelected);
+      setAllSelected(false);
     }
   };
 
   // Handle select all vehicles
   const handleSelectAll = (isSelected) => {
     if (isSelected) {
-      setSelectedVehicles(vehicles.map(vehicle => vehicle.id));
+      setSelectedVehicles(filteredVehicles.map(vehicle => vehicle.id));
+      setAllSelected(true);
     } else {
       setSelectedVehicles([]);
+      setAllSelected(false);
     }
   };
 
@@ -667,14 +679,15 @@ const Vehicles = () => {
                 <div className="px-4 py-5 sm:p-6">
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center space-x-2">
-                      <input 
-                        type="checkbox" 
-                        className="rounded border-gray-300 dark:border-gray-700" 
-                        onChange={(e) => handleSelectAll(e.target.checked)} 
-                      />
                       <button 
                         className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
-                        onClick={() => alert('Export functionality not implemented')}
+                        onClick={() => {
+                          if (selectedVehicles.length === 0) {
+                            alert('Please select at least one vehicle to export');
+                            return;
+                          }
+                          setShowPDFPreview(true);
+                        }}
                       >
                         <span className="mr-1">⬇️</span>{t('common.export')}
                       </button>
@@ -710,7 +723,12 @@ const Vehicles = () => {
                       <thead>
                         <tr>
                           <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider w-8 dark:text-gray-400">
-                            <input type="checkbox" className="rounded border-gray-300 dark:border-gray-700" />
+                            <input 
+                              type="checkbox" 
+                              className="rounded border-gray-300 dark:border-gray-700" 
+                              checked={allSelected}
+                              onChange={(e) => handleSelectAll(e.target.checked)}
+                            />
                           </th>
                           <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.licensePlate')}</th>
                           <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.status')}</th>
@@ -728,6 +746,7 @@ const Vehicles = () => {
                                 <input 
                                   type="checkbox" 
                                   className="rounded border-gray-300 dark:border-gray-700" 
+                                  checked={selectedVehicles.includes(vehicle.id)}
                                   onChange={(e) => handleVehicleSelection(vehicle.id, e.target.checked)} 
                                 />
                               </td>
@@ -1050,6 +1069,14 @@ const Vehicles = () => {
             </div>
           </div>
         </div>
+      )}
+      {showPDFPreview && (
+        <PDFPreviewModal
+          isOpen={showPDFPreview}
+          onClose={() => setShowPDFPreview(false)}
+          selectedVehicles={selectedVehicles}
+          vehicles={vehicles}
+        />
       )}
     </div>
   );

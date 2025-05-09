@@ -46,7 +46,9 @@
     "recordsFound": "records found",
     "notRecorded": "Not recorded",
     "viewVehicle": "View Vehicle",
-    "editDetails": "Edit Details"
+    "editDetails": "Edit Details",
+    "generatedOn": "Report generated on",
+    "totalVehicles": "Total vehicles"
   },
   "auth": {
     "loginTitle": "Login to Fleet Manager",
@@ -159,7 +161,8 @@
       "dueDate": "Due Date",
       "description": "Description",
       "roadWorthinessCertificate": "Road Worthiness Certificate",
-      "customReminder": "Custom Reminder"
+      "customReminder": "Custom Reminder",
+      "status": "Status"
     },
     "documents": "Documents",
     "active": "Active",
@@ -167,7 +170,7 @@
     "maintenance": "Maintenance",
     "searchVehicles": "Search vehicles...",
     "confirmDelete": "Are you sure you want to delete this vehicle?",
-    "confirmDeleteMultiple": "Are you sure you want to delete {count} vehicles?",
+    "confirmDeleteMultiple": "Are you sure you want to delete {{count}} vehicles?",
     "noChanges": "No changes detected",
     "requiredFields": "Please fill in all required fields",
     "registrationCertificate": "Registration Certificate number",
@@ -212,6 +215,12 @@
       "model": "Model",
       "year": "2023",
       "mileage": "45,000"
+    },
+    "export": {
+      "title": "Vehicle Information Report",
+      "download": "Download PDF",
+      "preview": "Preview",
+      "noVehiclesSelected": "Please select at least one vehicle to export"
     }
   },
   "service": {
