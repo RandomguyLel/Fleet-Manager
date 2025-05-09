@@ -40,7 +40,9 @@
     "other": "Cits",
     "notes": "Piezīmes",
     "saveChanges": "Saglabāt izmaiņas",
-    "integrations": "Integrācijas"
+    "integrations": "Integrācijas",
+    "generatedOn": "Atskaite izveidota",
+    "totalVehicles": "Kopējais transportlīdzekļu skaits"
   },
   "auth": {
     "loginTitle": "Ienākt Fleet Manager",
@@ -81,7 +83,7 @@
     "overdue": "Nokavēts",
     "dueSoon": "Drīz jāveic",
     "dueThisWeek": "Jāveic šonedēļ",
-    "onTrack": "Laikā",
+    "onTrack": "Kārtībā",
     "markServiced": "Atzīmēt kā apkalpotu",
     "markRenewed": "Atzīmēt kā atjaunotu",
     "markComplete": "Atzīmēt kā pabeigtu",
@@ -111,7 +113,7 @@
     "maintenance": "Apkopē",
     "searchVehicles": "Meklēt transportlīdzekļus...",
     "confirmDelete": "Vai tiešām vēlaties dzēst šo transportlīdzekli?",
-    "confirmDeleteMultiple": "Vai tiešām vēlaties dzēst {count} transportlīdzekļus?",
+    "confirmDeleteMultiple": "Vai tiešām vēlaties dzēst {{count}} transportlīdzekļus?",
     "noChanges": "Nav konstatētas izmaiņas",
     "requiredFields": "Lūdzu, aizpildiet visus obligātos laukus",
     "registrationCertificate": "Reģistrācijas apliecības numurs",
@@ -183,7 +185,8 @@
       "dueDate": "Termiņš",
       "description": "Apraksts",
       "roadWorthinessCertificate": "Tehniskā apskate",
-      "customReminder": "Pielāgots atgādinājums"
+      "customReminder": "Pielāgots atgādinājums",
+      "status": "Statuss" 
     },
     "location": {
       "title": "Pēdējā zināmā atrašanās vieta",
@@ -208,6 +211,12 @@
       "model": "Modelis",
       "year": "2023",
       "mileage": "45,000"
+    },
+    "export": {
+      "title": "Transportlīdzekļu atskaite",
+      "download": "Lejupielādēt PDF",
+      "preview": "Priekšskatīt",
+      "noVehiclesSelected": "Lūdzu, izvēlieties vismaz vienu transportlīdzekli eksportēšanai"
     }
   },
   "service": {
