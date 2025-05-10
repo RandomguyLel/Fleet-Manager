@@ -42,7 +42,15 @@
     "saveChanges": "Saglabāt izmaiņas",
     "integrations": "Integrācijas",
     "generatedOn": "Atskaite izveidota",
-    "totalVehicles": "Kopējais transportlīdzekļu skaits"
+    "totalVehicles": "Kopējais transportlīdzekļu skaits",
+    "fleetManager": "Transportldzekļu menedžmenta sistēma",
+    "allVehicles": "Visi transportlīdzekļi",
+    "selectCategory": "Izvēlieties kategoriju",
+    "recordsFound": "Atrasti ieraksti",
+    "notRecorded": "Nav norādīts",
+    "viewVehicle": "Skatīt transportlīdzekli",
+    "editDetails": "Rediģēt ierakstu",
+    "remove": "Dzēst"
   },
   "auth": {
     "loginTitle": "Ienākt Fleet Manager",
@@ -94,11 +102,12 @@
     "notificationServiceDueSoon": "Apkopes termiņš tuvojas",
     "notificationInsuranceRenewalSoon": "Apdrošināšanas atjaunošanas termiņš tuvojas",
     "reminders": "Atgādinājumi",
-    "systemSettings": "Sistēmas iestatījumi"
-  },
-  "vehicles": {
+    "systemSettings": "Sistēmas iestatījumi",
+    "generateNotifications": "Ģenerēt paziņojumus"
+  },  "vehicles": {
     "addVehicle": "Pievienot jaunu transportlīdzekli",
     "editVehicle": "Rediģēt transportlīdzekli",
+    "importNotImplemented": "Importēšanas funkcionalitāte drīzumā būs pieejama",
     "vehicleDetails": "Transportlīdzekļa informācija",
     "licensePlate": "Reģistrācijas numurs",
     "type": "Tips",
@@ -149,7 +158,8 @@
       "action2": "Importēt transportlīdzekļa termiņus un atgādinājumus",
       "action3": "Atjaunināt transportlīdzekļa atgādinājumus no csdd.lv",
       "remindersSynced": "Atgādinājumi veiksmīgi atjaunināti no e.csdd.lv",
-      "syncWithCsdd": "Sinhronizēt ar CSDD"
+      "syncWithCsdd": "Sinhronizēt ar CSDD",
+      "checkInsuranceHint": "Noklikšķiniet uz pogas, lai pārbaudītu apdrošināšanas datus"
     },
     
     "vehicleTypes": {
@@ -168,8 +178,7 @@
       "title": "Izsekošana",
       "enableGPS": "Ieslēgt GPS izsekošanu",
       "apiEndpoint": "API galapunkta URL"
-    },
-    "reminders": {
+    },    "reminders": {
       "noReminders": "Nav aktīvu atgādinājumu",
       "overdue": "Nokavēts par {{days}} dienām",
       "dueToday": "Termiņš šodien",
@@ -185,8 +194,13 @@
       "dueDate": "Termiņš",
       "description": "Apraksts",
       "roadWorthinessCertificate": "Tehniskā apskate",
+      "insuranceRenewal": "Apdrošināšanas atjaunošana",
+      "serviceDue": "Tehniskā apkope",
       "customReminder": "Pielāgots atgādinājums",
-      "status": "Statuss" 
+      "status": "Statuss" ,
+      "enabled": "Aktīvs",
+      "name": "Nosaukums",
+      "date": "Datums"
     },
     "location": {
       "title": "Pēdējā zināmā atrašanās vieta",
@@ -217,6 +231,11 @@
       "download": "Lejupielādēt PDF",
       "preview": "Priekšskatīt",
       "noVehiclesSelected": "Lūdzu, izvēlieties vismaz vienu transportlīdzekli eksportēšanai"
+    },
+    "tabs": {
+      "details": "Detaļas",
+      "reminders": "Atgādinājumi",
+      "integrations": "Integrācijas"
     }
   },
   "service": {
@@ -234,6 +253,12 @@
     "editServiceRecord": "Rediģēt servisa ierakstu",
     "location": "Servisa vieta",
     "filterByVehicle": "Filtrēt pēc transportlīdzekļa",
+    "expenseCategory": "Izdevumu kategorija",
+    "categories": {
+      "maintenance": "Apkope",
+      "documents": "Dokumenti",
+      "fuel": "Degviela"
+    },
     "types": {
       "oilChange": "Eļļas maiņa",
       "tireRotation": "Riepu rotācija",
@@ -251,7 +276,9 @@
       "wheelAlignment": "Riepu Balancēšana",
       "brakeInspection": "Bremžu apskate",
       "coolantFlush": "Dzesēšanas šķidruma nomaiņa",
-      "engineTuneUp": "Dzinēja uzlabojumi"
+      "engineTuneUp": "Dzinēja uzlabojumi",
+      "fuel": "Degviela",
+      "refueling": "Degvielas uzpilde"
     },
     "placeholders": {
       "mileage": "piem. 45000",
@@ -274,7 +301,8 @@
       "last7Days": "Pēdējās 7 dienas",
       "last30Days": "Pēdējās 30 dienas",
       "last3Months": "Pēdējie 3 mēneši",
-      "lastYear": "Pēdējais gads"
+      "lastYear": "Pēdējais gads",
+      "custom": "Cits"
     },
     "exportData": "Eksportēt datus",
     "retry": "Mēģināt vēlreiz",
@@ -293,7 +321,7 @@
     "category": "Kategorija",
     "thisMonth": "Šomēnes",
     "lastMonth": "Pagājušajā mēnesī",
-    "ytd": "Gada līdz šim",
+    "ytd": "No gada līdz šodienai",
     "total": "Kopā"
   },
   "userManagement": {

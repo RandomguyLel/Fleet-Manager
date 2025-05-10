@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import NotificationBell from './components/NotificationBell';
-import ProfileDropdown from './components/ProfileDropdown';
+import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
 import { useAuth } from './AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -43,6 +42,18 @@ const UserManagement = () => {
 
   // Get API URL from environment variable
   const apiUrl = import.meta.env.VITE_API_URL || '';
+  
+  // Sidebar collapsed state (lifted up)
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      return savedState === 'true';
+    }
+    return window.innerWidth < 768;
+  });
+  React.useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+  }, [sidebarCollapsed]);
   
   // Load users from API
   const fetchUsers = async () => {
@@ -176,9 +187,7 @@ const UserManagement = () => {
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (formData) => {
     try {
       // Check if we're demoting the last admin
       if (modalMode === 'edit' && 
@@ -400,7 +409,7 @@ const UserManagement = () => {
                     name="firstName"
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     required
                   />
                 </div>
@@ -415,7 +424,7 @@ const UserManagement = () => {
                     name="lastName"
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     required
                   />
                 </div>
@@ -431,7 +440,7 @@ const UserManagement = () => {
                   name="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   required
                 />
               </div>
@@ -446,7 +455,7 @@ const UserManagement = () => {
                   name="username"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   required
                 />
               </div>
@@ -463,7 +472,7 @@ const UserManagement = () => {
                       name="password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="block w-full rounded-l-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                       required
                     />
                     <button
@@ -486,7 +495,7 @@ const UserManagement = () => {
                   name="role"
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
                   <option value="user">{t('userManagement.user')}</option>
                   <option value="admin">{t('userManagement.admin')}</option>
@@ -532,32 +541,15 @@ const UserManagement = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="shrink-0 flex items-center">
-                <span className="text-2xl text-blue-600 dark:text-blue-400">🚚</span>
-              </div>
-              <div className="ml-4 text-xl font-medium text-gray-800 dark:text-white">Fleet Manager</div>
-            </div>
-            <div className="flex items-center relative">
-              <NotificationBell />
-              <div className="ml-4 flex items-center">
-                <ProfileDropdown />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <TopBar />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <div className="py-6">
+        <main className={`flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+          <div className="py-6 mt-16">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
                 <h1 className="text-2xl text-gray-900 dark:text-white">{t('userManagement.pageTitle')}</h1>

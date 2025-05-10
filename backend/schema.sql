@@ -77,6 +77,17 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   details JSONB -- Additional details in JSON format
 );
 
+-- Create user_csdd_credentials table for storing CSDD credentials per user
+CREATE TABLE IF NOT EXISTS user_csdd_credentials (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  email VARCHAR(100) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id)
+);
+
 -- Insert sample users with freshly generated bcrypt hashes
 INSERT INTO users (username, email, password_hash, first_name, last_name, role)
 VALUES 

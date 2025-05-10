@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS service_history (
   technician VARCHAR(100),
   location VARCHAR(100),
   notes TEXT,
+  expense_category VARCHAR(50), -- For categorizing expenses (Maintenance, Documents, Fuel)
   reminder_id INTEGER REFERENCES reminders(id) ON DELETE SET NULL, -- Optional link to the reminder that prompted this service
   created_by INTEGER REFERENCES users(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -17,6 +18,9 @@ CREATE TABLE IF NOT EXISTS service_history (
 
 -- Create an index on vehicle_id for faster lookups
 CREATE INDEX IF NOT EXISTS idx_service_history_vehicle_id ON service_history(vehicle_id);
+
+-- Create an index on expense_category for faster filtering
+CREATE INDEX IF NOT EXISTS idx_service_history_expense_category ON service_history(expense_category);
 
 -- Add a view that combines service history with vehicle information
 CREATE OR REPLACE VIEW service_history_with_vehicles AS
