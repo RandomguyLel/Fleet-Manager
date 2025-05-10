@@ -95,10 +95,10 @@
     "notificationInsuranceRenewalSoon": "Apdrošināšanas atjaunošanas termiņš tuvojas",
     "reminders": "Atgādinājumi",
     "systemSettings": "Sistēmas iestatījumi"
-  },
-  "vehicles": {
+  },  "vehicles": {
     "addVehicle": "Pievienot jaunu transportlīdzekli",
     "editVehicle": "Rediģēt transportlīdzekli",
+    "importNotImplemented": "Importēšanas funkcionalitāte drīzumā būs pieejama",
     "vehicleDetails": "Transportlīdzekļa informācija",
     "licensePlate": "Reģistrācijas numurs",
     "type": "Tips",
@@ -168,8 +168,7 @@
       "title": "Izsekošana",
       "enableGPS": "Ieslēgt GPS izsekošanu",
       "apiEndpoint": "API galapunkta URL"
-    },
-    "reminders": {
+    },    "reminders": {
       "noReminders": "Nav aktīvu atgādinājumu",
       "overdue": "Nokavēts par {{days}} dienām",
       "dueToday": "Termiņš šodien",
@@ -185,6 +184,8 @@
       "dueDate": "Termiņš",
       "description": "Apraksts",
       "roadWorthinessCertificate": "Tehniskā apskate",
+      "insuranceRenewal": "Apdrošināšanas atjaunošana",
+      "serviceDue": "Tehniskā apkope",
       "customReminder": "Pielāgots atgādinājums",
       "status": "Statuss" 
     },

@@ -275,20 +275,16 @@ const Sidebar = () => {
               <div className={`px-3 py-2 mt-6 text-xs uppercase text-gray-500 dark:text-gray-400 ${collapsed && window.innerWidth >= 768 ? "text-center" : ""}`}>
                 {(!collapsed || window.innerWidth < 768) && t('common.admin')}
               </div>
-              <ul className="space-y-1 mt-2">
-                <li>
-                  <a 
-                    href="#" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert('Not yet implemented!');
-                    }} 
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400 ${collapsed && window.innerWidth >= 768 ? "justify-center" : ""}`}
-                    title="System Settings"
+              <ul className="space-y-1 mt-2">                <li>
+                  <Link 
+                    to="/system-settings" 
+                    className={getLinkClass('/system-settings')} 
+                    title={t('common.systemSettings')}
+                    onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/system-settings') : null}
                   >
-                    <span className={`${collapsed && window.innerWidth >= 768 ? "text-xl" : "mr-3"} text-gray-500 dark:text-gray-400`}>⚙️</span>
-                    {(!collapsed || window.innerWidth < 768) && "System Settings - NYI"}
-                  </a>
+                    <span className={getIconClass('/system-settings')}>⚙️</span>
+                    {(!collapsed || window.innerWidth < 768) && t('common.systemSettings')}
+                  </Link>
                 </li>
                 <li>
                   <Link 

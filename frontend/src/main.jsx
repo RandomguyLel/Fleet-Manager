@@ -11,7 +11,9 @@ import Login from './Login';
 import Profile from './Profile';
 import UserManagement from './UserManagement';
 import ServiceHistory from './ServiceHistory';
+import SystemSettings from './SystemSettings';
 import { AuthProvider, ProtectedRoute, AdminProtectedRoute } from './AuthContext';
+import { CsddProvider } from './CsddContext';
 
 // Layout wrapper component
 const AppLayout = ({ children }) => {
@@ -102,6 +104,15 @@ const App = () => {
             </AppLayout>
           </ProtectedRoute>
         }
+      />      <Route
+        path="/system-settings"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SystemSettings />
+            </AppLayout>
+          </ProtectedRoute>
+        }
       />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
@@ -112,7 +123,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <CsddProvider>
+          <App />
+        </CsddProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

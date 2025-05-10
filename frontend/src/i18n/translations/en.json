@@ -39,16 +39,11 @@
     "selectServiceType": "Select service type",
     "other": "Other",
     "notes": "Notes",
-    "saveChanges": "Save Changes",
-    "integrations": "Integrations",
-    "filterByVehicle": "Filter by Vehicle",
-    "allVehicles": "All Vehicles",
-    "recordsFound": "records found",
-    "notRecorded": "Not recorded",
-    "viewVehicle": "View Vehicle",
-    "editDetails": "Edit Details",
-    "generatedOn": "Report generated on",
-    "totalVehicles": "Total vehicles"
+    "update": "Update",
+    "retry": "Retry",
+    "comingSoon": "Coming Soon",
+    "generatedOn": "Generated on",
+    "totalVehicles": "Total Vehicles"
   },
   "auth": {
     "loginTitle": "Login to Fleet Manager",
@@ -99,10 +94,10 @@
     "noUpcomingReminders": "No upcoming reminders found",
     "notificationServiceDueSoon": "Service Due due soon",
     "notificationInsuranceRenewalSoon": "Insurance Renewal due soon"
-  },
-  "vehicles": {
+  },  "vehicles": {
     "addVehicle": "Add New Vehicle",
     "editVehicle": "Edit Vehicle",
+    "importNotImplemented": "Import functionality is coming soon",
     "vehicleDetails": "Vehicle Details",
     "licensePlate": "License Plate",
     "type": "Type",
@@ -144,8 +139,7 @@
       "action3": "Update vehicle reminders from csdd.lv",
       "remindersSynced": "Reminders successfully updated from e.csdd.lv",
       "syncWithCsdd": "Sync with CSDD"
-    },
-    "reminders": {
+    },    "reminders": {
       "noReminders": "No active reminders",
       "overdue": "Overdue by {{days}} days",
       "dueToday": "Due today",
@@ -161,6 +155,8 @@
       "dueDate": "Due Date",
       "description": "Description",
       "roadWorthinessCertificate": "Road Worthiness Certificate",
+      "insuranceRenewal": "Insurance Renewal",
+      "serviceDue": "Service Due",
       "customReminder": "Custom Reminder",
       "status": "Status"
     },
@@ -405,5 +401,15 @@
       "roadworthiness": "Road Worthiness",
       "other": "Other"
     }
+  },
+  "settings": {
+    "integrations": "Integrations",
+    "general": "General",
+    "about": "About",
+    "connectToCsdd": "Connect to e.CSDD.lv",
+    "disconnectFromCsdd": "Disconnect from e.CSDD.lv",
+    "moreIntegrationsComingSoon": "More integrations coming soon",
+    "generalSettingsComingSoon": "General settings functionality is coming soon",
+    "acknowledgements": "Acknowledgements"
   }
-} 
+}
