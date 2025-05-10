@@ -13,6 +13,7 @@ import VehicleDeleteModal from './components/vehicle/VehicleDeleteModal';
 import EditConfirmationModal from './components/vehicle/EditConfirmationModal';
 import AddVehicleModal from './components/vehicle/AddVehicleModal';
 import { typeValueToKey, getStatusBadgeClass, getDocumentStatusClass, calculateDaysRemaining } from './components/vehicle/vehicleUtils';
+import TopBar from './components/TopBar';
 
 const Vehicles = () => {
   const { t } = useTranslation();
@@ -59,6 +60,17 @@ const Vehicles = () => {
   const [redirecting, setRedirecting] = useState(false);
   // Add state for PDF preview modal
   const [showPDFPreview, setShowPDFPreview] = useState(false);
+  // Sidebar collapsed state (lifted up)
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      return savedState === 'true';
+    }
+    return window.innerWidth < 768;
+  });
+  React.useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+  }, [sidebarCollapsed]);
 
   // Fetch vehicles from API
   useEffect(() => {
@@ -595,32 +607,17 @@ const Vehicles = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="shrink-0 flex items-center">
-                <span className="text-2xl text-blue-600 dark:text-blue-400">🚚</span>
-              </div>
-              <div className="ml-4 text-xl font-medium text-gray-800 dark:text-white">Fleet Manager</div>
-            </div>
-            <div className="flex items-center">
-              <NotificationBell />
-              <div className="ml-4">
-                <ProfileDropdown />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <TopBar />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Sidebar - only in flex flow on md+ */}
+        <div className="hidden md:block">
+          <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+        </div>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <div className="py-6">
+        {/* Main content - full width on mobile */}
+        <main className={`flex-1 w-full overflow-y-auto bg-gray-50 dark:bg-gray-900 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+          <div className="py-6 mt-16">
             <div className="px-4 sm:px-6 lg:px-8">                <div className="flex justify-between items-center">
                 <h1 className="text-2xl text-gray-900 dark:text-white">{t('common.vehicles')}</h1>
                 <div className="flex space-x-3">                  <button 

@@ -7,12 +7,11 @@ import { useAuth } from '../AuthContext';
 import DebugUtils from './DebugUtils';
 import { useTranslation } from 'react-i18next';
 
-const Sidebar = () => {
+const Sidebar = ({ collapsed, setCollapsed }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showDebugTools, setShowDebugTools] = useState(false);
@@ -21,25 +20,6 @@ const Sidebar = () => {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'admin';
   
-  // Check if sidebar state is saved in localStorage
-  useEffect(() => {
-    const savedState = localStorage.getItem('sidebarCollapsed');
-    if (savedState) {
-      setCollapsed(savedState === 'true');
-    }
-    
-    // Always collapse on mobile by default
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      setCollapsed(true);
-    }
-  }, []);
-
-  // Save sidebar state to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', collapsed);
-  }, [collapsed]);
-
   // Close mobile sidebar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -122,10 +102,10 @@ const Sidebar = () => {
   };
 
   return (
-    <div className={`relative ${collapsed ? "w-16" : "w-64"} transition-all duration-300 ease-in-out`}>
+    <div className={`fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 ${collapsed ? "w-16" : "w-64"} transition-all duration-300 ease-in-out bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700`}>
       {/* Desktop Language Switcher */}
-      <div className="hidden md:flex justify-center py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        <LanguageSwitcher />
+      <div className={`hidden md:flex justify-center py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800`}>
+        <LanguageSwitcher collapsed={collapsed} />
       </div>
       {/* Mobile header with the app name, hamburger menu, notification bell, and profile dropdown */}
       <div className="md:hidden fixed top-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-gray-800 border-b border-gray-700">
@@ -142,7 +122,7 @@ const Sidebar = () => {
           <span className="text-xl font-medium text-white">Fleet Manager</span>
         </div>
         <div className="flex items-center space-x-2">
-          <LanguageSwitcher />
+          <LanguageSwitcher collapsed={collapsed} />
           <NotificationBell />
           <ProfileDropdown />
         </div>
@@ -167,21 +147,11 @@ const Sidebar = () => {
         aria-hidden="true"
       />
       
-      {/* Combined sidebar for mobile and desktop */}
-      <nav 
+      {/* Mobile sidebar overlay (not in flex flow) */}
+      <nav
         id="mobile-sidebar"
-        className={`
-          ${mobileOpen ? "translate-x-0" : "-translate-x-full"} 
-          md:translate-x-0
-          fixed md:relative top-0 left-0 h-full z-40 md:z-auto
-          bg-white border-r border-gray-200 overflow-y-auto shadow-sm 
-          dark:bg-gray-800 dark:border-gray-700 
-          ${isTransitioning ? "overflow-hidden" : ""}
-          transition-transform duration-300 ease-in-out
-          ${collapsed ? "w-16" : "w-64"}
-          ${mobileOpen ? "w-[85vw] max-w-[300px]" : ""}
-          pt-16 md:pt-0
-        `}
+        className={`md:hidden fixed top-0 left-0 h-full z-40 bg-white border-r border-gray-200 overflow-y-auto shadow-sm dark:bg-gray-800 dark:border-gray-700 transition-transform duration-300 ease-in-out ${mobileOpen ? "translate-x-0" : "-translate-x-full"} w-[85vw] max-w-[300px] pt-16 ${isTransitioning ? "overflow-hidden" : ""}`}
+        style={{ willChange: 'transform' }}
       >
         <div className="py-6 px-4">
           {/* Mobile close button */}
@@ -268,6 +238,17 @@ const Sidebar = () => {
                 {(!collapsed || window.innerWidth < 768) && t('common.profile')}
               </Link>
             </li>
+            <li>
+              <Link 
+                to="/system-settings" 
+                className={getLinkClass('/system-settings')} 
+                title={t('common.systemSettings')}
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/system-settings') : null}
+              >
+                <span className={getIconClass('/system-settings')}>⚙️</span>
+                {(!collapsed || window.innerWidth < 768) && t('common.systemSettings')}
+              </Link>
+            </li>
           </ul>
 
           {isAdmin && (
@@ -275,17 +256,148 @@ const Sidebar = () => {
               <div className={`px-3 py-2 mt-6 text-xs uppercase text-gray-500 dark:text-gray-400 ${collapsed && window.innerWidth >= 768 ? "text-center" : ""}`}>
                 {(!collapsed || window.innerWidth < 768) && t('common.admin')}
               </div>
-              <ul className="space-y-1 mt-2">                <li>
+              <ul className="space-y-1 mt-2">
+                <li>
                   <Link 
-                    to="/system-settings" 
-                    className={getLinkClass('/system-settings')} 
-                    title={t('common.systemSettings')}
-                    onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/system-settings') : null}
+                    to="/user-management" 
+                    className={getLinkClass('/user-management')} 
+                    title={t('common.userManagement')}
+                    onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/user-management') : null}
                   >
-                    <span className={getIconClass('/system-settings')}>⚙️</span>
-                    {(!collapsed || window.innerWidth < 768) && t('common.systemSettings')}
+                    <span className={getIconClass('/user-management')}>👥</span>
+                    {(!collapsed || window.innerWidth < 768) && t('common.userManagement')}
                   </Link>
                 </li>
+                <li>
+                  <Link 
+                    to="/audit-log" 
+                    className={getLinkClass('/audit-log')} 
+                    title={t('common.auditLog')}
+                    onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/audit-log') : null}
+                  >
+                    <span className={getIconClass('/audit-log')}>📋</span>
+                    {(!collapsed || window.innerWidth < 768) && t('common.auditLog')}
+                  </Link>
+                </li>
+                
+                {/* Debug section for admins */}
+                <li>
+                  <a 
+                    href="#" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleDebugTools();
+                    }} 
+                    className={`flex items-center px-3 py-2 mt-4 text-sm font-medium rounded-md bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/40 ${collapsed && window.innerWidth >= 768 ? "justify-center" : ""}`}
+                    title="Debug Tools"
+                  >
+                    <span className={`${collapsed && window.innerWidth >= 768 ? "text-xl" : "mr-3"} text-purple-500 dark:text-purple-400`}>🐞</span>
+                    {(!collapsed || window.innerWidth < 768) && "Debug Tools"}
+                  </a>
+                </li>
+              </ul>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* Desktop sidebar (in flex flow) */}
+      <nav
+        className={`hidden md:block fixed md:relative top-0 left-0 h-full z-40 md:z-auto bg-white border-r border-gray-200 overflow-y-auto shadow-sm dark:bg-gray-800 dark:border-gray-700 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"} pt-0`}
+      >
+        <div className="py-6 px-4">
+          <div className={`px-3 py-2 text-xs uppercase text-gray-500 dark:text-gray-400 ${collapsed && window.innerWidth >= 768 ? "text-center" : ""}`}>
+            {(!collapsed || window.innerWidth < 768) && t('common.main')}
+          </div>
+          <ul className="space-y-1 mt-2">
+            <li>
+              <Link 
+                to="/" 
+                className={getLinkClass('/')} 
+                title={t('common.dashboard')}
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/') : null}
+              >
+                <span className={getIconClass('/')}>📊</span>
+                {(!collapsed || window.innerWidth < 768) && t('common.dashboard')}
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/analytics" 
+                className={getLinkClass('/analytics')} 
+                title={t('common.analytics')}
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/analytics') : null}
+              >
+                <span className={getIconClass('/analytics')}>📈</span>
+                {(!collapsed || window.innerWidth < 768) && t('common.analytics')}
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/vehicles" 
+                className={getLinkClass('/vehicles')} 
+                title={t('common.vehicles')}
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/vehicles') : null}
+              >
+                <span className={getIconClass('/vehicles')}>🚗</span>
+                {(!collapsed || window.innerWidth < 768) && t('common.vehicles')}
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/service-history" 
+                className={getLinkClass('/service-history')} 
+                title={t('common.serviceHistory')}
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/service-history') : null}
+              >
+                <span className={getIconClass('/service-history')}>🔧</span>
+                {(!collapsed || window.innerWidth < 768) && t('common.serviceHistory')}
+              </Link>
+            </li>
+            <li>
+              <a 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  alert('Not yet implemented!');
+                }} 
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:hover:text-blue-400 ${collapsed && window.innerWidth >= 768 ? "justify-center" : ""}`}
+                title="Documents"
+              >
+                <span className={`${collapsed && window.innerWidth >= 768 ? "text-xl" : "mr-3"} text-gray-500 dark:text-gray-400`}>📄</span>
+                {(!collapsed || window.innerWidth < 768) && "Documents - NYI"}
+              </a>
+            </li>
+            <li>
+              <Link 
+                to="/profile" 
+                className={getLinkClass('/profile')} 
+                title={t('common.profile')}
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/profile') : null}
+              >
+                <span className={getIconClass('/profile')}>👤</span>
+                {(!collapsed || window.innerWidth < 768) && t('common.profile')}
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/system-settings" 
+                className={getLinkClass('/system-settings')} 
+                title={t('common.systemSettings')}
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/system-settings') : null}
+              >
+                <span className={getIconClass('/system-settings')}>⚙️</span>
+                {(!collapsed || window.innerWidth < 768) && t('common.systemSettings')}
+              </Link>
+            </li>
+          </ul>
+
+          {isAdmin && (
+            <>
+              <div className={`px-3 py-2 mt-6 text-xs uppercase text-gray-500 dark:text-gray-400 ${collapsed && window.innerWidth >= 768 ? "text-center" : ""}`}>
+                {(!collapsed || window.innerWidth < 768) && t('common.admin')}
+              </div>
+              <ul className="space-y-1 mt-2">
                 <li>
                   <Link 
                     to="/user-management" 

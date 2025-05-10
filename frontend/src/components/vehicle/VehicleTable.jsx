@@ -34,7 +34,6 @@ const VehicleTable = ({
               />
             </th>
             <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.licensePlate')}</th>
-            <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.status')}</th>
             <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.type')}</th>
             <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.lastService')}</th>
             <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider dark:text-gray-400">{t('vehicles.documents')}</th>

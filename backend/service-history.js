@@ -81,7 +81,7 @@ async function createServiceHistory(data, user) {
   try {
     const { 
       vehicle_id, service_type, service_date, mileage, cost,
-      technician, location, notes, reminder_id, documents 
+      technician, location, notes, reminder_id, documents, expense_category 
     } = data;
     
     // Validate required fields
@@ -102,12 +102,12 @@ async function createServiceHistory(data, user) {
       // Insert service history record
       const result = await db.query(
         `INSERT INTO service_history 
-        (vehicle_id, service_type, service_date, mileage, cost, technician, location, notes, reminder_id, created_by, documents)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        (vehicle_id, service_type, service_date, mileage, cost, technician, location, notes, expense_category, reminder_id, created_by, documents)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *`,
         [
           vehicle_id, service_type, service_date, mileage, cost,
-          technician, location, notes, reminder_id, user.id,
+          technician, location, notes, expense_category || null, reminder_id, user.id,
           documents ? JSON.stringify(documents) : null
         ]
       );
@@ -169,7 +169,7 @@ async function updateServiceHistory(id, data, user) {
     
     const { 
       service_type, service_date, mileage, cost,
-      technician, location, notes, documents 
+      technician, location, notes, documents, expense_category 
     } = data;
     
     // Validate required fields
@@ -181,12 +181,13 @@ async function updateServiceHistory(id, data, user) {
     const result = await db.query(
       `UPDATE service_history 
       SET service_type = $1, service_date = $2, mileage = $3, cost = $4, 
-          technician = $5, location = $6, notes = $7, documents = $8
-      WHERE id = $9
+          technician = $5, location = $6, notes = $7, documents = $8, expense_category = $9
+      WHERE id = $10
       RETURNING *`,
       [
         service_type, service_date, mileage, cost,
         technician, location, notes, documents ? JSON.stringify(documents) : existingRecord.documents,
+        expense_category || null,
         id
       ]
     );
@@ -214,7 +215,8 @@ async function updateServiceHistory(id, data, user) {
         service_type,
         service_date,
         mileage,
-        cost
+        cost,
+        expense_category
       }),
       ip_address: user.ip,
       user_agent: user.userAgent

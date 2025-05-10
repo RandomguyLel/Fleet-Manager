@@ -5,7 +5,7 @@ const VehicleSearchBar = ({ searchQuery, setSearchQuery, openBulkDeleteConfirmat
   const { t } = useTranslation();
   
   return (
-    <div className="flex justify-between items-center mb-4">
+    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 mb-4">
       <div className="flex items-center space-x-2">
         <button 
           className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
@@ -20,11 +20,11 @@ const VehicleSearchBar = ({ searchQuery, setSearchQuery, openBulkDeleteConfirmat
           <span className="mr-1">🗑️</span>{t('common.delete')}
         </button>
       </div>
-      <div className="relative">
+      <div className="relative w-full max-w-xs md:max-w-sm ml-auto">
         <input 
           type="text" 
           placeholder={t('vehicles.searchVehicles')} 
-          className="pl-8 pr-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+          className="pl-8 pr-4 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 w-full"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />

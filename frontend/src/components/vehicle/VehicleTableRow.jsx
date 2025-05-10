@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import VehicleExpandedDetails from './VehicleExpandedDetails';
+import { calculateDaysRemaining } from './vehicleUtils';
 
 const VehicleTableRow = ({ 
   vehicle,
@@ -18,6 +19,37 @@ const VehicleTableRow = ({
 }) => {
   const { t } = useTranslation();
 
+  // Calculate the overall document status based on reminders
+  const getOverallDocumentStatus = () => {
+    if (!vehicle.reminders || vehicle.reminders.length === 0) {
+      return 'unknown';
+    }
+
+    // Get all enabled reminders
+    const enabledReminders = vehicle.reminders.filter(r => r.enabled);
+    if (enabledReminders.length === 0) {
+      return 'unknown';
+    }
+
+    // Check if any reminder is expired
+    const hasExpired = enabledReminders.some(reminder => {
+      const { status } = calculateDaysRemaining(reminder.date);
+      return status === 'expired';
+    });
+
+    // Check if any reminder is expiring soon
+    const hasExpiringSoon = enabledReminders.some(reminder => {
+      const { status } = calculateDaysRemaining(reminder.date);
+      return status === 'expiring soon';
+    });
+
+    if (hasExpired) return 'expired';
+    if (hasExpiringSoon) return 'expiring soon';
+    return 'valid';
+  };
+
+  const documentStatus = getOverallDocumentStatus();
+
   return (
     <React.Fragment>
       <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -28,7 +60,8 @@ const VehicleTableRow = ({
             checked={selectedVehicles.includes(vehicle.id)}
             onChange={(e) => handleVehicleSelection(vehicle.id, e.target.checked)} 
           />
-        </td>        <td className="px-6 py-4">
+        </td>
+        <td className="px-6 py-4">
           <button 
             className="flex items-center text-sm text-gray-900 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none"
             onClick={() => toggleExpandRow(vehicle.id)}
@@ -45,7 +78,6 @@ const VehicleTableRow = ({
             </span>
             <span className="font-medium">{vehicle.id}</span>
           </button>
-        </td><td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
           <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusBadgeClass(vehicle.status)}`}>
             {t('vehicles.statusOptions.' + (vehicle.status ? vehicle.status.toLowerCase() : 'unknown'))}
           </span>
@@ -53,26 +85,14 @@ const VehicleTableRow = ({
         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
           {t('vehicles.vehicleTypes.' + (typeValueToKey[vehicle.type] || 'other'))}
         </td>
-        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{vehicle.lastService}</td>        <td className="px-6 py-4">
-          <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-            getDocumentStatusClass(
-              typeof vehicle.documents === 'string'
-                ? vehicle.documents
-                : (vehicle.documents && typeof vehicle.documents.status === 'string'
-                    ? vehicle.documents.status
-                    : 'unknown')
-            )
-          }`}>
-            {
-              typeof vehicle.documents === 'string'
-                ? t('vehicles.documentStatus.' + vehicle.documents.toLowerCase())
-                : (vehicle.documents && typeof vehicle.documents.status === 'string'
-                    ? t('vehicles.documentStatus.' + vehicle.documents.status.toLowerCase())
-                    : t('vehicles.documentStatus.unknown'))
-            }
+        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{vehicle.lastService}</td>
+        <td className="px-6 py-4">
+          <span className={`px-2 py-1 text-xs rounded-full font-medium ${getDocumentStatusClass(documentStatus)}`}>
+            {t('vehicles.documentStatus.' + documentStatus)}
           </span>
-        </td><td className="px-6 py-4 text-right">
-          <div className="invisible group-hover:visible flex justify-end space-x-2">
+        </td>
+        <td className="px-6 py-4 text-right">
+          <div className="flex justify-end space-x-2">
             <button 
               className="p-1 hover:bg-gray-100 rounded dark:hover:bg-gray-700"
               onClick={() => openEditVehicleModal(vehicle)}

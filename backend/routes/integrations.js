@@ -2,6 +2,10 @@
 const express = require('express');
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
+const bcrypt = require('bcrypt');
+const db = require('../db');
+const { createAuditLog } = require('../audit-logger');
+const { authenticateToken } = require('./auth');
 const router = express.Router();
 
 // Store user sessions temporarily (in a real app, use a database or Redis)
@@ -577,6 +581,139 @@ router.get('/insurance/:registrationNumber/:regaplnr', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: `Server error: ${error.message}`
+    });
+  }
+});
+
+// Save CSDD credentials for the current user
+router.post('/csdd/credentials', authenticateToken, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const userId = req.user.id;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
+    // Hash the password
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // Check if user already has saved credentials
+    const existingCredentials = await db.query(
+      'SELECT * FROM user_csdd_credentials WHERE user_id = $1',
+      [userId]
+    );
+
+    if (existingCredentials.rows.length > 0) {
+      // Update existing credentials
+      await db.query(
+        `UPDATE user_csdd_credentials 
+         SET email = $1, password_hash = $2, updated_at = NOW()
+         WHERE user_id = $3`,
+        [email, passwordHash, userId]
+      );
+    } else {
+      // Insert new credentials
+      await db.query(
+        `INSERT INTO user_csdd_credentials (user_id, email, password_hash)
+         VALUES ($1, $2, $3)`,
+        [userId, email, passwordHash]
+      );
+    }
+
+    // Create audit log
+    await createAuditLog({
+      user_id: userId,
+      username: req.user.username,
+      action: existingCredentials.rows.length > 0 ? 'Update' : 'Create',
+      page: 'System Settings',
+      field: 'csdd_credentials',
+      new_value: JSON.stringify({ email }),
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
+
+    res.json({
+      success: true,
+      message: 'CSDD credentials saved successfully'
+    });
+  } catch (error) {
+    console.error('Error saving CSDD credentials:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to save CSDD credentials'
+    });
+  }
+});
+
+// Get saved CSDD credentials for the current user
+router.get('/csdd/credentials', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await db.query(
+      'SELECT email FROM user_csdd_credentials WHERE user_id = $1',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({
+        success: true,
+        hasCredentials: false
+      });
+    }
+
+    res.json({
+      success: true,
+      hasCredentials: true,
+      email: result.rows[0].email
+    });
+  } catch (error) {
+    console.error('Error getting CSDD credentials:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get CSDD credentials'
+    });
+  }
+});
+
+// Delete saved CSDD credentials for the current user
+router.delete('/csdd/credentials', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await db.query(
+      'DELETE FROM user_csdd_credentials WHERE user_id = $1 RETURNING email',
+      [userId]
+    );
+
+    if (result.rows.length > 0) {
+      // Create audit log
+      await createAuditLog({
+        user_id: userId,
+        username: req.user.username,
+        action: 'Delete',
+        page: 'System Settings',
+        field: 'csdd_credentials',
+        old_value: JSON.stringify({ email: result.rows[0].email }),
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent']
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'CSDD credentials deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting CSDD credentials:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete CSDD credentials'
     });
   }
 });

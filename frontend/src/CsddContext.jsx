@@ -9,25 +9,132 @@ export const useCsdd = () => {
 };
 
 export const CsddProvider = ({ children }) => {
-  const { getAuthHeader } = useAuth();
+  const { getAuthHeader, currentUser } = useAuth();
   const apiUrl = import.meta.env.VITE_API_URL;
   
   // State for CSDD integration
   const [csddIntegration, setCsddIntegration] = useState({
     connectionStatus: 'checking',
     userInfo: null,
-    credentials: { email: '', password: '' }
+    credentials: { email: '', password: '' },
+    hasSavedCredentials: false
   });
-    // Check session on component mount
+
+  // Check session and saved credentials on component mount or when user changes
   useEffect(() => {
-    checkCsddSession();
-  }, []);
-  
+    if (currentUser?.id) {
+      checkCsddSession();
+      checkSavedCredentials();
+    } else {
+      // Reset state when no user is logged in
+      setCsddIntegration({
+        connectionStatus: 'disconnected',
+        userInfo: null,
+        credentials: { email: '', password: '' },
+        hasSavedCredentials: false
+      });
+    }
+  }, [currentUser?.id]);
+
+  // Check for saved credentials
+  const checkSavedCredentials = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/credentials`, {
+        headers: {
+          ...getAuthHeader()
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      setCsddIntegration(prev => ({
+        ...prev,
+        hasSavedCredentials: data.hasCredentials,
+        credentials: {
+          ...prev.credentials,
+          email: data.email || ''
+        }
+      }));
+    } catch (error) {
+      console.error('Error checking saved credentials:', error);
+    }
+  };
+
+  // Save credentials
+  const saveCredentials = async (credentials) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/credentials`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify(credentials)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setCsddIntegration(prev => ({
+          ...prev,
+          hasSavedCredentials: true,
+          credentials: {
+            ...prev.credentials,
+            email: credentials.email
+          }
+        }));
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error saving credentials:', error);
+      throw error;
+    }
+  };
+
+  // Delete saved credentials
+  const deleteSavedCredentials = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/credentials`, {
+        method: 'DELETE',
+        headers: {
+          ...getAuthHeader()
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setCsddIntegration(prev => ({
+          ...prev,
+          hasSavedCredentials: false
+        }));
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error deleting credentials:', error);
+      throw error;
+    }
+  };
+
   const checkCsddSession = async () => {
     try {
       console.log('[Frontend] Checking for active CSDD session...');
       
-      const response = await fetch(`${apiUrl}/api/integrations/csdd/session/default`, {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/session/${currentUser.id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +173,8 @@ export const CsddProvider = ({ children }) => {
       });
     }
   };
-    // Connect to e.CSDD.lv
+
+  // Connect to e.CSDD.lv
   const connectToCsdd = async (credentials) => {
     try {
       setCsddIntegration({
@@ -85,7 +193,7 @@ export const CsddProvider = ({ children }) => {
         body: JSON.stringify({
           email: credentials.email,
           password: credentials.password,
-          userId: 'default' // Using a default user ID for this example
+          userId: currentUser.id // Use current user's ID
         }),
       });
 
@@ -127,7 +235,7 @@ export const CsddProvider = ({ children }) => {
   // Disconnect from e.CSDD.lv
   const disconnectFromCsdd = async () => {
     try {
-      const response = await fetch(`${apiUrl}/api/integrations/csdd/disconnect/default`, {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/disconnect/${currentUser.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +279,7 @@ export const CsddProvider = ({ children }) => {
 
       console.log('[Frontend] Fetching vehicle details for:', plateNumber);
       
-      const response = await fetch(`${apiUrl}/api/integrations/csdd/vehicle/${plateNumber}?userId=default`, {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/vehicle/${plateNumber}?userId=${currentUser.id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -208,7 +316,9 @@ export const CsddProvider = ({ children }) => {
     checkCsddSession,
     connectToCsdd,
     disconnectFromCsdd,
-    fetchVehicleDetails
+    fetchVehicleDetails,
+    saveCredentials,
+    deleteSavedCredentials
   };
   
   return (

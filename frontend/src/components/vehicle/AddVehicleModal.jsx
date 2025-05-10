@@ -699,7 +699,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
                           </p>
                           <button 
                             type="button" 
-                            onClick={disconnectFromCsdd}
+                            onClick={() => window.location.href = '/system-settings'}
                             className="px-4 py-2 text-sm border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 w-full dark:border-purple-500 dark:text-purple-400 dark:hover:bg-purple-900/30"
                           >
                             Go to System Settings

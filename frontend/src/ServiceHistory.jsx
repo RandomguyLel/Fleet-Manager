@@ -2,10 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import Sidebar from './components/Sidebar';
-import NotificationBell from './components/NotificationBell';
-import ProfileDropdown from './components/ProfileDropdown';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/i18n';
+import TopBar from './components/TopBar';
 
 // Service Modal Component
 const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedVehicle, apiUrl, getAuthHeader }) => {
@@ -19,22 +18,29 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
     technician: '',
     location: '',
     notes: '',
-    documents: []
+    documents: [],
+    expense_category: ''
   });
 
   // Initialize form data when modal opens or editRecord changes
   useEffect(() => {
     if (editRecord) {
-      setFormData({
-        vehicle_id: editRecord.vehicle_id,
-        service_type: editRecord.service_type,
-        service_date: editRecord.service_date.substring(0, 10),
-        mileage: editRecord.mileage || '',
-        cost: editRecord.cost || '',
-        technician: editRecord.technician || '',
-        location: editRecord.location || '',
-        notes: editRecord.notes || '',
-        documents: editRecord.documents || []
+      console.log('Edit record:', editRecord); // Debug log
+      setFormData(prev => {
+        const newFormData = {
+          vehicle_id: editRecord.vehicle_id,
+          service_type: editRecord.service_type,
+          service_date: editRecord.service_date.substring(0, 10),
+          mileage: editRecord.mileage || '',
+          cost: editRecord.cost || '',
+          technician: editRecord.technician || '',
+          location: editRecord.location || '',
+          notes: editRecord.notes || '',
+          documents: editRecord.documents || [],
+          expense_category: editRecord.expense_category || editRecord.expenseCategory || ''
+        };
+        console.log('Form data set in useEffect:', newFormData); // Debug log
+        return newFormData;
       });
     } else {
       // Set default values for new record
@@ -47,7 +53,8 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
         technician: '',
         location: '',
         notes: '',
-        documents: []
+        documents: [],
+        expense_category: ''
       });
     }
   }, [editRecord, selectedVehicle, isOpen]);
@@ -56,10 +63,23 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     const processedValue = name === 'mileage' || name === 'cost' ? parseFloat(value) || '' : value;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: processedValue
-    }));
+    
+    setFormData(prevData => {
+      const newData = {
+        ...prevData,
+        [name]: processedValue
+      };
+      
+      // Reset expense_category when service_type changes from "Other"
+      if (name === 'service_type' && value !== 'Other') {
+        newData.expense_category = '';
+      }
+      
+      // Log the form data changes for debugging
+      console.log('Form data updated:', newData);
+      
+      return newData;
+    });
   };
 
   // Handle form submission
@@ -67,6 +87,21 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
     e.preventDefault();
     
     try {
+      // Prepare data with placeholder values for empty fields
+      const processedData = {
+        ...formData,
+        technician: formData.technician.trim() || 'N/A',
+        location: formData.location.trim() || 'N/A',
+        notes: formData.notes.trim() || 'N/A',
+        mileage: formData.mileage || null,
+        cost: formData.cost || null,
+        // Only set expense_category if it's not empty and service type is Other
+        expense_category: formData.service_type === 'Other' && formData.expense_category ? formData.expense_category : null
+      };
+
+      // Log the data being sent for debugging
+      console.log('Submitting service record:', processedData);
+
       const url = editRecord 
         ? `${apiUrl}/api/service-history/${editRecord.id}` 
         : `${apiUrl}/api/service-history`;
@@ -79,7 +114,7 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
           ...getAuthHeader(),
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(processedData)
       });
       
       if (!response.ok) {
@@ -156,10 +191,34 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
                   <option value="Inspection">{t('service.types.inspection')}</option>
                   <option value="Insurance Renewal">{t('service.types.insuranceRenewal')}</option>
                   <option value="Road Worthiness Certificate">{t('service.types.roadWorthinessCertificate')}</option>
+                  <option value="Fuel">{t('service.types.fuel')}</option>
+                  <option value="Refueling">{t('service.types.refueling')}</option>
                   <option value="Other">{t('common.other')}</option>
                 </select>
               </div>
             </div>
+            
+            {/* Expense Category selection for "Other" type */}
+            {formData.service_type === 'Other' && (
+              <div>
+                <label htmlFor="expense_category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('service.expenseCategory')}
+                </label>
+                <select
+                  id="expense_category"
+                  name="expense_category"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  value={formData.expense_category}
+                  onChange={handleFormChange}
+                  required
+                >
+                  <option value="">{t('common.selectCategory')}</option>
+                  <option value="Maintenance">{t('service.categories.maintenance')}</option>
+                  <option value="Documents">{t('service.categories.documents')}</option>
+                  <option value="Fuel">{t('service.categories.fuel')}</option>
+                </select>
+              </div>
+            )}
             
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -445,6 +504,18 @@ const ServiceHistory = () => {
     setSelectedRecord(selectedRecord && selectedRecord.id === record.id ? null : record);
   };
   
+  // Sidebar collapsed state (lifted up)
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      return savedState === 'true';
+    }
+    return window.innerWidth < 768;
+  });
+  React.useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+  }, [sidebarCollapsed]);
+  
   // Load data on component mount
   useEffect(() => {
     const loadData = async () => {
@@ -479,32 +550,15 @@ const ServiceHistory = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="shrink-0 flex items-center">
-                <span className="text-2xl text-blue-600 dark:text-blue-400">🚚</span>
-              </div>
-              <div className="ml-4 text-xl font-medium text-gray-800 dark:text-white">Fleet Manager</div>
-            </div>
-            <div className="flex items-center">
-              <NotificationBell />
-              <div className="ml-4 relative">
-                <ProfileDropdown />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <TopBar />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <div className="py-6">
+        <main className={`flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+          <div className="py-6 mt-16">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
                 <h1 className="text-2xl text-gray-900 dark:text-white">{t('service.serviceHistory')}</h1>

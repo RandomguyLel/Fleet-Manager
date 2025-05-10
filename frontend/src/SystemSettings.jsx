@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useCsdd } from './CsddContext';
-import NotificationBell from './components/NotificationBell';
-import ProfileDropdown from './components/ProfileDropdown';
+import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
 import { useTranslation } from 'react-i18next';
 
@@ -14,7 +13,9 @@ const SystemSettings = () => {  const { t } = useTranslation();
     csddIntegration, 
     connectToCsdd: connectToCsddContext, 
     disconnectFromCsdd: disconnectFromCsddContext, 
-    checkCsddSession 
+    checkCsddSession,
+    saveCredentials,
+    deleteSavedCredentials
   } = useCsdd();
   
   // Local state for form handling
@@ -22,6 +23,7 @@ const SystemSettings = () => {  const { t } = useTranslation();
     email: csddIntegration.credentials?.email || '',
     password: ''
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [csddError, setCsddError] = useState(null);
   const [fetchingData, setFetchingData] = useState(false);
   
@@ -38,6 +40,7 @@ const SystemSettings = () => {  const { t } = useTranslation();
         email: csddIntegration.credentials.email
       }));
     }
+    setRememberMe(csddIntegration.hasSavedCredentials);
   }, [csddIntegration]);
   
   // Connect to e.CSDD.lv using the context
@@ -51,6 +54,14 @@ const SystemSettings = () => {  const { t } = useTranslation();
       if (!result) {
         setCsddError('Failed to log in. Please check your credentials.');
       } else {
+        // Save credentials if remember me is checked
+        if (rememberMe) {
+          await saveCredentials(csddCredentials);
+        } else if (csddIntegration.hasSavedCredentials) {
+          // Delete saved credentials if remember me is unchecked
+          await deleteSavedCredentials();
+        }
+        
         // Clear password form field after successful connection
         setCsddCredentials({
           ...csddCredentials,
@@ -70,6 +81,12 @@ const SystemSettings = () => {  const { t } = useTranslation();
     try {
       setFetchingData(true);
       await disconnectFromCsddContext();
+      
+      // Delete saved credentials when disconnecting
+      if (csddIntegration.hasSavedCredentials) {
+        await deleteSavedCredentials();
+        setRememberMe(false);
+      }
     } catch (error) {
       console.error('Error disconnecting from CSDD:', error);
       setCsddError('An error occurred while disconnecting. Please try again.');
@@ -78,35 +95,30 @@ const SystemSettings = () => {  const { t } = useTranslation();
     }
   };
 
+  // Sidebar collapsed state (lifted up)
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      return savedState === 'true';
+    }
+    return window.innerWidth < 768;
+  });
+  React.useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+  }, [sidebarCollapsed]);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="shrink-0 flex items-center">
-                <span className="text-2xl text-blue-600 dark:text-blue-400">🚚</span>
-              </div>
-              <div className="ml-4 text-xl font-medium text-gray-800 dark:text-white">Fleet Manager</div>
-            </div>
-            <div className="flex items-center">
-              <NotificationBell />
-              <div className="ml-4">
-                <ProfileDropdown />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <TopBar />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <div className="py-6">
+        <main className={`flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+          <div className="py-6 mt-16">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
                 <h1 className="text-2xl text-gray-900 dark:text-white">{t('common.systemSettings')}</h1>
@@ -170,6 +182,9 @@ const SystemSettings = () => {  const { t } = useTranslation();
                                   <div className="mt-2 text-sm text-green-700 dark:text-green-400">
                                     <p>User: {csddIntegration.userInfo?.firstName || ''} {csddIntegration.userInfo?.lastName || ''}</p>
                                     <p>Email: {csddIntegration.credentials?.email || 'Unknown'}</p>
+                                    {csddIntegration.hasSavedCredentials && (
+                                      <p className="mt-1 text-xs text-green-600">✓ Credentials saved</p>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -223,6 +238,18 @@ const SystemSettings = () => {  const { t } = useTranslation();
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                               />
                             </div>
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id="rememberMe"
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+                              />
+                              <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                                Remember my credentials
+                              </label>
+                            </div>
                             <div>
                               <button 
                                 type="button" 
@@ -265,7 +292,7 @@ const SystemSettings = () => {  const { t } = useTranslation();
                       <div className="text-center mb-6">
                         <div className="text-3xl text-blue-600 mb-2">🚚</div>
                         <h3 className="text-xl font-medium text-gray-900 dark:text-white">Fleet Manager</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Version 0.5.0 Alpha</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Version 0.6.5 Alpha</p>
                       </div>
                       
                       <div className="p-4 bg-gray-50 rounded-md dark:bg-gray-700/30">

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import NotificationBell from './components/NotificationBell';
-import ProfileDropdown from './components/ProfileDropdown';
+import TopBar from './components/TopBar';
 import Sidebar from './components/Sidebar';
 import {
   Chart as ChartJS,
@@ -38,6 +37,8 @@ ChartJS.register(
 
 const Analytics = () => {
   const [timeRange, setTimeRange] = useState('7d');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [serviceRecords, setServiceRecords] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicles, setSelectedVehicles] = useState([]);
@@ -47,6 +48,18 @@ const Analytics = () => {
   const navigate = useNavigate();
   const apiUrl = import.meta.env.VITE_API_URL;
   const { t } = useTranslation();
+
+  // Sidebar collapsed state (lifted up)
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      return savedState === 'true';
+    }
+    return window.innerWidth < 768;
+  });
+  React.useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+  }, [sidebarCollapsed]);
 
   // Check authentication
   useEffect(() => {
@@ -78,9 +91,9 @@ const Analytics = () => {
       
       setVehicles(data);
       
-      // Initialize selected vehicles with first two vehicles or all if less than two
+      // Initialize selected vehicles with all vehicles
       if (data.length > 0 && selectedVehicles.length === 0) {
-        setSelectedVehicles(data.slice(0, Math.min(2, data.length)).map(v => v.id));
+        setSelectedVehicles(data.map(v => v.id));
       }
       
       return data;
@@ -122,7 +135,7 @@ const Analytics = () => {
       
       // Get the response as text first to debug any issues
       const rawText = await response.text();
-      console.log('Raw API response:', rawText);
+      //console.log('Raw API response:', rawText);
       
       // Try to parse the text as JSON
       let data;
@@ -155,6 +168,22 @@ const Analytics = () => {
   // Handle time range change
   const handleTimeRangeChange = (e) => {
     setTimeRange(e.target.value);
+    // Reset custom date range when selecting predefined range
+    if (e.target.value !== 'custom') {
+      setStartDate('');
+      setEndDate('');
+    }
+  };
+
+  // Handle custom date range changes
+  const handleDateRangeChange = (type, value) => {
+    if (type === 'start') {
+      setStartDate(value);
+      setTimeRange('custom');
+    } else {
+      setEndDate(value);
+      setTimeRange('custom');
+    }
   };
 
   // Handle vehicle selection
@@ -207,23 +236,29 @@ const Analytics = () => {
     if (!serviceRecords || !serviceRecords.length) return [];
     
     const now = new Date();
-    let startDate = new Date();
+    let startDateObj = new Date();
+    let endDateObj = now;
     
-    switch(timeRange) {
-      case '7d':
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case '30d':
-        startDate.setDate(now.getDate() - 30);
-        break;
-      case '3m':
-        startDate.setMonth(now.getMonth() - 3);
-        break;
-      case '1y':
-        startDate.setFullYear(now.getFullYear() - 1);
-        break;
-      default:
-        startDate.setDate(now.getDate() - 7);
+    if (timeRange === 'custom' && startDate && endDate) {
+      startDateObj = new Date(startDate);
+      endDateObj = new Date(endDate);
+    } else {
+      switch(timeRange) {
+        case '7d':
+          startDateObj.setDate(now.getDate() - 7);
+          break;
+        case '30d':
+          startDateObj.setDate(now.getDate() - 30);
+          break;
+        case '3m':
+          startDateObj.setMonth(now.getMonth() - 3);
+          break;
+        case '1y':
+          startDateObj.setFullYear(now.getFullYear() - 1);
+          break;
+        default:
+          startDateObj.setDate(now.getDate() - 7);
+      }
     }
     
     // Filter records by date and selected vehicles
@@ -232,7 +267,7 @@ const Analytics = () => {
         if (!record || !record.service_date) return false;
         
         const recordDate = new Date(record.service_date);
-        const isInTimeRange = recordDate >= startDate && recordDate <= now;
+        const isInTimeRange = recordDate >= startDateObj && recordDate <= endDateObj;
         const isSelectedVehicle = !selectedVehicles.length || selectedVehicles.includes(record.vehicle_id);
         return isInTimeRange && isSelectedVehicle;
       } catch (e) {
@@ -425,16 +460,25 @@ const Analytics = () => {
         
         // Categorize service types
         let category = 'Maintenance';
-        if (record.service_type && (
-            record.service_type.toLowerCase().includes('fuel') || 
-            record.service_type.toLowerCase().includes('gas') ||
-            record.service_type.toLowerCase().includes('diesel'))) {
+        const serviceType = record.service_type?.toLowerCase() || '';
+        
+        // If it's an "Other" type with a custom expense category, use that
+        if (serviceType === 'other' && record.expense_category) {
+          category = record.expense_category;
+        } else if (serviceType.includes('fuel') || 
+                  serviceType.includes('gas') ||
+                  serviceType.includes('diesel') ||
+                  serviceType === 'fuel' ||
+                  serviceType === 'refueling') {
           category = 'Fuel';
-        } else if (record.service_type && (
-                  record.service_type.toLowerCase().includes('document') ||
-                  record.service_type.toLowerCase().includes('license') ||
-                  record.service_type.toLowerCase().includes('registration') ||
-                  record.service_type.toLowerCase().includes('permit'))) {
+        } else if (serviceType.includes('document') ||
+                  serviceType.includes('license') ||
+                  serviceType.includes('registration') ||
+                  serviceType.includes('permit') ||
+                  serviceType.includes('insurance') ||
+                  serviceType.includes('road worthiness') ||
+                  serviceType.includes('roadworthy') ||
+                  serviceType.includes('certificate')) {
           category = 'Documents';
         }
         
@@ -465,32 +509,15 @@ const Analytics = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="shrink-0 flex items-center">
-                <span className="text-2xl text-blue-600 dark:text-blue-400">🚚</span>
-              </div>
-              <div className="ml-4 text-xl font-medium text-gray-800 dark:text-white">Fleet Manager</div>
-            </div>
-            <div className="flex items-center">
-              <NotificationBell />
-              <div className="ml-4">
-                <ProfileDropdown />
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <TopBar />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <div className="py-6">
+        <main className={`flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+          <div className="py-6 mt-16">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
                 <h1 className="text-2xl text-gray-900 dark:text-white">{t('analytics.pageTitle')}</h1>
@@ -504,7 +531,26 @@ const Analytics = () => {
                     <option value="30d">{t('analytics.timeRange.last30Days')}</option>
                     <option value="3m">{t('analytics.timeRange.last3Months')}</option>
                     <option value="1y">{t('analytics.timeRange.lastYear')}</option>
+                    <option value="custom">{t('analytics.timeRange.custom')}</option>
                   </select>
+                  
+                  {timeRange === 'custom' && (
+                    <div className="flex space-x-2">
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => handleDateRangeChange('start', e.target.value)}
+                        className="px-4 py-2 border border-gray-300 rounded-md text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+                      />
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => handleDateRangeChange('end', e.target.value)}
+                        className="px-4 py-2 border border-gray-300 rounded-md text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+                      />
+                    </div>
+                  )}
+                  
                   <button 
                     className="px-4 py-2 bg-gray-800 text-white rounded-md text-sm dark:bg-gray-700"
                     onClick={() => {
