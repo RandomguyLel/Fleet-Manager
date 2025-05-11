@@ -93,6 +93,12 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Validate license plate is not empty
+    if (!vehicleData.id || vehicleData.id.trim() === '') {
+      alert(t('vehicles.errors.licensePlateRequired'));
+      return;
+    }
+    
     // Build a list of changes if we're editing
     let changes = [];
     if (vehicleToEdit) {
@@ -419,7 +425,9 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
             {activeTab === 'details' && (
               <div className="space-y-6">                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.licensePlate')}</label>
+                    <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">
+                      {t('vehicles.licensePlate')} <span className="text-red-500">*</span>
+                    </label>
                     <div className="relative">
                       <input
                         type="text"
@@ -428,6 +436,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         required
+                        placeholder={t('vehicles.licensePlatePlaceholder')}
                       />
                       {vehicleData.id && csddIntegration.connectionStatus === 'connected' && (
                         <button 

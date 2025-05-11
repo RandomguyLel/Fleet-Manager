@@ -127,6 +127,8 @@
     "requiredFields": "Lūdzu, aizpildiet visus obligātos laukus",
     "registrationCertificate": "Reģistrācijas apliecības numurs",
     "status": "Statuss",
+    "importFromCsdd": "Importēt transportlīdzekļus no e.csdd.lv",
+    "licensePlatePlaceholder": "piem. ABC123",
     "statusOptions": {
       "active": "Aktīvs",
       "inactive": "Neaktīvs",
@@ -236,6 +238,9 @@
       "details": "Detaļas",
       "reminders": "Atgādinājumi",
       "integrations": "Integrācijas"
+    },
+    "errors": {
+      "licensePlateRequired": "Reģistrācijas numurs ir obligāts"
     }
   },
   "service": {

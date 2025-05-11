@@ -40,7 +40,7 @@ const logResponse = (url, status, headers, body) => {
 // e.csdd.lv integration endpoints
 router.post('/csdd/connect', async (req, res) => {
   try {
-    const { email, password, userId = 'default' } = req.body;
+    const { email, password, userId = '${currentUser.id}' } = req.body;
     
     console.log(`[${new Date().toISOString()}] Attempting to connect to e.csdd.lv with email: ${email}`);
     
@@ -175,14 +175,14 @@ router.post('/csdd/connect', async (req, res) => {
 
 // Get user session if exists
 router.get('/csdd/session/:userId', async (req, res) => {
-  const { userId = 'default' } = req.params;
+  const { userId = '${currentUser.id}' } = req.params;
   
   console.log(`[${new Date().toISOString()}] Checking session for user ID: ${userId}`);
   
   if (userSessions[userId]) {
-    // Check if session is still valid (less than 1 hour old)
+    // Check if session is still valid (less than 6 hours old)
     const sessionAge = Date.now() - userSessions[userId].timestamp;
-    const isSessionValid = sessionAge < 3600000;
+    const isSessionValid = sessionAge < 21600000;
     
     console.log(`[${new Date().toISOString()}] Session found for user ID: ${userId}`);
     console.log(`[${new Date().toISOString()}] Session age: ${Math.round(sessionAge/1000)} seconds`);
@@ -211,7 +211,7 @@ router.get('/csdd/session/:userId', async (req, res) => {
 
 // Logout from CSDD
 router.post('/csdd/disconnect/:userId', async (req, res) => {
-  const { userId = 'default' } = req.params;
+  const { userId = '${currentUser.id}' } = req.params;
   
   console.log(`[${new Date().toISOString()}] Disconnecting session for user ID: ${userId}`);
   
@@ -232,7 +232,7 @@ router.post('/csdd/disconnect/:userId', async (req, res) => {
 router.get('/csdd/vehicle/:registrationNumber', async (req, res) => {
   try {
     const { registrationNumber } = req.params;
-    const { userId = 'default' } = req.query;
+    const { userId = '${currentUser.id}' } = req.query;
     
     console.log(`[${new Date().toISOString()}] Fetching details for vehicle: ${registrationNumber} with user ID: ${userId}`);
     
@@ -714,6 +714,88 @@ router.delete('/csdd/credentials', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to delete CSDD credentials'
+    });
+  }
+});
+
+// Get all vehicles from CSDD
+router.get('/csdd/vehicles', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Check if user has an active session
+    if (!userSessions[userId]) {
+      return res.status(401).json({
+        success: false,
+        message: 'No active session. Please connect to e.csdd.lv first.'
+      });
+    }
+
+    try {
+      // Make a request to the vehicle list page
+      const vehiclesUrl = 'https://e.csdd.lv/tldati/';
+      const headers = {
+        'Cookie': userSessions[userId].cookies,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
+      };
+
+      // Log request
+      logRequest('GET', vehiclesUrl, headers);
+
+      const response = await fetch(vehiclesUrl, { headers });
+      const html = await response.text();
+
+      // Log response
+      logResponse(
+        vehiclesUrl,
+        response.status,
+        Object.fromEntries([...response.headers.entries()]),
+        html.substring(0) + '... (truncated)'
+      );
+
+      // Use cheerio to parse the HTML and extract vehicle data
+      const $ = cheerio.load(html);
+      const vehicles = [];
+
+      // Find all vehicle rows in the table
+      $('#vehicles-table tbody tr.tr-data').each((i, el) => {
+        const $row = $(el);
+        const status = $row.find('td.collapse-mobile.translate').text().trim();
+        
+        // Only include vehicles that are "Uzskaitē" (registered)
+        if (status === 'Uzskaitē') {
+          const tds = $row.find('td');
+          if (tds.length >= 6) {
+            const vehicle = {
+              id: $row.attr('value'), // License plate number
+              make: $(tds[2]).text().trim(), // Make/Model
+              regaplnr: $(tds[3]).text().trim(), // Registration number
+              type: $(tds[4]).text().trim(), // Vehicle type
+              status: status
+            };
+            vehicles.push(vehicle);
+          }
+        }
+      });
+
+      console.log(`[${new Date().toISOString()}] Found ${vehicles.length} registered vehicles`);
+      
+      return res.json({
+        success: true,
+        vehicles
+      });
+    } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error fetching vehicles from CSDD:`, error);
+      return res.status(500).json({
+        success: false,
+        message: `Failed to fetch vehicles: ${error.message}`
+      });
+    }
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Error in vehicles endpoint:`, error);
+    return res.status(500).json({
+      success: false,
+      message: `Server error: ${error.message}`
     });
   }
 });
