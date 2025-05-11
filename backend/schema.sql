@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS vehicles (
   id VARCHAR(10) PRIMARY KEY,
   status VARCHAR(20) NOT NULL,
-  type VARCHAR(20) NOT NULL,
+  type VARCHAR(50) NOT NULL,
   "lastService" VARCHAR(20),
   documents VARCHAR(20),
   make VARCHAR(50),

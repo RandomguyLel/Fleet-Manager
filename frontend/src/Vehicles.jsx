@@ -14,6 +14,7 @@ import EditConfirmationModal from './components/vehicle/EditConfirmationModal';
 import AddVehicleModal from './components/vehicle/AddVehicleModal';
 import { typeValueToKey, getStatusBadgeClass, getDocumentStatusClass, calculateDaysRemaining } from './components/vehicle/vehicleUtils';
 import TopBar from './components/TopBar';
+import ImportVehiclesModal from './components/vehicle/ImportVehiclesModal';
 
 const Vehicles = () => {
   const { t } = useTranslation();
@@ -68,6 +69,8 @@ const Vehicles = () => {
     }
     return window.innerWidth < 768;
   });
+  const [showImportModal, setShowImportModal] = useState(false);
+
   React.useEffect(() => {
     localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
   }, [sidebarCollapsed]);
@@ -326,7 +329,7 @@ const Vehicles = () => {
       console.log('[Frontend] Syncing reminders for vehicle:', vehicleId);
       
       // First check if we have an active CSDD connection
-      const sessionResponse = await fetch(`${apiUrl}/api/integrations/csdd/session/default`, {
+      const sessionResponse = await fetch(`${apiUrl}/api/integrations/csdd/session/${currentUser.id}`, {
         method: 'GET',
         headers: { 
           'Content-Type': 'application/json',
@@ -342,7 +345,7 @@ const Vehicles = () => {
       }
       
       // Fetch the latest data from CSDD
-      const response = await fetch(`${apiUrl}/api/integrations/csdd/vehicle/${vehicleId}?userId=default`, {
+      const response = await fetch(`${apiUrl}/api/integrations/csdd/vehicle/${vehicleId}?userId=${currentUser.id}`, {
         method: 'GET',
         headers: { 
           'Content-Type': 'application/json',
@@ -562,6 +565,12 @@ const Vehicles = () => {
     } else {
       alert('There was an error deleting one or more vehicles');
     }
+
+    // After all deletions
+    setVehicles(prevVehicles => prevVehicles.filter(
+      v => !selectedVehicles.includes(v.id)
+    ));
+    setSelectedVehicles([]);
   };
 
   // Reset modal state when closing
@@ -572,6 +581,39 @@ const Vehicles = () => {
 
   // Make syncVehicleRemindersWithCsdd available to child components
   window.syncVehicleRemindersWithCsdd = syncVehicleRemindersWithCsdd;
+
+  // Handle vehicle import
+  const handleImportVehicle = async (vehicleData) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/vehicles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
+        body: JSON.stringify(vehicleData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        
+        // Handle duplicate vehicle error
+        if (response.status === 409 && errorData.code === 'DUPLICATE_VEHICLE') {
+          console.warn(`Vehicle ${vehicleData.id} already exists, skipping...`);
+          return false;
+        }
+        
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const newVehicle = await response.json();
+      setVehicles(prev => [...prev, newVehicle]);
+      return true;
+    } catch (error) {
+      console.error('Error importing vehicle:', error);
+      return false;
+    }
+  };
 
   // Display loading state
   if (loading) {
@@ -622,9 +664,7 @@ const Vehicles = () => {
                 <h1 className="text-2xl text-gray-900 dark:text-white">{t('common.vehicles')}</h1>
                 <div className="flex space-x-3">                  <button 
                     className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 dark:text-white flex items-center"
-                    onClick={() => {
-                      alert(t('vehicles.importNotImplemented', 'Import functionality is coming soon'));
-                    }}
+                    onClick={() => setShowImportModal(true)}
                   >
                     <span className="mr-2">⬆️</span>{t('common.import')}
                   </button>
@@ -707,6 +747,13 @@ const Vehicles = () => {
           vehicles={vehicles}
         />
       )}
+
+      {/* Import Vehicles Modal */}
+      <ImportVehiclesModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImportVehicle}
+      />
     </div>
   );
 };

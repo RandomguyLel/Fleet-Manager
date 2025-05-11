@@ -116,10 +116,13 @@
     "mileage": "Mileage",
     "status": "Status",
     "lastService": "Last Service",
+    "importFromCsdd": "Import Vehicles from e.csdd.lv",
+    "licensePlatePlaceholder": "e.g. ABC123",
     "statusOptions": {
       "active": "Active",
       "inactive": "Inactive",
       "maintenance": "Maintenance"
+      
     },
     "csddIntegration": {
       "title": "CSDD Integration",
@@ -149,6 +152,7 @@
       "remindersSynced": "Reminders successfully updated from e.csdd.lv",
       "syncWithCsdd": "Sync with CSDD",
       "checkInsuranceHint": "Click the button to check insurance info"
+      
     },    "reminders": {
       "noReminders": "No active reminders",
       "overdue": "Overdue by {{days}} days",
@@ -236,6 +240,9 @@
       "details": "Details",
       "reminders": "Reminders",
       "integrations": "Integrations"
+    },
+    "errors": {
+      "licensePlateRequired": "License plate number is required"
     }
   },
   "service": {
