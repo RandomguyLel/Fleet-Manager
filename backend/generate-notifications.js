@@ -1,5 +1,6 @@
 // filepath: c:\Users\ritva\Desktop\TMS\Fleet Manager\backend\generate-notifications.js
 const db = require('./db');
+const i18next = require('./i18n'); // adjust path as needed
 
 /**
  * Generate notifications from active reminders
@@ -46,17 +47,17 @@ async function generateNotifications(force = false) {
           // Overdue
           shouldCreateNotification = true;
           priority = 'high';
-          title = `${reminder.name} overdue for ${reminder.make} ${reminder.model}`;
+          title = `notifications.types.${type}.overdue`;
         } else if (diffDays <= 7) {
           // Due within a week
           shouldCreateNotification = true;
           priority = 'high';
-          title = `${reminder.name} due in ${diffDays} day${diffDays === 1 ? '' : 's'}`;
+          title = `notifications.types.${type}.dueInDays`;
         } else if (diffDays <= 30) {
           // Due within a month
           shouldCreateNotification = true;
           priority = 'normal';
-          title = `${reminder.name} due soon`;
+          title = `notifications.types.${type}.dueSoon`;
         }
         
         if (shouldCreateNotification) {
@@ -72,13 +73,17 @@ async function generateNotifications(force = false) {
           }
           
           if (shouldCreateNew) {
-            const message = `${reminder.name} for ${reminder.make} ${reminder.model} (${reminder.vehicle_id}) is due on ${new Date(reminder.date).toLocaleDateString()}.`;
+            const messageVars = {
+              reminderName: reminder.name,
+              vehicle: `${reminder.make} ${reminder.model} (${reminder.vehicle_id})`,
+              date: new Date(reminder.date).toLocaleDateString()
+            };
             
             // Create notification
             const notificationResult = await db.query(
-              `INSERT INTO notifications (vehicle_id, type, title, message, due_date, priority, created_at)
+              `INSERT INTO notifications (vehicle_id, type, title, message_vars, due_date, priority, created_at)
                VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`,
-              [reminder.vehicle_id, type, title, message, reminder.date, priority]
+              [reminder.vehicle_id, type, title, JSON.stringify(messageVars), reminder.date, priority]
             );
             
             notifications.push(notificationResult.rows[0]);

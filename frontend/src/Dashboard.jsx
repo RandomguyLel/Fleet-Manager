@@ -310,7 +310,7 @@ const Dashboard = () => {
               const dueDate = new Date(reminder.date);
               const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
               
-allReminders.push({
+              allReminders.push({
                 ...reminder,
                 vehicle: {
                   id: vehicle.id,
@@ -431,15 +431,15 @@ allReminders.push({
                         });
                         await fetchNotifications();
                         
-                        // Here you would generate your report
-                        alert('Not yet implemented!');
+                        
+                        alert('Paziņojumi atjaunināti!');
                       } catch (error) {
                         console.error('Error generating report:', error);
                         alert('Failed to generate report. Please try again.');
                       }
                     }}
                   >
-                    <span className="mr-2">🔄</span>Generate Report
+                    <span className="mr-2">🔄</span>
                   </button>
                 </div>
               </div>
@@ -544,31 +544,41 @@ allReminders.push({
                                 <div className="ml-3 flex-1">
                                   <p className="text-sm font-medium text-gray-900 dark:text-white">{
                                     (() => {
-                                      // Try to map notification type to a translation key
-                                      const notificationTypeMap = {
-                                        'maintenance': 'dashboard.serviceDue',
-                                        'insurance': 'dashboard.insuranceRenewal',
-                                        'roadworthiness': 'vehicles.reminders.roadWorthinessCertificate',
-                                      };
-                                      // If the notification has a type and a known translation, use it
-                                      if (notification.type && notificationTypeMap[notification.type]) {
-                                        return t(notificationTypeMap[notification.type]);
+                                      // If the title is a translation key, translate it
+                                      if (notification.title.startsWith('notifications.types.')) {
+                                        const [type, status] = notification.title.split('.').slice(-2);
+                                        return t(notification.title, {
+                                          days: notification.daysUntilDue,
+                                          vehicle: `${notification.make} ${notification.model}`
+                                        });
                                       }
-                                      // Otherwise, fallback to the notification title
+                                      // For custom reminders, use the title as is
                                       return notification.title;
                                     })()
                                   }</p>
                                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{
                                     (() => {
-                                      // Try to map notification type to a translation key for the message if needed
-                                      // If not, fallback to the notification message
-                                      return notification.message;
+                                      const reminderNameTranslationMap = {
+                                        'Service Due': 'dashboard.serviceDue',
+                                        'Insurance Renewal': 'dashboard.insuranceRenewal',
+                                        'Road Worthiness Certificate': 'vehicles.reminders.roadWorthinessCertificate',
+                                      };
+                                      const getTranslatedReminderName = (reminderName) => {
+                                        const key = reminderNameTranslationMap[reminderName];
+                                        return key ? t(key) : reminderName;
+                                      };
+                                      return notification.message_vars
+                                        ? t('notifications.message.default', {
+                                            ...notification.message_vars,
+                                            reminderName: getTranslatedReminderName(notification.message_vars.reminderName)
+                                          })
+                                        : null;
                                     })()
                                   }</p>
                                   <div className="mt-2 flex space-x-2">
                                     {notification.vehicle_id && (
                                       <Link 
-                                        to={`/vehicles/${notification.vehicle_id}`}
+                                        to={`/vehicles?expand=${notification.vehicle_id}`}
                                         className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
                                       >
                                         {t('dashboard.viewVehicle')}
@@ -636,22 +646,17 @@ allReminders.push({
                         <span className="block text-2xl">🚗</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('common.vehicles')}</span>
                       </Link>
-                      <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
-                        <span className="block text-2xl">🔍</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.placeholder1')}</span>
-                      </button>
-                      <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
+                      <button onClick={() => {
+                        alert('Available in Vehicles/Pieejams transportlīdzekļu sadaļā');
+                      }}   className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">📄</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.documents')}</span>
                       </button>
-                      <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
+                      <Link to="/calendar" className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">📅</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.scheduler')}</span>
-                      </button>
-                      <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
-                        <span className="block text-2xl">💬</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.placeholder2')}</span>
-                      </button>
+                      </Link>
+                      
                       <button 
                         className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60"
                         onClick={async () => {

@@ -16,7 +16,8 @@ const VehicleTable = ({
   getDocumentStatusClass,
   typeValueToKey,
   csddIntegration,
-  syncVehicleRemindersWithCsdd
+  syncVehicleRemindersWithCsdd,
+  rowRefs
 }) => {
   const { t } = useTranslation();
 
@@ -56,6 +57,11 @@ const VehicleTable = ({
               typeValueToKey={typeValueToKey}
               csddIntegration={csddIntegration}
               syncVehicleRemindersWithCsdd={syncVehicleRemindersWithCsdd}
+              rowRef={el => {
+                if (rowRefs && rowRefs.current) {
+                  rowRefs.current[vehicle.id] = el;
+                }
+              }}
             />
           ))}
         </tbody>

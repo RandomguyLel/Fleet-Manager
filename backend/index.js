@@ -7,6 +7,7 @@ const db = require('./db');
 const integrationsRoutes = require('./routes/integrations');
 const { router: authRoutes, authenticateToken } = require('./routes/auth');
 const debugRoutes = require('./routes/debug');
+const documentRoutes = require('./routes/documents');
 // Import the enhanced notification service functions
 const { 
   generateNotifications, 
@@ -96,7 +97,8 @@ app.use('/api/auth', authRoutes);
 
 // Register the integrations routes
 app.use('/api/integrations', integrationsRoutes);
-
+// Register the documents routes
+app.use('/api', documentRoutes);
 // Admin access middleware for debug routes
 const requireAdmin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {

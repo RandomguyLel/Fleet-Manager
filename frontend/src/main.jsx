@@ -12,6 +12,7 @@ import Profile from './Profile';
 import UserManagement from './UserManagement';
 import ServiceHistory from './ServiceHistory';
 import SystemSettings from './SystemSettings';
+import Calendar from './pages/Calendar';
 import { AuthProvider, ProtectedRoute, AdminProtectedRoute } from './AuthContext';
 import { CsddProvider } from './CsddContext';
 
@@ -104,7 +105,18 @@ const App = () => {
             </AppLayout>
           </ProtectedRoute>
         }
-      />      <Route
+      />
+      <Route
+        path="/calendar"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Calendar />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/system-settings"
         element={
           <ProtectedRoute>

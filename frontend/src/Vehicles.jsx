@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { useCsdd } from './CsddContext';
 import NotificationBell from './components/NotificationBell';
@@ -20,6 +20,8 @@ const Vehicles = () => {
   const { t } = useTranslation();
   // Add useNavigate for redirection
   const navigate = useNavigate();
+  // Add useLocation for query param
+  const location = useLocation();
   // State for expanded row
   const [expandedRow, setExpandedRow] = useState(null);
   // State for showing/hiding add vehicle modal
@@ -71,9 +73,21 @@ const Vehicles = () => {
   });
   const [showImportModal, setShowImportModal] = useState(false);
 
+  const rowRefs = useRef({});
+
+
   React.useEffect(() => {
     localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
   }, [sidebarCollapsed]);
+
+  // Expand row if 'expand' query param is present
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const expandId = params.get('expand');
+    if (expandId) {
+      setExpandedRow(expandId);
+    }
+  }, [location.search]);
 
   // Fetch vehicles from API
   useEffect(() => {
@@ -615,6 +629,17 @@ const Vehicles = () => {
     }
   };
 
+
+  // Scroll to expanded row when it changes
+  useEffect(() => {
+    if (expandedRow && rowRefs.current[expandedRow]) {
+      // Delay to ensure the row is rendered
+      setTimeout(() => {
+        rowRefs.current[expandedRow]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 0);
+    }
+  }, [expandedRow, filteredVehicles]);
+
   // Display loading state
   if (loading) {
     return (
@@ -695,6 +720,7 @@ const Vehicles = () => {
                   <VehicleTable
                     filteredVehicles={filteredVehicles}
                     expandedRow={expandedRow}
+                    rowRefs={rowRefs}
                     toggleExpandRow={toggleExpandRow}
                     selectedVehicles={selectedVehicles}
                     handleVehicleSelection={handleVehicleSelection}

@@ -28,3 +28,6 @@ files
 
 #.env files
 *.env
+
+# Uploads
+backend/uploads/*

@@ -165,9 +165,9 @@ const SystemSettings = () => {  const { t } = useTranslation();
                   {activeTab === 'integrations' && (
                     <div className="space-y-6">
                       <div className="mb-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-2 dark:text-white">e.CSDD.lv Integration</h3>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2 dark:text-white">{t('settings.csddIntegration.title')}</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                          Connect to e.CSDD.lv to automatically fetch vehicle details and insurance information.
+                          {t('settings.csddIntegration.description')}
                         </p>
                         
                         {csddIntegration.connectionStatus === 'connected' ? (
@@ -178,12 +178,12 @@ const SystemSettings = () => {  const { t } = useTranslation();
                                   <span className="text-green-400 dark:text-green-300">✓</span>
                                 </div>
                                 <div className="ml-3">
-                                  <h3 className="text-sm font-medium text-green-800 dark:text-green-300">Connected to e.CSDD.lv</h3>
+                                  <h3 className="text-sm font-medium text-green-800 dark:text-green-300">{t('settings.csddIntegration.connected')}</h3>
                                   <div className="mt-2 text-sm text-green-700 dark:text-green-400">
-                                    <p>User: {csddIntegration.userInfo?.firstName || ''} {csddIntegration.userInfo?.lastName || ''}</p>
-                                    <p>Email: {csddIntegration.credentials?.email || 'Unknown'}</p>
+                                    <p>{t('settings.csddIntegration.user')}: {csddIntegration.userInfo?.firstName || ''} {csddIntegration.userInfo?.lastName || ''}</p>
+                                    <p>{t('settings.csddIntegration.email')}: {csddIntegration.credentials?.email || 'Unknown'}</p>
                                     {csddIntegration.hasSavedCredentials && (
-                                      <p className="mt-1 text-xs text-green-600">✓ Credentials saved</p>
+                                      <p className="mt-1 text-xs text-green-600">{t('settings.csddIntegration.credentialsSaved')}</p>
                                     )}
                                   </div>
                                 </div>
@@ -212,8 +212,8 @@ const SystemSettings = () => {  const { t } = useTranslation();
                                     <span className="text-red-400 dark:text-red-300">❌</span>
                                   </div>
                                   <div className="ml-3">
-                                    <h3 className="text-sm font-medium text-red-800 dark:text-red-300">Error</h3>
-                                    <div className="mt-2 text-sm text-red-700 dark:text-red-400">
+                                    <h3 className="text-sm font-medium text-red-800 dark:text-red-300">{t('settings.csddIntegration.error')}</h3>
+                                    <div className="mt-2 text-sm text-red-700 dark:text-green-400">
                                       <p>{csddError}</p>
                                     </div>
                                   </div>
@@ -221,7 +221,7 @@ const SystemSettings = () => {  const { t } = useTranslation();
                               </div>
                             )}
                             <div>
-                              <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Email</label>
+                              <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('settings.csddIntegration.email')}</label>
                               <input
                                 type="email"
                                 value={csddCredentials.email}
@@ -230,7 +230,7 @@ const SystemSettings = () => {  const { t } = useTranslation();
                               />
                             </div>
                             <div>
-                              <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">Password</label>
+                              <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('auth.password')}</label>
                               <input
                                 type="password"
                                 value={csddCredentials.password}
@@ -247,7 +247,7 @@ const SystemSettings = () => {  const { t } = useTranslation();
                                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
                               />
                               <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                                Remember my credentials
+                                {t('settings.csddIntegration.rememberCredentials')}
                               </label>
                             </div>
                             <div>
@@ -291,27 +291,31 @@ const SystemSettings = () => {  const { t } = useTranslation();
                     <div className="space-y-6">
                       <div className="text-center mb-6">
                         <div className="text-3xl text-blue-600 mb-2">🚚</div>
-                        <h3 className="text-xl font-medium text-gray-900 dark:text-white">Fleet Manager</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Version 0.6.5 Alpha</p>
+                        <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('common.fleetManager')}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Version 0.7 - Beta Candidate</p>
                       </div>
                       
                       <div className="p-4 bg-gray-50 rounded-md dark:bg-gray-700/30">
                         <h4 className="font-medium mb-2 text-gray-900 dark:text-white">{t('settings.about')}</h4>
                         <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                          Fleet Manager is a comprehensive solution for managing vehicle fleets, 
+                          {t('common.fleetManager')} is a comprehensive solution for managing vehicle fleets, 
                           service history, and document management.
                         </p>
                         
                         <h4 className="font-medium mb-2 text-gray-900 dark:text-white">{t('settings.acknowledgements')}</h4>
                         <ul className="text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
-                          <li>React Icons - https://react-icons.github.io/react-icons/</li>
-                          <li>Tailwind CSS - https://tailwindcss.com/</li>
+                          <li>React Icons - <a href="https://react-icons.github.io/react-icons/" target="_blank" rel="noopener noreferrer">https://react-icons.github.io/react-icons/</a></li>
+                          <li>Tailwind CSS - <a href="https://tailwindcss.com/" target="_blank" rel="noopener noreferrer">https://tailwindcss.com/</a></li>
+                          <li>--------------------------------</li>
+                          <li><a href="https://github.com/WatchDogee" target="_blank" rel="noopener noreferrer">Intars Kūleris</a> - Contributed by picking a version number between 0.0.0 and 0.9.0 (such a contribution)</li>
                         </ul>
                       </div>
                       
                       <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-                        <p>&copy; {new Date().getFullYear()} Fleet Manager. Developed by RandomguyLel</p>
-                        <p className="mt-1">Last updated: May 11, 2025</p>
+
+                        <p>&copy; {new Date().getFullYear()} {t('common.fleetManager')}. Developed by RandomguyLel</p>
+                        <p className="mt-1">Last updated: May 13, 2025</p>
+
                       </div>
                     </div>
                   )}
