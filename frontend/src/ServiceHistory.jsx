@@ -717,7 +717,7 @@ const ServiceHistory = () => {
                                     
                                     <div className="mt-4 flex justify-end space-x-2">
                                       <Link 
-                                        to={`/vehicles/${record.vehicle_id}`} 
+                                        to={`/vehicles?expand=${record.vehicle_id}`} 
                                         className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                                         onClick={(e) => e.stopPropagation()}
                                       >

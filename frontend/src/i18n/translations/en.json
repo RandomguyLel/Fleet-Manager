@@ -64,6 +64,9 @@
     "noEvents": "No events",
     "loadingEvents": "Loading events...",
     "errorLoadingEvents": "Error loading events",
+    "preview": "Preview",
+    "download": "Download",
+    "upload": "Upload",
     "eventTypes": {
       "reminder": "Reminder",
       "notification": "Notification",
@@ -137,6 +140,7 @@
     "lastService": "Last Service",
     "importFromCsdd": "Import Vehicles from e.csdd.lv",
     "licensePlatePlaceholder": "e.g. ABC123",
+    "details": "Details",
     "statusOptions": {
       "active": "Active",
       "inactive": "Inactive",
@@ -478,6 +482,39 @@
     "disconnectFromCsdd": "Disconnect from e.CSDD.lv",
     "moreIntegrationsComingSoon": "More integrations coming soon",
     "generalSettingsComingSoon": "General settings functionality is coming soon",
-    "acknowledgements": "Acknowledgements"
+    "acknowledgements": "Acknowledgements",
+    "csddIntegration": {
+      "title": "e.CSDD.lv Integration",
+      "description": "Connect to e.CSDD.lv to automatically fetch vehicle details and insurance information.",
+      "connected": "Connected to e.CSDD.lv",
+      "user": "User",
+      "email": "Email",
+      "credentialsSaved": "✓ Credentials saved",
+      "rememberCredentials": "Remember my credentials",
+      "error": "Error"
+    }
+  },
+  "documents": {
+    "title": "Documents",
+    "name": "Name",
+    "category": "Category",
+    "uploaded": "Uploaded",
+    "expiryDate": "Expiry Date",
+    "upload": "Upload Document",
+    "file": "File",
+    "description": "Description",
+    "selectCategory": "Select Category",
+    "invalidFileType": "Invalid file type. Allowed: PDF, DOC, DOCX, XLS, XLSX, PNG, JPG.",
+    "fileTooLarge": "File is too large. Maximum size is 10 MB.",
+    "confirmDelete": "Are you sure you want to delete this document?",
+    "noDocuments": "No documents found",
+    "categories": {
+      "Insurance": "Insurance",
+      "Maintenance": "Maintenance",
+      "Registration": "Registration",
+      "Inspection": "Inspection",
+      "Other": "Other"
+    }
   }
+
 }

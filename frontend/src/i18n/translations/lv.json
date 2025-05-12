@@ -63,6 +63,9 @@
     "noEvents": "Nav notikumu",
     "loadingEvents": "Ielādē notikumus...",
     "errorLoadingEvents": "Kļūda ielādējot notikumus",
+    "preview": "Priekšskatīt",
+    "download": "Lejupielādēt",
+    "upload": "Augšupielādēt",
     "eventTypes": {
       "reminder": "Atgādinājums",
       "notification": "Paziņojums",
@@ -123,7 +126,8 @@
     "reminders": "Atgādinājumi",
     "systemSettings": "Sistēmas iestatījumi",
     "generateNotifications": "Ģenerēt paziņojumus"
-  },  "vehicles": {
+  },
+  "vehicles": {
     "addVehicle": "Pievienot jaunu transportlīdzekli",
     "editVehicle": "Rediģēt transportlīdzekli",
     "importNotImplemented": "Importēšanas funkcionalitāte drīzumā būs pieejama",
@@ -148,6 +152,7 @@
     "status": "Statuss",
     "importFromCsdd": "Importēt transportlīdzekļus no e.csdd.lv",
     "licensePlatePlaceholder": "piem. ABC123",
+    "details": "Detaļas",
     "statusOptions": {
       "active": "Aktīvs",
       "inactive": "Neaktīvs",
@@ -182,7 +187,6 @@
       "syncWithCsdd": "Sinhronizēt ar CSDD",
       "checkInsuranceHint": "Noklikšķiniet uz pogas, lai pārbaudītu apdrošināšanas datus"
     },
-    
     "vehicleTypes": {
       "car": "Vieglais auto",
       "truck": "Kravas auto",
@@ -199,7 +203,8 @@
       "title": "Izsekošana",
       "enableGPS": "Ieslēgt GPS izsekošanu",
       "apiEndpoint": "API galapunkta URL"
-    },    "reminders": {
+    },
+    "reminders": {
       "noReminders": "Nav aktīvu atgādinājumu",
       "overdue": "Nokavēts par {{days}} dienām",
       "dueToday": "Termiņš šodien",
@@ -218,7 +223,7 @@
       "insuranceRenewal": "Apdrošināšanas atjaunošana",
       "serviceDue": "Tehniskā apkope",
       "customReminder": "Pielāgots atgādinājums",
-      "status": "Statuss" ,
+      "status": "Statuss",
       "enabled": "Aktīvs",
       "name": "Nosaukums",
       "date": "Datums"
@@ -263,6 +268,7 @@
     }
   },
   "service": {
+    "serviceRecords": "Servisa ieraksti",
     "serviceHistory": "Servisa vēsture",
     "serviceDate": "Servisa datums",
     "serviceType": "Servisa veids",
@@ -462,6 +468,48 @@
     },
     "message": {
       "default": "{{reminderName}} priekš {{vehicle}} beigsies {{date}}."
+    }
+  },
+  "documents": {
+    "title": "Dokumenti",
+    "name": "Nosaukums",
+    "category": "Kategorija",
+    "uploaded": "Augšupielādēts",
+    "expiryDate": "Derīguma termiņš",
+    "upload": "Augšupielādēt dokumentu",
+    "file": "Datne",
+    "description": "Apraksts",
+    "selectCategory": "Izvēlieties kategoriju",
+    "invalidFileType": "Nederīgs faila formāts. Atļautie formāti: PDF, DOC, DOCX, XLS, XLSX, PNG, JPG.",
+    "fileTooLarge": "Faila izmērs ir pārāk liels. Maksimālais izmērs ir 10 MB.",
+    "confirmDelete": "Vai tiešām vēlaties dzēst šo dokumentu?",
+    "noDocuments": "Nav dokumentu",
+    "categories": {
+      "Insurance": "Apdrošināšana",
+      "Maintenance": "Apkope",
+      "Registration": "Reģistrācija",
+      "Inspection": "Apskate",
+      "Other": "Cits"
+    }
+  },
+  "settings": {
+    "integrations": "Integrācijas",
+    "general": "Vispārīgi",
+    "about": "Par",
+    "connectToCsdd": "Pieslēgties e.CSDD.lv",
+    "disconnectFromCsdd": "Atvienoties no e.CSDD.lv",
+    "moreIntegrationsComingSoon": "Drīzumā būs pieejamas vairāk integrācijas",
+    "generalSettingsComingSoon": "Vispārīgo iestatījumu funkcionalitāte drīzumā būs pieejama",
+    "acknowledgements": "Pateicības",
+    "csddIntegration": {
+      "title": "e.CSDD.lv integrācija",
+      "description": "Pieslēdzieties e.CSDD.lv, lai automātiski iegūtu transportlīdzekļa detaļas un apdrošināšanas informāciju.",
+      "connected": "Pieslēdzies e.CSDD.lv",
+      "user": "Lietotājs",
+      "email": "E-pasts",
+      "credentialsSaved": "✓ Lietotājvārds saglabāts",
+      "rememberCredentials": "Atcerēties manu lietotājvārdu",
+      "error": "Kļūda"
     }
   }
 } 

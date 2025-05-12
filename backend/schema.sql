@@ -89,6 +89,39 @@ CREATE TABLE IF NOT EXISTS user_csdd_credentials (
   UNIQUE(user_id)
 );
 
+-- Create documents table for storing document metadata
+CREATE TABLE IF NOT EXISTS documents (
+  id SERIAL PRIMARY KEY,
+  vehicle_id VARCHAR(10) REFERENCES vehicles(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  file_path VARCHAR(255) NOT NULL,
+  file_type VARCHAR(50) NOT NULL,
+  file_size INTEGER NOT NULL,
+  uploaded_by INTEGER REFERENCES users(id),
+  uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  category VARCHAR(50), -- e.g., 'insurance', 'maintenance', 'registration', 'other'
+  expiry_date DATE, -- Optional, for documents that expire
+  is_archived BOOLEAN DEFAULT FALSE
+);
+
+-- Create document_categories table for predefined categories
+CREATE TABLE IF NOT EXISTS document_categories (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(50) UNIQUE NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default document categories
+INSERT INTO document_categories (name, description) VALUES
+  ('Insurance', 'Insurance related documents'),
+  ('Maintenance', 'Maintenance and service records'),
+  ('Registration', 'Vehicle registration documents'),
+  ('Inspection', 'Vehicle inspection reports'),
+  ('Other', 'Other vehicle related documents');
+
 -- Insert sample users with freshly generated bcrypt hashes
 INSERT INTO users (username, email, password_hash, first_name, last_name, role)
 VALUES 

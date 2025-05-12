@@ -274,7 +274,7 @@ const Login = () => {
             &copy; {new Date().getFullYear()} Fleet Manager. Developed by RandomguyLel
           </p>
           <p className={`text-center text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
-            Version something alpha | Last updated: May 12th, 2025
+          Version 0.7 - Beta Candidate | Last updated: May 13th, 2025
           </p>
         </div>
       </div>

@@ -431,15 +431,15 @@ const Dashboard = () => {
                         });
                         await fetchNotifications();
                         
-                        // Here you would generate your report
-                        alert('Not yet implemented!');
+                        
+                        alert('Paziņojumi atjaunināti!');
                       } catch (error) {
                         console.error('Error generating report:', error);
                         alert('Failed to generate report. Please try again.');
                       }
                     }}
                   >
-                    <span className="mr-2">🔄</span>Generate Report
+                    <span className="mr-2">🔄</span>
                   </button>
                 </div>
               </div>
@@ -646,7 +646,9 @@ const Dashboard = () => {
                         <span className="block text-2xl">🚗</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('common.vehicles')}</span>
                       </Link>
-                      <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
+                      <button onClick={() => {
+                        alert('Available in Vehicles/Pieejams transportlīdzekļu sadaļā');
+                      }}   className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">📄</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.documents')}</span>
                       </button>
