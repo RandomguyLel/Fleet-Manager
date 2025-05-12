@@ -1,6 +1,5 @@
-// filepath: c:\Users\ritva\Desktop\TMS\Fleet Manager\backend\generate-notifications.js
 const db = require('./db');
-const i18next = require('./i18n'); // adjust path as needed
+
 
 /**
  * Generate notifications from active reminders
