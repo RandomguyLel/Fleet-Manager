@@ -50,7 +50,9 @@
     "notRecorded": "Nav norādīts",
     "viewVehicle": "Skatīt transportlīdzekli",
     "editDetails": "Rediģēt ierakstu",
-    "remove": "Dzēst"
+    "remove": "Dzēst",
+    "for": "priekš",
+    "isDueOn": "beigsies"
   },
   "auth": {
     "loginTitle": "Ienākt Fleet Manager",
@@ -85,7 +87,7 @@
     "generateReport": "Ģenerēt atskaiti",
     "checkNotifications": "Pārbaudīt paziņojumus",
     "documents": "Dokumenti",
-    "scheduler": "Plānotājs",
+    "scheduler": "Kalendārs",
     "placeholder1": "Vietturis 1",
     "placeholder2": "Vietturis 2",
     "overdue": "Nokavēts",
@@ -413,9 +415,36 @@
     "usernameCannotBeChanged": "Lietotājvārds nevar tikt mainīts"
   },
   "notifications": {
-    "newNotification": "Jauns paziņojums",
-    "markAsRead": "Atzīmēt kā izlasītu",
+    "title": "Paziņojumi",
     "markAllAsRead": "Atzīmēt visus kā izlasītus",
-    "noNotifications": "Nav jaunu paziņojumu"
+    "markAsRead": "Atzīmēt kā izlasītu",
+    "dismiss": "Noraidīt",
+    "noNotifications": "Nav paziņojumu",
+    "loading": "Ielādē paziņojumus...",
+    "error": "Neizdevās ielādēt paziņojumus",
+    "generateNotifications": "Ģenerēt paziņojumus",
+    "generating": "Ģenerē paziņojumus...",
+    "generated": "Ģenerēts {{count}} jauns paziņojums",
+    "noNewNotifications": "Nav jaunu paziņojumu",
+    "types": {
+      "maintenance": {
+        "overdue": "Apkope nokavēta {{vehicle}}",
+        "dueInDays": "Apkope jāveic pēc {{days}} dienām {{vehicle}}",
+        "dueSoon": "Tuvojās plānotā apkope {{vehicle}}"
+      },
+      "insurance": {
+        "overdue": "Apdrošināšana beigusies {{vehicle}}",
+        "dueInDays": "Apdrošināšana beigsies pēc {{days}} dienām {{vehicle}}",
+        "dueSoon": "Apdrošināšanas termiņš tuvojas {{vehicle}}"
+      },
+      "roadworthiness": {
+        "overdue": "Tehniskā apskate nokavēta {{vehicle}}",
+        "dueInDays": "Tehniskā apskate jāveic pēc {{days}} dienām {{vehicle}}",
+        "dueSoon": "Tuvojās tehniskās apskates termiņš {{vehicle}}"
+      }
+    },
+    "message": {
+      "default": "{{reminderName}} priekš {{vehicle}} beigsies {{date}}."
+    }
   }
 } 

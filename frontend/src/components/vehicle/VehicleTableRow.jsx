@@ -15,7 +15,8 @@ const VehicleTableRow = ({
   getDocumentStatusClass,
   typeValueToKey,
   csddIntegration,
-  syncVehicleRemindersWithCsdd
+  syncVehicleRemindersWithCsdd,
+  rowRef
 }) => {
   const { t } = useTranslation();
 
@@ -111,7 +112,7 @@ const VehicleTableRow = ({
         </td>
       </tr>
       {expandedRow === vehicle.id && (
-        <tr>
+        <tr ref={rowRef}>
           <td colSpan="7" className="px-6 py-4 bg-gray-50 dark:bg-gray-800">
             <VehicleExpandedDetails 
               vehicle={vehicle} 

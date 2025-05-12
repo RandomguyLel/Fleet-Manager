@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   type VARCHAR(50) NOT NULL, -- e.g., maintenance, insurance, roadworthiness
   title VARCHAR(200) NOT NULL,
   message TEXT,
+  message_vars JSONB,
   due_date DATE,
   priority VARCHAR(20) DEFAULT 'normal', -- high, normal, low
   is_read BOOLEAN DEFAULT FALSE,

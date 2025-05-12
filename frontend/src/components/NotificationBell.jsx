@@ -288,14 +288,39 @@ const NotificationBell = () => {
                       <div className="flex items-start space-x-2">
                         <span className="text-lg">{getNotificationIcon(notification.type)}</span>
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {notification.title || t(`notifications.types.${notification.type.toLowerCase()}`)}
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {(() => {
+                              // If the title is a translation key, translate it
+                              if (notification.title.startsWith('notifications.types.')) {
+                                const [type, status] = notification.title.split('.').slice(-2);
+                                return t(notification.title, {
+                                  days: notification.daysUntilDue,
+                                  vehicle: `${notification.make} ${notification.model}`
+                                });
+                              }
+                              // For custom reminders, use the title as is
+                              return notification.title;
+                            })()}
                           </p>
-                          {notification.message && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 break-words">
-                              {notification.message}
-                            </p>
-                          )}
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                            {(() => {
+                              const reminderNameTranslationMap = {
+                                'Service Due': 'dashboard.serviceDue',
+                                'Insurance Renewal': 'dashboard.insuranceRenewal',
+                                'Road Worthiness Certificate': 'vehicles.reminders.roadWorthinessCertificate',
+                              };
+                              const getTranslatedReminderName = (reminderName) => {
+                                const key = reminderNameTranslationMap[reminderName];
+                                return key ? t(key) : reminderName;
+                              };
+                              return notification.message_vars
+                                ? t('notifications.message.default', {
+                                    ...notification.message_vars,
+                                    reminderName: getTranslatedReminderName(notification.message_vars.reminderName)
+                                  })
+                                : null;
+                            })()}
+                          </p>
                           {notification.due_date && (
                             <p className="text-xs text-gray-400">
                               Due: {formatDate(notification.due_date)}

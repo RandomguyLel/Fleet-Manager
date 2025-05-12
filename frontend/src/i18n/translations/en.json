@@ -51,7 +51,9 @@
     "notRecorded": "Not recorded",
     "viewVehicle": "View Vehicle",
     "editDetails": "Edit Record",
-    "remove": "Remove"
+    "remove": "Remove",
+    "for": "for",
+    "isDueOn": "is due on"
   },
   "auth": {
     "loginTitle": "Login to Fleet Manager",
@@ -86,7 +88,7 @@
     "generateReport": "Generate Report",
     "checkNotifications": "Check Notifications",
     "documents": "Documents",
-    "scheduler": "Scheduler",
+    "scheduler": "Calendar",
     "placeholder1": "Placeholder 1",
     "placeholder2": "Placeholder 2",
     "overdue": "Overdue",
@@ -431,11 +433,25 @@
     "generated": "Generated {{count}} new notification{{s}}",
     "noNewNotifications": "No new notifications to generate",
     "types": {
-      "insurance": "Insurance",
-      "maintenance": "Maintenance",
-      "roadworthiness": "Road Worthiness",
-      "other": "Other"
-    }
+      "maintenance": {
+        "overdue": "Service overdue for {{vehicle}}",
+        "dueInDays": "Service due in {{days}} days for {{vehicle}}",
+        "dueSoon": "Service due soon for {{vehicle}}"
+      },
+      "insurance": {
+        "overdue": "Insurance expired for {{vehicle}}",
+        "dueInDays": "Insurance expires in {{days}} days for {{vehicle}}",
+        "dueSoon": "Insurance renewal due soon for {{vehicle}}"
+      },
+      "roadworthiness": {
+        "overdue": "Road worthiness certificate expired for {{vehicle}}",
+        "dueInDays": "Road worthiness certificate expires in {{days}} days for {{vehicle}}",
+        "dueSoon": "Road worthiness certificate due soon for {{vehicle}}"
+      }
+    },
+    "message": {
+      "default": "{{reminderName}} for {{vehicle}} is due on {{date}}."
+    } 
   },
   "settings": {
     "integrations": "Integrations",
