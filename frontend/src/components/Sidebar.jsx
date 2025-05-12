@@ -214,6 +214,17 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
               </Link>
             </li>
             <li>
+              <Link 
+                to="/calendar" 
+                className={getLinkClass('/calendar')} 
+                title={t('common.calendar')}
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/calendar') : null}
+              >
+                <span className={getIconClass('/calendar')}>📅</span>
+                {(!collapsed || window.innerWidth < 768) && t('common.calendar')}
+              </Link>
+            </li>
+            <li>
               <a 
                 href="#" 
                 onClick={(e) => {
@@ -352,6 +363,17 @@ const Sidebar = ({ collapsed, setCollapsed }) => {
               >
                 <span className={getIconClass('/service-history')}>🔧</span>
                 {(!collapsed || window.innerWidth < 768) && t('common.serviceHistory')}
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/calendar" 
+                className={getLinkClass('/calendar')} 
+                title={t('common.calendar')}
+                onClick={(e) => window.innerWidth >= 768 && collapsed ? handleNavigation(e, '/calendar') : null}
+              >
+                <span className={getIconClass('/calendar')}>📅</span>
+                {(!collapsed || window.innerWidth < 768) && t('common.calendar')}
               </Link>
             </li>
             <li>

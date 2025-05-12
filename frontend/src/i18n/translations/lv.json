@@ -52,7 +52,24 @@
     "editDetails": "Rediģēt ierakstu",
     "remove": "Dzēst",
     "for": "priekš",
-    "isDueOn": "beigsies"
+    "isDueOn": "beigsies",
+    "calendar": "Kalendārs",
+    "month": "Mēnesis",
+    "week": "Nedēļa",
+    "day": "Diena",
+    "today": "Šodien",
+    "previous": "Iepriekšējais",
+    "next": "Nākamais",
+    "noEvents": "Nav notikumu",
+    "loadingEvents": "Ielādē notikumus...",
+    "errorLoadingEvents": "Kļūda ielādējot notikumus",
+    "eventTypes": {
+      "reminder": "Atgādinājums",
+      "notification": "Paziņojums",
+      "service": "Apkope",
+      "insurance": "Apdrošināšana",
+      "roadworthiness": "Tehniskā apskate"
+    }
   },
   "auth": {
     "loginTitle": "Ienākt Fleet Manager",

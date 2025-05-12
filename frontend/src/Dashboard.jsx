@@ -647,21 +647,14 @@ const Dashboard = () => {
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('common.vehicles')}</span>
                       </Link>
                       <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
-                        <span className="block text-2xl">🔍</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.placeholder1')}</span>
-                      </button>
-                      <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">📄</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.documents')}</span>
                       </button>
-                      <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
+                      <Link to="/calendar" className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">📅</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.scheduler')}</span>
-                      </button>
-                      <button className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
-                        <span className="block text-2xl">💬</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.placeholder2')}</span>
-                      </button>
+                      </Link>
+                      
                       <button 
                         className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60"
                         onClick={async () => {
