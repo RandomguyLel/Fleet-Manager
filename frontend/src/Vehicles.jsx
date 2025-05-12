@@ -72,7 +72,9 @@ const Vehicles = () => {
     return window.innerWidth < 768;
   });
   const [showImportModal, setShowImportModal] = useState(false);
+
   const rowRefs = useRef({});
+
 
   React.useEffect(() => {
     localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
@@ -626,6 +628,7 @@ const Vehicles = () => {
       return false;
     }
   };
+
 
   // Scroll to expanded row when it changes
   useEffect(() => {

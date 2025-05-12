@@ -312,8 +312,10 @@ const SystemSettings = () => {  const { t } = useTranslation();
                       </div>
                       
                       <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+
                         <p>&copy; {new Date().getFullYear()} {t('common.fleetManager')}. Developed by RandomguyLel</p>
                         <p className="mt-1">Last updated: May 13, 2025</p>
+
                       </div>
                     </div>
                   )}

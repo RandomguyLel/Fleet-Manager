@@ -153,6 +153,7 @@
     "importFromCsdd": "Importēt transportlīdzekļus no e.csdd.lv",
     "licensePlatePlaceholder": "piem. ABC123",
     "details": "Detaļas",
+
     "statusOptions": {
       "active": "Aktīvs",
       "inactive": "Neaktīvs",

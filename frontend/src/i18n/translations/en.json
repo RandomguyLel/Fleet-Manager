@@ -141,6 +141,7 @@
     "importFromCsdd": "Import Vehicles from e.csdd.lv",
     "licensePlatePlaceholder": "e.g. ABC123",
     "details": "Details",
+
     "statusOptions": {
       "active": "Active",
       "inactive": "Inactive",
