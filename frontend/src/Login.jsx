@@ -213,7 +213,7 @@ const Login = () => {
               <a
                 href="#"
                 className="font-medium text-blue-600 hover:text-blue-500"
-                onClick={() => { alert('Feature not implemented yet!'); }}
+                onClick={() => { alert(t('alerts.forgotPassword')); }}
               >
                 {t('auth.forgotPassword')}
               </a>

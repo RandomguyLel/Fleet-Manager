@@ -633,7 +633,6 @@ router.post('/csdd/credentials', authenticateToken, async (req, res) => {
       page: 'System Settings',
       field: 'csdd_credentials',
       new_value: JSON.stringify({ email }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
 
@@ -700,7 +699,6 @@ router.delete('/csdd/credentials', authenticateToken, async (req, res) => {
         page: 'System Settings',
         field: 'csdd_credentials',
         old_value: JSON.stringify({ email: result.rows[0].email }),
-        ip_address: req.ip,
         user_agent: req.headers['user-agent']
       });
     }

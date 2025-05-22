@@ -19,7 +19,9 @@ export const typeValueToKey = {
   "Kuģis": "ship",
   "Ship": "ship",
   "Cits": "other",
-  "Other": "other"
+  "Other": "other",
+  "Tractor": "tractor",
+  "tractor": "tractor"
 };
 
 // Status badge classes

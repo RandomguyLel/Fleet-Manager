@@ -6,6 +6,20 @@ import Sidebar from './components/Sidebar';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/i18n';
 
+const getReminderTranslation = (reminderName, t) => {
+  // Try to match known reminder names to translation keys
+  const map = {
+    'Service Due': 'dashboard.serviceDue',
+    'serviceDue': 'dashboard.serviceDue',
+    'Insurance Renewal': 'dashboard.insuranceRenewal',
+    'insuranceRenewal': 'dashboard.insuranceRenewal',
+    'Road Worthiness Certificate': 'vehicles.reminders.roadWorthinessCertificate',
+    'roadWorthinessCertificate': 'vehicles.reminders.roadWorthinessCertificate',
+  };
+  // Try direct match, then lowercased, then fallback
+  return t(map[reminderName] || map[reminderName?.toLowerCase?.()] || reminderName);
+};
+
 const Dashboard = () => {
   // Get translations
   const { t } = useTranslation();
@@ -217,10 +231,10 @@ const Dashboard = () => {
                 setUpcomingReminders(allReminders.slice(0, 10));
               }
               
-              alert(`Reminder marked as completed and new reminder scheduled for ${new Date(newDate).toLocaleDateString()}`);
+              alert(t('alerts.reminderCompleted', { date: new Date(newDate).toLocaleDateString() }));
             } catch (error) {
               console.error('Error handling reminder completion:', error);
-              alert(`Error: ${error.message}`);
+              alert(t('alerts.error', { message: error.message }));
             }
             return;
           }
@@ -261,14 +275,14 @@ const Dashboard = () => {
           completionMessage = 'Document renewal marked as completed!';
         }
         
-        alert(completionMessage);
+        alert(t('alerts.reminderCompletedType', { type: reminderType }));
       } catch (error) {
         console.error('Error marking reminder as completed:', error);
-        alert(`Error: ${error.message}`);
+        alert(t('alerts.error', { message: error.message }));
       }
     } catch (error) {
       console.error('Error in markReminderAsCompleted:', error);
-      alert(`Error: ${error.message}`);
+      alert(t('alerts.error', { message: error.message }));
     }
   };
 
@@ -350,7 +364,7 @@ const Dashboard = () => {
         setError(null);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
-        setError(`Error fetching dashboard data: ${err.message}`);
+        setError(t('alerts.error', { message: err.message }));
       } finally {
         setLoading(false);
       }
@@ -432,10 +446,10 @@ const Dashboard = () => {
                         await fetchNotifications();
                         
                         
-                        alert('Paziņojumi atjaunināti!');
+                        alert(t('alerts.notificationsUpdated'));
                       } catch (error) {
                         console.error('Error generating report:', error);
-                        alert('Failed to generate report. Please try again.');
+                        alert(t('alerts.generateReportFailed'));
                       }
                     }}
                   >
@@ -641,24 +655,17 @@ const Dashboard = () => {
                 <div className="bg-white shadow rounded-lg dark:bg-gray-800 dark:border dark:border-gray-700">
                   <div className="px-4 py-5 sm:p-6">
                     <h2 className="text-lg font-medium text-gray-900 dark:text-white">{t('dashboard.quickAccess')}</h2>
-                    <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
                       <Link to="/vehicles" className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">🚗</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('common.vehicles')}</span>
                       </Link>
-                      <button onClick={() => {
-                        alert('Available in Vehicles/Pieejams transportlīdzekļu sadaļā');
-                      }}   className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
-                        <span className="block text-2xl">📄</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.documents')}</span>
-                      </button>
                       <Link to="/calendar" className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">📅</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.scheduler')}</span>
                       </Link>
-                      
                       <button 
-                        className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60"
+                        className="col-span-2 p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60"
                         onClick={async () => {
                           try {
                             await fetch(`${apiUrl}/api/notifications/generate?force=true`, {
@@ -666,7 +673,7 @@ const Dashboard = () => {
                               headers: getAuthHeader()
                             });
                             await fetchNotifications();
-                            alert('Notifications refreshed successfully!');
+                            alert(t('alerts.notificationsRefreshed'));
                           } catch (error) {
                             console.error('Error generating notifications:', error);
                           }
@@ -731,17 +738,7 @@ const Dashboard = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">{
-                              (() => {
-                                const reminderTranslationMap = {
-                                  'Service Due': 'dashboard.serviceDue',
-                                  'Insurance Renewal': 'dashboard.insuranceRenewal',
-                                  'Road Worthiness Certificate': 'vehicles.reminders.roadWorthinessCertificate',
-                                };
-                                const key = reminderTranslationMap[reminder.name];
-                                return key ? t(key) : reminder.name;
-                              })()
-                            }</div>
+                            <div className="text-sm text-gray-900 dark:text-white">{getReminderTranslation(reminder.name, t)}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900 dark:text-white">{formatDate(reminder.date)}</div>
@@ -754,13 +751,13 @@ const Dashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button 
                                     onClick={() => markReminderAsCompleted(reminder.vehicle.id, reminder.id, reminder.name)}
-className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                  >
-{reminder.name.toLowerCase().includes('service') ? t('dashboard.markServiced') :
+                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                    >
+                              {reminder.name.toLowerCase().includes('service') ? t('dashboard.markServiced') :
                                reminder.name.toLowerCase().includes('insurance') ? t('dashboard.markRenewed') :
                                reminder.name.toLowerCase().includes('worthiness') || reminder.name.toLowerCase().includes('certificate') ? t('dashboard.markRenewed') :
                                t('dashboard.markComplete')}
-</button>
+                            </button>
                           </td>
                         </tr>
                         );

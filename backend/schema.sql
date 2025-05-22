@@ -3,13 +3,13 @@ CREATE TABLE IF NOT EXISTS vehicles (
   id VARCHAR(10) PRIMARY KEY,
   status VARCHAR(20) NOT NULL,
   type VARCHAR(50) NOT NULL,
-  "lastService" VARCHAR(20),
+  lastService VARCHAR(20),
   documents VARCHAR(20),
   make VARCHAR(50),
   model VARCHAR(50),
   year INTEGER,
   license VARCHAR(20),
-  regaplnr VARCHAR(20) UNIQUE,
+  regaplnr VARCHAR(20),
   mileage VARCHAR(20)
 );
 
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   first_name VARCHAR(50),
   last_name VARCHAR(50),
-  role VARCHAR(20) DEFAULT 'user', -- 'admin', 'user', 'manager', etc.
+  role VARCHAR(20) DEFAULT 'user', 
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_login TIMESTAMP
@@ -73,7 +73,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   field VARCHAR(50), -- Specific field that was changed (if applicable)
   old_value TEXT, -- Previous value (if applicable)
   new_value TEXT, -- New value (if applicable)
-  ip_address VARCHAR(50), -- IP address of the user
   user_agent TEXT, -- User agent of the browser
   details JSONB -- Additional details in JSON format
 );
@@ -120,17 +119,17 @@ INSERT INTO document_categories (name, description) VALUES
   ('Maintenance', 'Maintenance and service records'),
   ('Registration', 'Vehicle registration documents'),
   ('Inspection', 'Vehicle inspection reports'),
-  ('Other', 'Other vehicle related documents');
+  ('Other', 'Other vehicle related documents')
+ON CONFLICT (name) DO NOTHING;
 
 -- Insert sample users with freshly generated bcrypt hashes
 INSERT INTO users (username, email, password_hash, first_name, last_name, role)
 VALUES 
   ('admin', 'admin@fleetmanager.com', '$2b$10$iqqU7TiRrstPdMcqVzGJceqBtGzBih20B4AlR8J14oLXAymM1e9au', 'Admin', 'User', 'admin'), -- password: admin123
-  ('manager', 'manager@fleetmanager.com', '$2b$10$ULACjrb.0pOw2.iln4/8su8RNlUUiFDyQRL6/OMdC0WfqCk7rHha2', 'Fleet', 'Manager', 'manager'), -- password: manager123
   ('user', 'user@fleetmanager.com', '$2b$10$bw78pDjO1z8dX24qd5.z5OAmRc/yuEucTiuJR49o9YfIftoLrZv9K', 'Regular', 'User', 'user'); -- password: user123
 
 -- Insert sample vehicle data
-INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, regaplnr, mileage)
+INSERT INTO vehicles (id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage)
 VALUES 
   ('XYZ-123', 'Active', 'Kravas auto', 'Jan 15, 2025', 'Valid', 'Toyota', 'Hino 300', 2023, 'XYZ-123', '1HGCM82633A123456', '45,000 km'),
   ('ABC-789', 'Active', 'Vieglais auto', 'Mar 1, 2025', 'Expiring Soon', 'Mercedes', 'Sprinter', 2022, 'ABC-789', '2FMZA5145XBA12345', '32,500 km'),

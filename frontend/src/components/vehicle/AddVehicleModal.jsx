@@ -9,7 +9,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
   const [vehicleData, setVehicleData] = useState(vehicleToEdit || {
     id: '',
     status: 'Active',
-    type: 'Vieglais auto',
+    type: 'Car',
     lastService: new Date().toLocaleDateString('lv-LV', { month: 'short', day: 'numeric', year: 'numeric' }),
     documents: 'Valid',
     make: '',
@@ -19,8 +19,21 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
     regaplnr: '',
     mileage: '',
     reminders: [
-      { name: 'Insurance Renewal', date: '2025-01-15', enabled: true },
-      { name: 'Service Due', date: '2025-03-20', enabled: true }
+      {
+        name: 'roadWorthinessCertificate',
+        date: new Date().toISOString().split('T')[0],
+        enabled: false
+      },
+      {
+        name: 'insuranceRenewal',
+        date: new Date().toISOString().split('T')[0],
+        enabled: false
+      },
+      {
+        name: 'serviceDue',
+        date: new Date().toISOString().split('T')[0],
+        enabled: false
+      }
     ]
   });  
   // Use csddIntegration from global context
@@ -95,7 +108,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
     
     // Validate license plate is not empty
     if (!vehicleData.id || vehicleData.id.trim() === '') {
-      alert(t('vehicles.errors.licensePlateRequired'));
+      alert(t('alerts.licensePlateRequired'));
       return;
     }
     
@@ -128,7 +141,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
   
   // Redirect to System Settings page for CSDD connection
   const connectToCsdd = () => {
-    alert('Please connect to e.CSDD.lv in System Settings. You will be redirected there now.');
+    alert(t('alerts.csddConnectSystemSettings'));
     // Close the current modal
     onClose();
     // Redirect to system settings page
@@ -138,7 +151,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
   // Fetch vehicle details from CSDD using global context
   const fetchVehicleDetails = async (plateNumber) => {
     if (!plateNumber) {
-      alert('Please enter a license plate number first');
+      alert(t('alerts.enterLicensePlate'));
       return;
     }
 
@@ -149,7 +162,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
       const result = await fetchVehicleFromCsdd(plateNumber);
       
       if (!result.success) {
-        alert(`Failed to retrieve vehicle information: ${result.message}`);
+        alert(t('alerts.fetchVehicleFailed', { message: result.message }));
         return;
       }
       
@@ -207,7 +220,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
       }
     } catch (error) {
       console.error('Error fetching vehicle details:', error);
-      alert(`Failed to fetch vehicle details: ${error.message}`);
+      alert(t('alerts.fetchVehicleDetailsFailed', { message: error.message }));
     } finally {
       setFetchingData(false);
     }
@@ -216,7 +229,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
   // Get insurance information from CSDD
   const getInsuranceInfo = async (regaplnr) => {
     if (!regaplnr || !vehicleData.id) {
-      alert('Registration certificate number and license plate are required');
+      alert(t('alerts.registrationAndPlateRequired'));
       return;
     }    
     
@@ -239,7 +252,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
       
       if (!data.success) {
         console.log('[Frontend] No insurance info found:', data.message);
-        alert('No insurance info found. Please check the registration certificate number.');
+        alert(t('alerts.insuranceNoInfo'));
         return;
       }
       
@@ -281,12 +294,13 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
           }
         });
         
-        alert('Insurance information successfully added as a reminder');      } else {
-        alert('No insurance policy date found in the data.');
+        alert(t('alerts.insuranceAdded'));
+      } else {
+        alert(t('alerts.insuranceNoDate'));
       }
     } catch (error) {
       console.error('Error fetching insurance info:', error);
-      alert(`Error fetching insurance info: ${error.message}`);
+      alert(t('alerts.insuranceFetchError', { message: error.message }));
     } finally {
       setInsuranceLoading(false);
     }
@@ -294,7 +308,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
 
   // Disconnect from CSDD
   const disconnectFromCsdd = () => {
-    alert('Please disconnect from e.CSDD.lv in System Settings. You will be redirected there now.');
+    alert(t('alerts.csddDisconnectSystemSettings'));
     // Close the current modal
     onClose();
     // Redirect to system settings page
@@ -307,8 +321,8 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
       ...vehicleData,
       reminders: [...(vehicleData.reminders || []), {
         name: '',
-        date: '',
-        enabled: true,
+        date: new Date().toISOString().split('T')[0],
+        enabled: false,
         status: 'Valid'
       }]
     });
@@ -481,7 +495,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
                     >
                       <option value="Active">{t('vehicles.statusOptions.active')}</option>
                       <option value="Maintenance">{t('vehicles.statusOptions.maintenance')}</option>
-                      <option value="Out of Service">{t('vehicles.statusOptions.outOfService')}</option>
+                      <option value="Inactive">{t('vehicles.statusOptions.inactive')}</option>
                     </select>
                   </div>
                 </div>
@@ -538,9 +552,27 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     >
-                      <option value="Vieglais auto">{t('vehicles.vehicleTypes.car')}</option>
-                      <option value="Kravas auto">{t('vehicles.vehicleTypes.truck')}</option>
-                      <option value="Puspiekabe">{t('vehicles.vehicleTypes.trailer')}</option>
+
+                      <option value="Car">{t('vehicles.vehicleTypes.car')}</option>
+
+                      <option value="Truck">{t('vehicles.vehicleTypes.truck')}</option>
+
+                      <option value="Trailer">{t('vehicles.vehicleTypes.trailer')}</option>
+
+                      <option value="Tractor">{t('vehicles.vehicleTypes.tractor')}</option>
+
+                      <option value="Bus">{t('vehicles.vehicleTypes.bus')}</option>
+
+                      <option value="Moped">{t('vehicles.vehicleTypes.moped')}</option>
+
+                      <option value="Motorcycle">{t('vehicles.vehicleTypes.motorcycle')}</option>
+
+                      <option value="Tricycle">{t('vehicles.vehicleTypes.tricycle')}</option>
+
+                      <option value="Boat">{t('vehicles.vehicleTypes.boat')}</option>
+
+                      <option value="Ship">{t('vehicles.vehicleTypes.ship')}</option>
+
                       <option value="Other">{t('vehicles.vehicleTypes.other')}</option>
                     </select>
                   </div>
@@ -611,13 +643,22 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
                       <div>
                         <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.reminders.name')}</label>
-                        <input
-                          type="text"
-                          value={reminder.name || ''}
-                          onChange={(e) => updateReminder(index, 'name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                          required
-                        />
+                        {['roadWorthinessCertificate', 'insuranceRenewal', 'serviceDue'].includes(reminder.name) ? (
+                          <input
+                            type="text"
+                            value={t('vehicles.reminders.' + reminder.name)}
+                            disabled
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white bg-gray-100 cursor-not-allowed"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={reminder.name || ''}
+                            onChange={(e) => updateReminder(index, 'name', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            required
+                          />
+                        )}
                       </div>                      <div>
                         <label className="block text-sm text-gray-700 mb-1 dark:text-gray-300">{t('vehicles.reminders.date')}</label>
                         <input

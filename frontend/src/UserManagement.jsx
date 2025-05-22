@@ -194,7 +194,7 @@ const UserManagement = () => {
           selectedUser.role === 'admin' && 
           formData.role !== 'admin' && 
           isLastActiveAdmin(selectedUser)) {
-        alert('Cannot demote the last administrator. The system must have at least one active admin user.');
+        alert(t('alerts.cannotDemoteLastAdmin'));
         return;
       }
       
@@ -204,7 +204,7 @@ const UserManagement = () => {
           selectedUser.isActive === true && 
           formData.isActive === false && 
           isLastActiveAdmin(selectedUser)) {
-        alert('Cannot disable the last administrator. The system must have at least one active admin user.');
+        alert(t('alerts.cannotDisableLastAdmin'));
         return;
       }
       
@@ -233,7 +233,7 @@ const UserManagement = () => {
         
         // Refresh user list
         fetchUsers();
-        alert(`User ${formData.firstName} ${formData.lastName} created successfully with temporary password: ${formData.password}`);
+        alert(t('alerts.userCreated', { name: `${formData.firstName} ${formData.lastName}`, password: formData.password }));
       } else {
         // Update existing user
         const response = await fetch(`${apiUrl}/api/auth/users/${selectedUser.id}`, {
@@ -257,13 +257,13 @@ const UserManagement = () => {
         
         // Refresh user list
         fetchUsers();
-        alert(`User ${formData.firstName} ${formData.lastName} updated successfully`);
+        alert(t('alerts.userUpdated', { name: `${formData.firstName} ${formData.lastName}` }));
       }
       
       closeModal();
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert(`Error: ${error.message}`);
+      alert(t('alerts.error', { message: error.message }));
     }
   };
 
@@ -290,7 +290,7 @@ const UserManagement = () => {
       fetchUsers();
     } catch (error) {
       console.error('Error toggling user status:', error);
-      alert(`Error: ${error.message}`);
+      alert(t('alerts.error', { message: error.message }));
     }
   };
 
@@ -318,7 +318,7 @@ const UserManagement = () => {
       alert(`Password for ${user.firstName || ''} ${user.lastName || ''} has been reset to: ${newPassword}`);
     } catch (error) {
       console.error('Error resetting password:', error);
-      alert(`Error: ${error.message}`);
+      alert(t('alerts.error', { message: error.message }));
     }
   };
 

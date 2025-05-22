@@ -96,7 +96,7 @@ const ImportVehiclesModal = ({ isOpen, onClose, onImport }) => {
 
   const handleImport = async () => {
     if (selectedVehicles.length === 0) {
-      alert('Please select at least one vehicle to import');
+      alert(t('alerts.importSelect'));
       return;
     }
 

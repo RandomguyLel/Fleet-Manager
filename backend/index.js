@@ -191,7 +191,7 @@ app.post('/api/vehicles', authenticateToken, async (req, res) => {
     try {
       // Insert vehicle
       const vehicleResult = await db.query(
-        'INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+        'INSERT INTO vehicles (id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
         [id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage]
       );
       
@@ -233,7 +233,6 @@ app.post('/api/vehicles', authenticateToken, async (req, res) => {
           type,
           status
         }),
-        ip_address: req.ip,
         user_agent: req.headers['user-agent']
       });
       
@@ -270,7 +269,7 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
     try {
       // Update vehicle
       const vehicleResult = await db.query(
-        'UPDATE vehicles SET status = $1, type = $2, "lastService" = $3, documents = $4, make = $5, model = $6, year = $7, license = $8, regaplnr = $9, mileage = $10 WHERE id = $11 RETURNING *',
+        'UPDATE vehicles SET status = $1, type = $2, lastService = $3, documents = $4, make = $5, model = $6, year = $7, license = $8, regaplnr = $9, mileage = $10 WHERE id = $11 RETURNING *',
         [status, type, lastService, documents, make, model, year, license, regaplnr, mileage, id]
       );
       
@@ -323,7 +322,6 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
               enabled: r.enabled
             }))
           }),
-          ip_address: req.ip,
           user_agent: req.headers['user-agent']
         }).catch(err => console.error('Failed to create reminder audit log:', err));
       }
@@ -375,7 +373,6 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
           field: 'vehicle',
           old_value: JSON.stringify(oldVehicleData),
           new_value: JSON.stringify(newVehicleData),
-          ip_address: req.ip,
           user_agent: req.headers['user-agent']
         });
       }
@@ -415,7 +412,6 @@ app.delete('/api/vehicles/:id', authenticateToken, async (req, res) => {
       page: 'Vehicles',
       field: 'vehicle',
       old_value: JSON.stringify(result.rows[0]),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
@@ -486,7 +482,6 @@ app.post('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
         date: date,
         enabled: enabled !== undefined ? enabled : true
       }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
@@ -539,7 +534,6 @@ app.put('/api/reminders/:id', authenticateToken, async (req, res) => {
         date: date,
         enabled: enabled !== undefined ? enabled : true
       }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
@@ -577,7 +571,6 @@ app.delete('/api/reminders/:id', authenticateToken, async (req, res) => {
         date: existingReminder.date,
         enabled: existingReminder.enabled
       }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
@@ -655,7 +648,6 @@ app.put('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
             enabled: r.enabled
           }))
         }),
-        ip_address: req.ip,
         user_agent: req.headers['user-agent']
       });
       
@@ -923,7 +915,6 @@ app.post('/api/service-history', authenticateToken, async (req, res) => {
     const user = {
       id: req.user.id,
       username: req.user.username,
-      ip: req.ip,
       userAgent: req.headers['user-agent']
     };
     
@@ -952,7 +943,6 @@ app.put('/api/service-history/:id', authenticateToken, async (req, res) => {
     const user = {
       id: req.user.id,
       username: req.user.username,
-      ip: req.ip,
       userAgent: req.headers['user-agent']
     };
     
@@ -983,7 +973,6 @@ app.delete('/api/service-history/:id', authenticateToken, async (req, res) => {
     const user = {
       id: req.user.id,
       username: req.user.username,
-      ip: req.ip,
       userAgent: req.headers['user-agent']
     };
     
@@ -1024,7 +1013,6 @@ app.post('/api/reminders/:id/complete', authenticateToken, async (req, res) => {
     const user = {
       id: req.user.id,
       username: req.user.username,
-      ip: req.ip,
       userAgent: req.headers['user-agent']
     };
     
