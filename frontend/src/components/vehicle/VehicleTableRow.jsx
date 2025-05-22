@@ -86,7 +86,17 @@ const VehicleTableRow = ({
         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
           {t('vehicles.vehicleTypes.' + (typeValueToKey[vehicle.type] || 'other'))}
         </td>
-        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{vehicle.lastService}</td>
+        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+          {(() => {
+            if (!vehicle.lastService) return '';
+            // Try to parse as date
+            const d = new Date(vehicle.lastService);
+            if (!isNaN(d.getTime())) {
+              return d.toLocaleDateString();
+            }
+            return vehicle.lastService;
+          })()}
+        </td>
         <td className="px-6 py-4">
           <span className={`px-2 py-1 text-xs rounded-full font-medium ${getDocumentStatusClass(documentStatus)}`}>
             {t('vehicles.documentStatus.' + documentStatus)}

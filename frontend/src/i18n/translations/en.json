@@ -115,6 +115,8 @@
     "preview": "Preview",
     "download": "Download",
     "upload": "Upload",
+    "importing": "Importing...",
+    "uploading": "Uploading...",
     "aboutText": "is a comprehensive solution for managing vehicle fleets, service history, and document management.",
     "eventTypes": {
       "reminder": "Reminder",

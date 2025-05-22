@@ -115,6 +115,8 @@
     "download": "Lejupielādēt",
     "upload": "Augšupielādēt",
     "aboutText": "ir visaptverošs risinājums auto parka, servisa vēstures un dokumentu pārvaldībai.",
+    "importing": "Importēšana...",
+    "uploading": "Augšupielādēšana...",
     "eventTypes": {
       "reminder": "Atgādinājums",
       "notification": "Paziņojums",

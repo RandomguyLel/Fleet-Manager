@@ -125,8 +125,13 @@ const Vehicles = () => {
         }
 
         const data = await response.json();
-        setVehicles(data);
-        setFilteredVehicles(data); // Initialize filtered vehicles with all vehicles
+        // Map lastservice (from DB) to lastService (frontend)
+        const mappedData = data.map(vehicle => ({
+          ...vehicle,
+          lastService: vehicle.lastService || vehicle.lastservice || ''
+        }));
+        setVehicles(mappedData);
+        setFilteredVehicles(mappedData); // Initialize filtered vehicles with all vehicles
         setError(null);
       } catch (err) {
         console.error('Error fetching vehicles:', err);
