@@ -1,4 +1,52 @@
 {
+  "alerts": {
+    "sessionExpired": "Your session has expired. Please log in again.",
+    "duplicateVehicle": "Error: This vehicle already exists.",
+    "addVehicleFailed": "Failed to add vehicle. Please try again.",
+    "updateVehicleFailed": "Failed to update vehicle. Please try again.",
+    "deleteVehicleSelect": "Please select at least one vehicle to delete.",
+    "deleteVehicleSuccess": "Vehicle {{id}} deleted successfully.",
+    "deleteVehiclesSuccess": "{{count}} vehicles deleted successfully.",
+    "deleteVehicleError": "There was an error deleting one or more vehicles.",
+    "noVehicleId": "No vehicle ID provided.",
+    "csddNotConnected": "You need to connect to e.csdd.lv first. Please go to Edit Vehicle > Integrations tab to connect.",
+    "csddNotConnectedImport": "You need to connect to e.csdd.lv in System Settings before importing vehicles.",
+    "csddSyncAllSuccess": "All vehicle data successfully synchronized: Road worthiness and insurance reminders updated.",
+    "csddSyncPartialSuccess": "Vehicle data partially synchronized: Road worthiness updated, but insurance data could not be retrieved.",
+    "csddSyncNoRegaplnr": "Vehicle details successfully updated from e.csdd.lv. No Registration Certificate Number available to check insurance.",
+    "csddSyncError": "Error syncing vehicle details: {{message}}",
+    "importSelect": "Please select at least one vehicle to import.",
+    "importDuplicateVehicle": "Vehicle {{id}} already exists, skipping...",
+    "importFailed": "Error importing vehicle.",
+    "licensePlateRequired": "License plate number is required.",
+    "enterLicensePlate": "Please enter a license plate number first.",
+    "fetchVehicleFailed": "Failed to retrieve vehicle information: {{message}}",
+    "fetchVehicleDetailsFailed": "Failed to fetch vehicle details: {{message}}",
+    "registrationAndPlateRequired": "Registration certificate number and license plate are required.",
+    "insuranceNoInfo": "No insurance info found. Please check the registration certificate number.",
+    "insuranceAdded": "Insurance information successfully added as a reminder.",
+    "insuranceNoDate": "No insurance policy date found in the data.",
+    "insuranceFetchError": "Error fetching insurance info: {{message}}",
+    "csddConnectSystemSettings": "Please connect to e.CSDD.lv in System Settings. You will be redirected there now.",
+    "csddDisconnectSystemSettings": "Please disconnect from e.CSDD.lv in System Settings. You will be redirected there now.",
+    "reminderCompleted": "Reminder marked as completed and new reminder scheduled for {{date}}.",
+    "error": "Error: {{message}}",
+    "reminderCompletedType": "{{type}} marked as completed!",
+    "notificationsUpdated": "Notifications updated!",
+    "generateReportFailed": "Failed to generate report. Please try again.",
+    "notificationsRefreshed": "Notifications refreshed successfully!",
+    "exportNotImplemented": "Data export functionality will be implemented in a future update.",
+    "featureNotImplemented": "Feature not implemented yet!",
+    "cannotDemoteLastAdmin": "Cannot demote the last administrator. The system must have at least one active admin user.",
+    "cannotDisableLastAdmin": "Cannot disable the last administrator. The system must have at least one active admin user.",
+    "userCreated": "User {{name}} created successfully with temporary password: {{password}}",
+    "userUpdated": "User {{name}} updated successfully.",
+    "serviceRecordSuccess": "Service record {{action}} successfully!",
+    "updated": "updated",
+    "created": "created",
+    "notYetImplemented": "Not yet implemented!",
+    "forgotPassword": "Contact your administrator to reset your password."
+  },
   "common": {
     "main": "Main",
     "admin": "Admin",
@@ -67,6 +115,7 @@
     "preview": "Preview",
     "download": "Download",
     "upload": "Upload",
+    "aboutText": "is a comprehensive solution for managing vehicle fleets, service history, and document management.",
     "eventTypes": {
       "reminder": "Reminder",
       "notification": "Notification",
@@ -76,8 +125,9 @@
     }
   },
   "auth": {
+    "tms": "Fleet Manager",
     "loginTitle": "Login to Fleet Manager",
-    "email": "Email",
+    "email": "Email/Username",
     "password": "Password",
     "rememberMe": "Remember me",
     "forgotPassword": "Forgot password?",
@@ -174,7 +224,7 @@
       "action2": "Import vehicle due dates and reminders",
       "action3": "Update vehicle reminders from csdd.lv",
       "remindersSynced": "Reminders successfully updated from e.csdd.lv",
-      "syncWithCsdd": "Sync with CSDD",
+      "syncWithCsdd": "Fetch Data",
       "checkInsuranceHint": "Click the button to check insurance info"
       
     },    "reminders": {
@@ -222,7 +272,8 @@
       "tricycle": "Tricycle",
       "boat": "Boat",
       "ship": "Ship",
-      "other": "Other"
+      "other": "Other",
+      "tractor": "Tractor"
     },
     "tracking": {
       "title": "Tracking",
@@ -300,6 +351,7 @@
       "inspection": "Inspection",
       "insuranceRenewal": "Insurance Renewal",
       "roadWorthinessCertificate": "Road Worthiness Certificate",
+      "serviceDue": "Service Due",
       "other": "Other",
       "sparkPlugReplacement": "Spark Plug Replacement",
       "wheelAlignment": "Wheel Alignment",
@@ -401,7 +453,6 @@
     "user": "User",
     "action": "Action",
     "details": "Details",
-    "ipAddress": "IP Address",
     "browser": "Browser",
     "exportLog": "Export Log",
     "actionType": "Action Type",
@@ -469,6 +520,11 @@
         "overdue": "Road worthiness certificate expired for {{vehicle}}",
         "dueInDays": "Road worthiness certificate expires in {{days}} days for {{vehicle}}",
         "dueSoon": "Road worthiness certificate due soon for {{vehicle}}"
+      },
+      "other": {
+        "overdue": "Custom reminder overdue for {{vehicle}}",
+        "dueInDays": "Custom reminder due in {{days}} days for {{vehicle}}",
+        "dueSoon": "Custom reminder due soon for {{vehicle}}"
       }
     },
     "message": {

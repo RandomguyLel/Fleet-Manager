@@ -137,41 +137,49 @@ const Calendar = () => {
   // Map known reminder names to translation keys
   const reminderTitleToKey = {
     'Insurance Renewal': 'vehicles.reminders.insuranceRenewal',
+    'insuranceRenewal': 'vehicles.reminders.insuranceRenewal',
     'Road Worthiness Certificate': 'vehicles.reminders.roadWorthinessCertificate',
+    'roadWorthinessCertificate': 'vehicles.reminders.roadWorthinessCertificate',
     'Service Due': 'vehicles.reminders.serviceDue',
+    'serviceDue': 'vehicles.reminders.serviceDue',
     // Add more mappings as needed
   };
 
+  // Map known service types to translation keys
+  const serviceTypeToKey = {
+    'Oil Change': 'service.types.oilChange',
+    'Tire Rotation': 'service.types.tireRotation',
+    'Brake Service': 'service.types.brakeService',
+    'Engine Service': 'service.types.engineService',
+    'Transmission Service': 'service.types.transmissionService',
+    'Battery Replacement': 'service.types.batteryReplacement',
+    'Air Filter Replacement': 'service.types.airFilterReplacement',
+    'Fluid Service': 'service.types.fluidService',
+    'Inspection': 'service.types.inspection',
+    'Insurance Renewal': 'service.types.insuranceRenewal',
+    'insuranceRenewal': 'service.types.insuranceRenewal',
+    'Road Worthiness Certificate': 'service.types.roadWorthinessCertificate',
+    'roadWorthinessCertificate': 'service.types.roadWorthinessCertificate',
+    'Service Due': 'vehicles.reminders.serviceDue',
+    'serviceDue': 'vehicles.reminders.serviceDue',
+    'Fuel': 'service.types.fuel',
+    'Refueling': 'service.types.refueling',
+    'Other': 'service.types.other',
+    'Spark Plugs Replacement': 'service.types.sparkPlugReplacement',
+    'Wheel Alignment': 'service.types.wheelAlignment',
+    'Brake Inspection': 'service.types.brakeInspection',
+    'Coolant Flush': 'service.types.coolantFlush',
+    'Engine Tune-up': 'service.types.engineTuneUp',
+    // Add more mappings as needed
+  };
+
+  // Helper to get translated event title
   const getNotificationTitle = (event) => {
     if (event.type === 'reminder' && reminderTitleToKey[event.title]) {
       return t(reminderTitleToKey[event.title]);
     }
-    if (event.type === 'service' && event.title) {
-      // Try to translate service type if possible
-      const serviceTypeToKey = {
-        'Oil Change': 'service.types.oilChange',
-        'Tire Rotation': 'service.types.tireRotation',
-        'Brake Service': 'service.types.brakeService',
-        'Engine Service': 'service.types.engineService',
-        'Transmission Service': 'service.types.transmissionService',
-        'Battery Replacement': 'service.types.batteryReplacement',
-        'Air Filter Replacement': 'service.types.airFilterReplacement',
-        'Fluid Service': 'service.types.fluidService',
-        'Inspection': 'service.types.inspection',
-        'Insurance Renewal': 'service.types.insuranceRenewal',
-        'Road Worthiness Certificate': 'service.types.roadWorthinessCertificate',
-        'Fuel': 'service.types.fuel',
-        'Refueling': 'service.types.refueling',
-        'Other': 'service.types.other',
-        'Spark Plugs Replacement': 'service.types.sparkPlugReplacement',
-        'Wheel Alignment': 'service.types.wheelAlignment',
-        'Brake Inspection': 'service.types.brakeInspection',
-        'Coolant Flush': 'service.types.coolantFlush',
-        'Engine Tune-up': 'service.types.engineTuneUp',
-      };
-      if (serviceTypeToKey[event.title]) {
-        return t(serviceTypeToKey[event.title]);
-      }
+    if (event.type === 'service' && serviceTypeToKey[event.title]) {
+      return t(serviceTypeToKey[event.title]);
     }
     return event.title || t(`common.eventTypes.${event.type}`);
   };

@@ -106,6 +106,7 @@ const Vehicles = () => {
           if (!redirecting) {
             setRedirecting(true);
             console.log('Session expired or invalid. Redirecting to login page...');
+            alert(t('alerts.sessionExpired'));
             // Clear the invalid session
             await logout(true);
             // Redirect to login page with a return URL
@@ -136,7 +137,7 @@ const Vehicles = () => {
     };
 
     fetchVehicles();
-  }, [getAuthHeader, apiUrl, logout, navigate]);
+  }, [getAuthHeader, apiUrl, logout, navigate, t]);
 
   // Add useEffect to handle search filtering
   useEffect(() => {
@@ -192,7 +193,7 @@ const Vehicles = () => {
         
         // Handle duplicate vehicle error
         if (response.status === 409 && errorData.code === 'DUPLICATE_VEHICLE') {
-          alert(`Error: ${errorData.error}`);
+          alert(t('alerts.duplicateVehicle'));
           return false;
         }
         
@@ -205,7 +206,7 @@ const Vehicles = () => {
       return true;
     } catch (error) {
       console.error('Error adding vehicle:', error);
-      alert('Failed to add vehicle. Please try again.');
+      alert(t('alerts.addVehicleFailed'));
       return false;
     }
   };
@@ -242,7 +243,7 @@ const Vehicles = () => {
       setVehicleChanges(null);
     } catch (error) {
       console.error('Error updating vehicle:', error);
-      alert('Failed to update vehicle. Please try again.');
+      alert(t('alerts.updateVehicleFailed'));
     }
   };
 
@@ -301,7 +302,7 @@ const Vehicles = () => {
   // Open delete confirmation for multiple vehicles
   const openBulkDeleteConfirmation = () => {
     if (selectedVehicles.length === 0) {
-      alert('Please select at least one vehicle to delete');
+      alert(t('alerts.deleteVehicleSelect'));
       return;
     }
     setVehicleToDelete(null); // null indicates bulk delete
@@ -335,7 +336,7 @@ const Vehicles = () => {
   // Sync vehicle reminders with latest data from CSDD
   const syncVehicleRemindersWithCsdd = async (vehicleId) => {
     if (!vehicleId) {
-      alert('No vehicle ID provided');
+      alert(t('alerts.noVehicleId'));
       return null;
     }
 
@@ -354,7 +355,7 @@ const Vehicles = () => {
       const sessionData = await sessionResponse.json();
       
       if (!sessionData.success || !sessionData.connected) {
-        alert('You need to connect to e.csdd.lv first. Please go to Edit Vehicle > Integrations tab to connect.');
+        alert(t('alerts.csddNotConnected'));
         return null;
       }
       
@@ -534,20 +535,20 @@ const Vehicles = () => {
           
           // Show success message with information about what was updated
           alert(insuranceSuccess 
-            ? 'All vehicle data successfully synchronized: Road worthiness and insurance reminders updated.' 
-            : 'Vehicle data partially synchronized: Road worthiness updated, but insurance data could not be retrieved.');
+            ? t('alerts.csddSyncAllSuccess')
+            : t('alerts.csddSyncPartialSuccess'));
         } catch (error) {
           console.error('[Frontend] Error updating insurance info during sync:', error);
-          alert('Vehicle data partially synchronized: Road worthiness updated, but insurance data could not be retrieved.');
+          alert(t('alerts.csddSyncPartialSuccess'));
         }
       } else {
-        alert('Vehicle details successfully updated from e.csdd.lv. No Registration Certificate Number available to check insurance.');
+        alert(t('alerts.csddSyncNoRegaplnr'));
       }
       
       return updatedVehicleData;
     } catch (error) {
       console.error('[Frontend] Error syncing vehicle with CSDD:', error);
-      alert(`Error syncing vehicle details: ${error.message}`);
+      alert(t('alerts.csddSyncError', { message: error.message }));
       return null;
     }
   };
@@ -574,10 +575,10 @@ const Vehicles = () => {
     // Show appropriate message
     if (success) {
       alert(vehicleToDelete 
-        ? `Vehicle ${vehicleToDelete.id} deleted successfully` 
-        : `${selectedVehicles.length} vehicles deleted successfully`);
+        ? t('alerts.deleteVehicleSuccess', { id: vehicleToDelete.id })
+        : t('alerts.deleteVehiclesSuccess', { count: selectedVehicles.length }));
     } else {
-      alert('There was an error deleting one or more vehicles');
+      alert(t('alerts.deleteVehicleError'));
     }
 
     // After all deletions
@@ -614,6 +615,7 @@ const Vehicles = () => {
         // Handle duplicate vehicle error
         if (response.status === 409 && errorData.code === 'DUPLICATE_VEHICLE') {
           console.warn(`Vehicle ${vehicleData.id} already exists, skipping...`);
+          alert(t('alerts.importDuplicateVehicle', { id: vehicleData.id }));
           return false;
         }
         

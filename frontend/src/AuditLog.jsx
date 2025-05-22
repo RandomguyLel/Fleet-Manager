@@ -292,11 +292,11 @@ const AuditLog = () => {
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center">
                 <h1 className="text-2xl text-gray-900 dark:text-white">{t('audit.auditLog')}</h1>
-                <div className="flex space-x-3">
+                {/* <div className="flex space-x-3">
                   <button className="px-4 py-2 text-sm bg-gray-900 text-white rounded-md shadow-sm hover:bg-gray-800 dark:bg-blue-700 dark:hover:bg-blue-800">
                     <span className="mr-2">⬇️</span>{t('audit.exportLog')}
                   </button>
-                </div>
+                </div> */}
               </div>
 
               <div className="mt-6 bg-white shadow rounded-lg dark:bg-gray-800 dark:border dark:border-gray-700">

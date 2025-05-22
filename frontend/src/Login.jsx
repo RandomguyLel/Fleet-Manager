@@ -75,7 +75,7 @@ const Login = () => {
           </div>
           <div className="mt-6 flex items-center justify-center space-x-4">
             <h2 className={`text-3xl font-extrabold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Fleet Manager
+              {t('auth.tms')}
             </h2>
             <div className="flex ml-2 border border-gray-300 rounded overflow-hidden">
               <button
@@ -213,7 +213,7 @@ const Login = () => {
               <a
                 href="#"
                 className="font-medium text-blue-600 hover:text-blue-500"
-                onClick={() => { alert('Feature not implemented yet!'); }}
+                onClick={() => { alert(t('alerts.forgotPassword')); }}
               >
                 {t('auth.forgotPassword')}
               </a>
@@ -253,12 +253,12 @@ const Login = () => {
           
           <div className="text-center">
             <p className={`mt-2 text-sm ${darkMode ? 'text-red-400' : 'text-red-600'}`}>
-            ⚠️ In active development. Source code available ➡️ 
+            Source code available  
               
               <button 
                 type="button"
                 className="ml-1 font-medium text-blue-600 hover:text-blue-500"
-                onClick={() => {window.location.href = 'https://github.com/RandomguyLel/Fleet-Manager'}}
+                onClick={() => {window.open('https://github.com/RandomguyLel/Fleet-Manager', '_blank');}}
                 disabled={isLoading}
               >
                 here
@@ -275,7 +275,7 @@ const Login = () => {
           </p>
           <p className={`text-center text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
 
-          Version 0.7 - Beta Candidate | Last updated: May 13th, 2025
+          Version 0.8 | Last updated: May 22nd, 2025
 
           </p>
         </div>

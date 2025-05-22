@@ -26,10 +26,9 @@ Fleet Manager is a comprehensive transportation management solution designed to 
 ### Frontend
 - **React 19**: Latest React framework for UI components
 - **Vite**: Next-generation frontend build tool
-- **TypeScript**: Type-safe JavaScript
 - **Tailwind CSS**: Utility-first CSS framework for responsive design
 - **React Router**: Client-side routing
-- **Lit Elements**: Web components for reusable UI elements
+
 
 ## 🚀 Getting Started
 
@@ -118,12 +117,11 @@ The Fleet Manager API provides the following endpoints:
 - `/api/users` - User management
 - `/api/analytics` - Fleet analytics
 
-## 🔄 Integrations WIP
+## 🔄 Integrations
 
 Fleet Manager can integrate with:
-- [Soon™] Vehicle GPS location data
 
-- [X] E-CSDD vehicle registry *account required
+- [X] E-CSDD vehicle registry (Import owned vehicles and check vehicle TA and Insurance) *account required
 
 
 ## 👏 Acknowledgements
@@ -133,4 +131,4 @@ Fleet Manager can integrate with:
 
 ---
 
-Made with ❤️ by RandomguyLel | Last updated: April 29, 2025
+Made with ❤️ by RandomguyLel | Last updated: May 22nd, 2025

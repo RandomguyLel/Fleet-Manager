@@ -10,8 +10,6 @@ const db = require('./db');
  * @param {string} [logData.field] - Field that was changed (if applicable)
  * @param {string} [logData.old_value] - Previous value (if applicable)
  * @param {string} [logData.new_value] - New value (if applicable)
- * @param {string} [logData.ip_address] - IP address of the user
- * @param {string} [logData.user_agent] - User agent of the browser
  * @param {Object} [logData.details] - Additional details in JSON format
  * @returns {Promise<Object>} The created audit log entry
  */
@@ -25,15 +23,14 @@ async function createAuditLog(logData) {
       field,
       old_value,
       new_value,
-      ip_address,
       user_agent,
       details
     } = logData;
 
     const result = await db.query(
       `INSERT INTO audit_logs 
-       (user_id, username, action, page, field, old_value, new_value, ip_address, user_agent, details)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       (user_id, username, action, page, field, old_value, new_value, user_agent, details)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         user_id || null,
@@ -43,7 +40,6 @@ async function createAuditLog(logData) {
         field || null,
         old_value || null,
         new_value || null,
-        ip_address || null,
         user_agent || null,
         details ? JSON.stringify(details) : null
       ]

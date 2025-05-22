@@ -137,7 +137,7 @@ const SystemSettings = () => {  const { t } = useTranslation();
                     >
                       {t('settings.integrations')}
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => setActiveTab('general')}
                       className={`whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm ${
                         activeTab === 'general'
@@ -146,7 +146,7 @@ const SystemSettings = () => {  const { t } = useTranslation();
                       }`}
                     >
                       {t('settings.general')}
-                    </button>
+                    </button> */}
                     <button
                       onClick={() => setActiveTab('about')}
                       className={`whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm ${
@@ -264,17 +264,17 @@ const SystemSettings = () => {  const { t } = useTranslation();
                         )}
                       </div>
 
-                      {/* Other integrations can be added here */}
+                      {/* Other integrations can be added here
                       <div className="p-4 border border-dashed border-gray-300 rounded-md dark:border-gray-700">
                         <div className="text-center text-gray-500 dark:text-gray-400">
                           <p className="text-sm">{t('settings.moreIntegrationsComingSoon')}</p>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   )}
 
                   {/* General Settings Tab */}
-                  {activeTab === 'general' && (
+                  {/* {activeTab === 'general' && (
                     <div className="space-y-6">
                       <p className="text-gray-500 dark:text-gray-400">{t('settings.generalSettingsComingSoon')}</p>
                       
@@ -284,7 +284,7 @@ const SystemSettings = () => {  const { t } = useTranslation();
                         </div>
                       </div>
                     </div>
-                  )}
+                  )} */}
 
                   {/* About Tab */}
                   {activeTab === 'about' && (
@@ -292,29 +292,21 @@ const SystemSettings = () => {  const { t } = useTranslation();
                       <div className="text-center mb-6">
                         <div className="text-3xl text-blue-600 mb-2">🚚</div>
                         <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('common.fleetManager')}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Version 0.7 - Beta Candidate</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Version 0.8</p>
                       </div>
                       
                       <div className="p-4 bg-gray-50 rounded-md dark:bg-gray-700/30">
                         <h4 className="font-medium mb-2 text-gray-900 dark:text-white">{t('settings.about')}</h4>
                         <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                          {t('common.fleetManager')} is a comprehensive solution for managing vehicle fleets, 
-                          service history, and document management.
+                          {t('common.fleetManager')} {t('common.aboutText')}
                         </p>
                         
-                        <h4 className="font-medium mb-2 text-gray-900 dark:text-white">{t('settings.acknowledgements')}</h4>
-                        <ul className="text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
-                          <li>React Icons - <a href="https://react-icons.github.io/react-icons/" target="_blank" rel="noopener noreferrer">https://react-icons.github.io/react-icons/</a></li>
-                          <li>Tailwind CSS - <a href="https://tailwindcss.com/" target="_blank" rel="noopener noreferrer">https://tailwindcss.com/</a></li>
-                          <li>--------------------------------</li>
-                          <li><a href="https://github.com/WatchDogee" target="_blank" rel="noopener noreferrer">Intars Kūleris</a> - Contributed by picking a version number between 0.0.0 and 0.9.0 (such a contribution)</li>
-                        </ul>
                       </div>
                       
                       <div className="text-center text-xs text-gray-500 dark:text-gray-400">
 
-                        <p>&copy; {new Date().getFullYear()} {t('common.fleetManager')}. Developed by RandomguyLel</p>
-                        <p className="mt-1">Last updated: May 13, 2025</p>
+                        <p>&copy; {new Date().getFullYear()} {t('common.fleetManager')}. By Ritvars Šakins</p>
+                        <p className="mt-1">Last updated: May 22, 2025</p>
 
                       </div>
                     </div>

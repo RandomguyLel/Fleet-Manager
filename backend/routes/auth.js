@@ -180,7 +180,6 @@ router.post('/login', async (req, res) => {
         page: 'Auth',
         field: 'password',
         new_value: 'Invalid password attempt',
-        ip_address: req.ip,
         user_agent: req.headers['user-agent'],
         details: { reason: 'Invalid password' }
       });
@@ -210,7 +209,6 @@ router.post('/login', async (req, res) => {
       username: user.username,
       action: 'Login',
       page: 'Auth',
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
@@ -248,7 +246,6 @@ router.post('/logout', authenticateToken, async (req, res) => {
       username: req.user.username,
       action: 'Logout',
       page: 'Auth',
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
@@ -518,7 +515,6 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res) => {
         role,
         isActive: true
       }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
@@ -625,7 +621,6 @@ router.put('/users/:id', authenticateToken, requireAdmin, async (req, res) => {
         role: result.rows[0].role,
         isActive: result.rows[0].is_active
       }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
@@ -715,7 +710,6 @@ router.patch('/users/:id/status', authenticateToken, requireAdmin, async (req, r
         username: result.rows[0].username,
         isActive: result.rows[0].is_active
       }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
@@ -780,7 +774,6 @@ router.post('/users/:id/reset-password', authenticateToken, requireAdmin, async 
         resetBy: req.user.username,
         resetAt: new Date().toISOString()
       }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     

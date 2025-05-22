@@ -119,7 +119,7 @@ async function createServiceHistory(data, user) {
       
       // Update vehicle's last service date and mileage
       await db.query(
-        'UPDATE vehicles SET "lastService" = $1, mileage = $2 WHERE id = $3',
+        'UPDATE vehicles SET lastService = $1, mileage = $2 WHERE id = $3',
         [service_date, mileage ? mileage + ' km' : null, vehicle_id]
       );
       
@@ -137,7 +137,6 @@ async function createServiceHistory(data, user) {
           service_date,
           mileage
         }),
-        ip_address: user.ip,
         user_agent: user.userAgent
       });
       
@@ -218,7 +217,6 @@ async function updateServiceHistory(id, data, user) {
         cost,
         expense_category
       }),
-      ip_address: user.ip,
       user_agent: user.userAgent
     });
     
@@ -259,7 +257,6 @@ async function deleteServiceHistory(id, user) {
         service_type: existingRecord.service_type,
         service_date: existingRecord.service_date
       }),
-      ip_address: user.ip,
       user_agent: user.userAgent
     });
     

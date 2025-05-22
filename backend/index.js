@@ -26,6 +26,7 @@ const {
   updateServiceHistory,
   deleteServiceHistory
 } = require('./service-history');
+const cron = require('node-cron');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -191,7 +192,7 @@ app.post('/api/vehicles', authenticateToken, async (req, res) => {
     try {
       // Insert vehicle
       const vehicleResult = await db.query(
-        'INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+        'INSERT INTO vehicles (id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
         [id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage]
       );
       
@@ -233,7 +234,6 @@ app.post('/api/vehicles', authenticateToken, async (req, res) => {
           type,
           status
         }),
-        ip_address: req.ip,
         user_agent: req.headers['user-agent']
       });
       
@@ -270,7 +270,7 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
     try {
       // Update vehicle
       const vehicleResult = await db.query(
-        'UPDATE vehicles SET status = $1, type = $2, "lastService" = $3, documents = $4, make = $5, model = $6, year = $7, license = $8, regaplnr = $9, mileage = $10 WHERE id = $11 RETURNING *',
+        'UPDATE vehicles SET status = $1, type = $2, lastService = $3, documents = $4, make = $5, model = $6, year = $7, license = $8, regaplnr = $9, mileage = $10 WHERE id = $11 RETURNING *',
         [status, type, lastService, documents, make, model, year, license, regaplnr, mileage, id]
       );
       
@@ -323,7 +323,6 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
               enabled: r.enabled
             }))
           }),
-          ip_address: req.ip,
           user_agent: req.headers['user-agent']
         }).catch(err => console.error('Failed to create reminder audit log:', err));
       }
@@ -338,6 +337,15 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
       
       // Commit transaction
       await db.query('COMMIT');
+
+      // Generate notifications after reminders are updated (batch update)
+      if (reminders && Array.isArray(reminders)) {
+        try {
+          await generateNotifications(false);
+        } catch (err) {
+          console.error('Error generating notifications after batch reminder update:', err);
+        }
+      }
       
       // Create audit log for vehicle update only if vehicle data actually changed
       const oldVehicleData = {
@@ -375,7 +383,6 @@ app.put('/api/vehicles/:id', authenticateToken, async (req, res) => {
           field: 'vehicle',
           old_value: JSON.stringify(oldVehicleData),
           new_value: JSON.stringify(newVehicleData),
-          ip_address: req.ip,
           user_agent: req.headers['user-agent']
         });
       }
@@ -415,7 +422,6 @@ app.delete('/api/vehicles/:id', authenticateToken, async (req, res) => {
       page: 'Vehicles',
       field: 'vehicle',
       old_value: JSON.stringify(result.rows[0]),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
@@ -486,11 +492,12 @@ app.post('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
         date: date,
         enabled: enabled !== undefined ? enabled : true
       }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
     res.status(201).json(result.rows[0]);
+    // Generate notifications after reminder creation
+    generateNotifications(false).catch(err => console.error('Error generating notifications after reminder creation:', err));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -539,11 +546,12 @@ app.put('/api/reminders/:id', authenticateToken, async (req, res) => {
         date: date,
         enabled: enabled !== undefined ? enabled : true
       }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
     res.json(result.rows[0]);
+    // Generate notifications after reminder update
+    generateNotifications(false).catch(err => console.error('Error generating notifications after reminder update:', err));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -577,11 +585,12 @@ app.delete('/api/reminders/:id', authenticateToken, async (req, res) => {
         date: existingReminder.date,
         enabled: existingReminder.enabled
       }),
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
     
     res.json({ message: 'Reminder deleted successfully' });
+    // Generate notifications after reminder deletion
+    generateNotifications(false).catch(err => console.error('Error generating notifications after reminder deletion:', err));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -632,6 +641,15 @@ app.put('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
       // Commit transaction
       await db.query('COMMIT');
       
+      // Generate notifications after reminders are updated (batch update)
+      if (reminders && Array.isArray(reminders)) {
+        try {
+          await generateNotifications(false);
+        } catch (err) {
+          console.error('Error generating notifications after batch reminder update:', err);
+        }
+      }
+      
       // Create audit log for reminder batch update
       await createAuditLog({
         user_id: req.user.id,
@@ -655,11 +673,12 @@ app.put('/api/vehicles/:id/reminders', authenticateToken, async (req, res) => {
             enabled: r.enabled
           }))
         }),
-        ip_address: req.ip,
         user_agent: req.headers['user-agent']
       });
       
       res.json(insertedReminders);
+      // Generate notifications after batch update
+      generateNotifications(false).catch(err => console.error('Error generating notifications after batch reminder update:', err));
     } catch (err) {
       // Rollback transaction on error
       await db.query('ROLLBACK');
@@ -923,7 +942,6 @@ app.post('/api/service-history', authenticateToken, async (req, res) => {
     const user = {
       id: req.user.id,
       username: req.user.username,
-      ip: req.ip,
       userAgent: req.headers['user-agent']
     };
     
@@ -952,7 +970,6 @@ app.put('/api/service-history/:id', authenticateToken, async (req, res) => {
     const user = {
       id: req.user.id,
       username: req.user.username,
-      ip: req.ip,
       userAgent: req.headers['user-agent']
     };
     
@@ -983,7 +1000,6 @@ app.delete('/api/service-history/:id', authenticateToken, async (req, res) => {
     const user = {
       id: req.user.id,
       username: req.user.username,
-      ip: req.ip,
       userAgent: req.headers['user-agent']
     };
     
@@ -1024,7 +1040,6 @@ app.post('/api/reminders/:id/complete', authenticateToken, async (req, res) => {
     const user = {
       id: req.user.id,
       username: req.user.username,
-      ip: req.ip,
       userAgent: req.headers['user-agent']
     };
     
@@ -1045,9 +1060,12 @@ app.post('/api/reminders/:id/complete', authenticateToken, async (req, res) => {
     try {
       const serviceRecord = await createServiceHistory(serviceData, user);
       
-      // Since createServiceHistory already marks the reminder as completed,
-      // we don't need to do it here again
-      
+      // Dismiss notifications for this reminder (by vehicle and due date)
+      await db.query(
+        `UPDATE notifications SET is_dismissed = TRUE WHERE vehicle_id = $1 AND due_date = $2 AND is_dismissed = FALSE`,
+        [reminder.vehicle_id, reminder.date]
+      );
+
       res.status(201).json({
         message: 'Reminder marked as completed and service record created',
         serviceRecord
@@ -1075,6 +1093,13 @@ app.get('/api/test', authenticateToken, (req, res) => {
       { id: 2, name: 'Test Item 2' }
     ]
   });
+});
+
+// Schedule to run every day at 00:05 AM
+cron.schedule('5 0 * * *', () => {
+  generateNotifications()
+    .then(() => console.log('Daily notifications generated'))
+    .catch(err => console.error('Error generating daily notifications:', err));
 });
 
 // Start server

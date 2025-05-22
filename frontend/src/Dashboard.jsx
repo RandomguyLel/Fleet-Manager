@@ -6,6 +6,33 @@ import Sidebar from './components/Sidebar';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n/i18n';
 
+const getReminderTranslation = (reminderName, t) => {
+  // Try to match known reminder names to translation keys
+  const map = {
+    'Service Due': 'dashboard.serviceDue',
+    'serviceDue': 'dashboard.serviceDue',
+    'Insurance Renewal': 'dashboard.insuranceRenewal',
+    'insuranceRenewal': 'dashboard.insuranceRenewal',
+    'Road Worthiness Certificate': 'vehicles.reminders.roadWorthinessCertificate',
+    'roadWorthinessCertificate': 'vehicles.reminders.roadWorthinessCertificate',
+  };
+  // Try direct match, then lowercased, then fallback
+  return t(map[reminderName] || map[reminderName?.toLowerCase?.()] || reminderName);
+};
+
+// Helper to translate reminder names
+const getTranslatedReminderName = (reminderName, t) => {
+  const map = {
+    'Service Due': t('dashboard.serviceDue'),
+    'serviceDue': t('dashboard.serviceDue'),
+    'Insurance Renewal': t('dashboard.insuranceRenewal'),
+    'insuranceRenewal': t('dashboard.insuranceRenewal'),
+    'Road Worthiness Certificate': t('vehicles.reminders.roadWorthinessCertificate'),
+    'roadWorthinessCertificate': t('vehicles.reminders.roadWorthinessCertificate'),
+  };
+  return map[reminderName] || reminderName;
+};
+
 const Dashboard = () => {
   // Get translations
   const { t } = useTranslation();
@@ -118,7 +145,7 @@ const Dashboard = () => {
   const markReminderAsCompleted = async (vehicleId, reminderId, reminderName) => {
     try {
       // Determine reminder type for better messaging
-      let reminderType = 'general';
+      let reminderType = 'Custom reminder';
       if (reminderName.toLowerCase().includes('service')) {
         reminderType = 'service';
       } else if (reminderName.toLowerCase().includes('insurance')) {
@@ -127,20 +154,24 @@ const Dashboard = () => {
         reminderType = 'document';
       }
       
-      // For service reminders, offer to reschedule
-      if (reminderType === 'service') {
-        const reschedule = confirm('Would you like to create a new service reminder after marking this one as completed?');
-        
-        if (reschedule) {
-          // Ask for new date - default to 6 months from now for service
+      // For service, insurance, and document reminders, offer to reschedule
+      if (['service', 'insurance', 'document'].includes(reminderType)) {
+        let defaultDate;
+        if (reminderType === 'service') {
           const today = new Date();
           const nextServiceDate = new Date(today.setMonth(today.getMonth() + 6));
-          const dateStr = nextServiceDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-          
-          const newDate = prompt('Enter the date for the next service reminder:', dateStr);
+          defaultDate = nextServiceDate.toISOString().split('T')[0];
+        } else if (reminderType === 'insurance' || reminderType === 'document') {
+          const today = new Date();
+          const nextYearDate = new Date(today.setFullYear(today.getFullYear() + 1));
+          defaultDate = nextYearDate.toISOString().split('T')[0];
+        }
+        const reschedule = confirm(`Would you like to create a new ${reminderType === 'service' ? 'service' : reminderType === 'insurance' ? 'insurance renewal' : 'document renewal'} reminder after marking this one as completed?`);
+        if (reschedule) {
+          const newDate = prompt(`Enter the date for the next ${reminderType === 'service' ? 'service' : reminderType === 'insurance' ? 'insurance renewal' : 'document renewal'} reminder:`, defaultDate);
           if (newDate) {
             try {
-              // FIXED: Use the complete endpoint to create service history record
+              // Complete the current reminder
               const completeResponse = await fetch(`${apiUrl}/api/reminders/${reminderId}/complete`, {
                 method: 'POST',
                 headers: {
@@ -152,11 +183,9 @@ const Dashboard = () => {
                   service_date: new Date().toISOString().split('T')[0]
                 })
               });
-              
               if (!completeResponse.ok) {
                 throw new Error(`Failed to complete reminder: ${completeResponse.status}`);
               }
-              
               // Create a new reminder
               const createResponse = await fetch(`${apiUrl}/api/vehicles/${vehicleId}/reminders`, {
                 method: 'POST',
@@ -170,36 +199,29 @@ const Dashboard = () => {
                   enabled: true
                 })
               });
-              
               if (!createResponse.ok) {
                 throw new Error(`Failed to create new reminder: ${createResponse.status}`);
               }
-              
               // Update UI by filtering out the completed reminder
               setUpcomingReminders(prevReminders => 
                 prevReminders.filter(reminder => reminder.id !== reminderId)
               );
-              
               // Refresh data to include the new reminder
               const vehiclesResponse = await fetch(`${apiUrl}/api/vehicles`, {
                 headers: {
                   ...getAuthHeader()
                 }
               });
-              
               if (vehiclesResponse.ok) {
                 const vehiclesData = await vehiclesResponse.json();
                 const today = new Date();
                 const allReminders = [];
-                
                 for (const vehicle of vehiclesData) {
                   if (vehicle.reminders && vehicle.reminders.length > 0) {
                     for (const reminder of vehicle.reminders) {
                       if (!reminder.enabled) continue;
-                      
                       const dueDate = new Date(reminder.date);
                       const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                      
                       allReminders.push({
                         ...reminder,
                         vehicle: {
@@ -212,24 +234,20 @@ const Dashboard = () => {
                     }
                   }
                 }
-                
                 allReminders.sort((a, b) => a.daysUntilDue - b.daysUntilDue);
                 setUpcomingReminders(allReminders.slice(0, 10));
               }
-              
-              alert(`Reminder marked as completed and new reminder scheduled for ${new Date(newDate).toLocaleDateString()}`);
+              alert(t('alerts.reminderCompleted', { date: new Date(newDate).toLocaleDateString() }));
             } catch (error) {
               console.error('Error handling reminder completion:', error);
-              alert(`Error: ${error.message}`);
+              alert(t('alerts.error', { message: error.message }));
             }
             return;
           }
         }
       }
-      
-      // For non-service reminders or if user declined to reschedule
+      // For non-rescheduled or declined reschedule
       try {
-        // FIXED: Use the complete endpoint to create service history record for all reminder types
         const completeResponse = await fetch(`${apiUrl}/api/reminders/${reminderId}/complete`, {
           method: 'POST',
           headers: {
@@ -241,17 +259,12 @@ const Dashboard = () => {
             service_date: new Date().toISOString().split('T')[0]
           })
         });
-        
         if (!completeResponse.ok) {
           throw new Error(`Failed to complete reminder: ${completeResponse.status}`);
         }
-        
-        // Update UI by filtering out the completed reminder
         setUpcomingReminders(prevReminders => 
           prevReminders.filter(reminder => reminder.id !== reminderId)
         );
-        
-        // Use better terminology based on reminder type
         let completionMessage = 'Reminder marked as completed!';
         if (reminderType === 'service') {
           completionMessage = 'Service marked as completed!';
@@ -260,15 +273,14 @@ const Dashboard = () => {
         } else if (reminderType === 'document') {
           completionMessage = 'Document renewal marked as completed!';
         }
-        
-        alert(completionMessage);
+        alert(t('alerts.reminderCompletedType', { type: reminderType }));
       } catch (error) {
         console.error('Error marking reminder as completed:', error);
-        alert(`Error: ${error.message}`);
+        alert(t('alerts.error', { message: error.message }));
       }
     } catch (error) {
       console.error('Error in markReminderAsCompleted:', error);
-      alert(`Error: ${error.message}`);
+      alert(t('alerts.error', { message: error.message }));
     }
   };
 
@@ -350,7 +362,7 @@ const Dashboard = () => {
         setError(null);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
-        setError(`Error fetching dashboard data: ${err.message}`);
+        setError(t('alerts.error', { message: err.message }));
       } finally {
         setLoading(false);
       }
@@ -432,10 +444,10 @@ const Dashboard = () => {
                         await fetchNotifications();
                         
                         
-                        alert('Paziņojumi atjaunināti!');
+                        alert(t('alerts.notificationsUpdated'));
                       } catch (error) {
                         console.error('Error generating report:', error);
-                        alert('Failed to generate report. Please try again.');
+                        alert(t('alerts.generateReportFailed'));
                       }
                     }}
                   >
@@ -546,7 +558,6 @@ const Dashboard = () => {
                                     (() => {
                                       // If the title is a translation key, translate it
                                       if (notification.title.startsWith('notifications.types.')) {
-                                        const [type, status] = notification.title.split('.').slice(-2);
                                         return t(notification.title, {
                                           days: notification.daysUntilDue,
                                           vehicle: `${notification.make} ${notification.model}`
@@ -558,19 +569,10 @@ const Dashboard = () => {
                                   }</p>
                                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{
                                     (() => {
-                                      const reminderNameTranslationMap = {
-                                        'Service Due': 'dashboard.serviceDue',
-                                        'Insurance Renewal': 'dashboard.insuranceRenewal',
-                                        'Road Worthiness Certificate': 'vehicles.reminders.roadWorthinessCertificate',
-                                      };
-                                      const getTranslatedReminderName = (reminderName) => {
-                                        const key = reminderNameTranslationMap[reminderName];
-                                        return key ? t(key) : reminderName;
-                                      };
                                       return notification.message_vars
                                         ? t('notifications.message.default', {
                                             ...notification.message_vars,
-                                            reminderName: getTranslatedReminderName(notification.message_vars.reminderName)
+                                            reminderName: getTranslatedReminderName(notification.message_vars.reminderName, t)
                                           })
                                         : null;
                                     })()
@@ -641,24 +643,17 @@ const Dashboard = () => {
                 <div className="bg-white shadow rounded-lg dark:bg-gray-800 dark:border dark:border-gray-700">
                   <div className="px-4 py-5 sm:p-6">
                     <h2 className="text-lg font-medium text-gray-900 dark:text-white">{t('dashboard.quickAccess')}</h2>
-                    <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
                       <Link to="/vehicles" className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">🚗</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('common.vehicles')}</span>
                       </Link>
-                      <button onClick={() => {
-                        alert('Available in Vehicles/Pieejams transportlīdzekļu sadaļā');
-                      }}   className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
-                        <span className="block text-2xl">📄</span>
-                        <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.documents')}</span>
-                      </button>
                       <Link to="/calendar" className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60">
                         <span className="block text-2xl">📅</span>
                         <span className="mt-2 block text-sm font-medium text-gray-900 dark:text-white">{t('dashboard.scheduler')}</span>
                       </Link>
-                      
                       <button 
-                        className="p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60"
+                        className="col-span-2 p-3 bg-gray-50 rounded-lg text-center hover:bg-gray-100 dark:bg-gray-700/40 dark:hover:bg-gray-700/60"
                         onClick={async () => {
                           try {
                             await fetch(`${apiUrl}/api/notifications/generate?force=true`, {
@@ -666,7 +661,7 @@ const Dashboard = () => {
                               headers: getAuthHeader()
                             });
                             await fetchNotifications();
-                            alert('Notifications refreshed successfully!');
+                            alert(t('alerts.notificationsRefreshed'));
                           } catch (error) {
                             console.error('Error generating notifications:', error);
                           }
@@ -731,17 +726,7 @@ const Dashboard = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">{
-                              (() => {
-                                const reminderTranslationMap = {
-                                  'Service Due': 'dashboard.serviceDue',
-                                  'Insurance Renewal': 'dashboard.insuranceRenewal',
-                                  'Road Worthiness Certificate': 'vehicles.reminders.roadWorthinessCertificate',
-                                };
-                                const key = reminderTranslationMap[reminder.name];
-                                return key ? t(key) : reminder.name;
-                              })()
-                            }</div>
+                            <div className="text-sm text-gray-900 dark:text-white">{getReminderTranslation(reminder.name, t)}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900 dark:text-white">{formatDate(reminder.date)}</div>
@@ -754,13 +739,13 @@ const Dashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button 
                                     onClick={() => markReminderAsCompleted(reminder.vehicle.id, reminder.id, reminder.name)}
-className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                  >
-{reminder.name.toLowerCase().includes('service') ? t('dashboard.markServiced') :
+                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                    >
+                              {reminder.name.toLowerCase().includes('service') ? t('dashboard.markServiced') :
                                reminder.name.toLowerCase().includes('insurance') ? t('dashboard.markRenewed') :
                                reminder.name.toLowerCase().includes('worthiness') || reminder.name.toLowerCase().includes('certificate') ? t('dashboard.markRenewed') :
                                t('dashboard.markComplete')}
-</button>
+                            </button>
                           </td>
                         </tr>
                         );

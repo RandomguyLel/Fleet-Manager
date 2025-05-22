@@ -1,4 +1,52 @@
 {
+  "alerts": {
+    "sessionExpired": "Jūsu sesija ir beigusies. Lūdzu, piesakieties vēlreiz.",
+    "duplicateVehicle": "Kļūda: Šis transportlīdzeklis jau pastāv.",
+    "addVehicleFailed": "Neizdevās pievienot transportlīdzekli. Lūdzu, mēģiniet vēlreiz.",
+    "updateVehicleFailed": "Neizdevās atjaunināt transportlīdzekli. Lūdzu, mēģiniet vēlreiz.",
+    "deleteVehicleSelect": "Lūdzu, izvēlieties vismaz vienu transportlīdzekli dzēšanai.",
+    "deleteVehicleSuccess": "Transportlīdzeklis {{id}} veiksmīgi dzēsts.",
+    "deleteVehiclesSuccess": "{{count}} transportlīdzekļi veiksmīgi dzēsti.",
+    "deleteVehicleError": "Radās kļūda, dzēšot vienu vai vairākus transportlīdzekļus.",
+    "noVehicleId": "Nav norādīts transportlīdzekļa ID.",
+    "csddNotConnected": "Jums vispirms jāpieslēdzas e.csdd.lv. Lūdzu, dodieties uz Rediģēt transportlīdzekli > Integrācijas cilni, lai pieslēgtos.",
+    "csddNotConnectedImport": "Lūdzu, pieslēdzieties e.csdd.lv integrācijai sistēmas iestatījumos, lai varētu importēt transportlīdzekļus.",
+    "csddSyncAllSuccess": "Visi transportlīdzekļa dati veiksmīgi sinhronizēti: tehniskā apskate un apdrošināšanas atgādinājumi atjaunināti.",
+    "csddSyncPartialSuccess": "Dati daļēji sinhronizēti: tehniskā apskate atjaunināta, bet apdrošināšanas dati nav pieejami.",
+    "csddSyncNoRegaplnr": "Transportlīdzekļa dati veiksmīgi atjaunināti no e.csdd.lv. Nav reģistrācijas apliecības numura, lai pārbaudītu apdrošināšanu.",
+    "csddSyncError": "Kļūda sinhronizējot transportlīdzekļa datus: {{message}}",
+    "importSelect": "Lūdzu, izvēlieties vismaz vienu transportlīdzekli importēšanai.",
+    "importDuplicateVehicle": "Transportlīdzeklis {{id}} jau pastāv, tiek izlaists...",
+    "importFailed": "Kļūda importējot transportlīdzekli.",
+    "licensePlateRequired": "Reģistrācijas numurs ir obligāts.",
+    "enterLicensePlate": "Lūdzu, vispirms ievadiet reģistrācijas numuru.",
+    "fetchVehicleFailed": "Neizdevās iegūt transportlīdzekļa informāciju: {{message}}",
+    "fetchVehicleDetailsFailed": "Neizdevās ielādēt transportlīdzekļa datus: {{message}}",
+    "registrationAndPlateRequired": "Nepieciešams reģistrācijas apliecības numurs un reģistrācijas numurs.",
+    "insuranceNoInfo": "Nav atrasta apdrošināšanas informācija. Lūdzu, pārbaudiet reģistrācijas apliecības numuru.",
+    "insuranceAdded": "Apdrošināšanas informācija veiksmīgi pievienota kā atgādinājums.",
+    "insuranceNoDate": "Datu kopā nav apdrošināšanas polises datuma.",
+    "insuranceFetchError": "Kļūda iegūstot apdrošināšanas informāciju: {{message}}",
+    "csddConnectSystemSettings": "Lūdzu, pieslēdzieties e.CSDD.lv sistēmas iestatījumos. Jūs tiksiet novirzīts turp.",
+    "csddDisconnectSystemSettings": "Lūdzu, atvienojiet e.CSDD.lv sistēmas iestatījumos. Jūs tiksiet novirzīts turp.",
+    "reminderCompleted": "Atgādinājums atzīmēts kā pabeigts, jauns atgādinājums ieplānots uz {{date}}.",
+    "error": "Kļūda: {{message}}",
+    "reminderCompletedType": "{{type}} atzīmēts kā pabeigts!",
+    "notificationsUpdated": "Paziņojumi atjaunināti!",
+    "generateReportFailed": "Neizdevās ģenerēt atskaiti. Lūdzu, mēģiniet vēlreiz.",
+    "notificationsRefreshed": "Paziņojumi veiksmīgi atsvaidzināti!",
+    "exportNotImplemented": "Datu eksporta funkcionalitāte tiks ieviesta nākotnē.",
+    "featureNotImplemented": "Funkcionalitāte vēl nav ieviesta!",
+    "cannotDemoteLastAdmin": "Nevar pazemināt pēdējo administratoru. Sistēmā jābūt vismaz vienam aktīvam administratoram.",
+    "cannotDisableLastAdmin": "Nevar atspējot pēdējo administratoru. Sistēmā jābūt vismaz vienam aktīvam administratoram.",
+    "userCreated": "Lietotājs {{name}} veiksmīgi izveidots ar pagaidu paroli: {{password}}",
+    "userUpdated": "Lietotājs {{name}} veiksmīgi atjaunināts.",
+    "serviceRecordSuccess": "Servisa ieraksts veiksmīgi {{action}}!",
+    "updated": "atjaunināts",
+    "created": "izveidots",
+    "notYetImplemented": "Vēl nav ieviests!",
+    "forgotPassword": "Lai atiestatītu paroli, lūdzu, sazinieties ar administratoru."
+  },
   "common": {
     "main": "Galvenā",
     "admin": "Administrācija",
@@ -66,6 +114,7 @@
     "preview": "Priekšskatīt",
     "download": "Lejupielādēt",
     "upload": "Augšupielādēt",
+    "aboutText": "ir visaptverošs risinājums auto parka, servisa vēstures un dokumentu pārvaldībai.",
     "eventTypes": {
       "reminder": "Atgādinājums",
       "notification": "Paziņojums",
@@ -75,8 +124,9 @@
     }
   },
   "auth": {
-    "loginTitle": "Ienākt Fleet Manager",
-    "email": "Lietotājvārds",
+    "tms": "TMS",
+    "loginTitle": "Ienākt TMS",
+    "email": "Lietotājvārds/E-pasts",
     "password": "Parole",
     "rememberMe": "Atcerēties mani",
     "forgotPassword": "Aizmirsi paroli?",
@@ -185,7 +235,7 @@
       "action2": "Importēt transportlīdzekļa termiņus un atgādinājumus",
       "action3": "Atjaunināt transportlīdzekļa atgādinājumus no csdd.lv",
       "remindersSynced": "Atgādinājumi veiksmīgi atjaunināti no e.csdd.lv",
-      "syncWithCsdd": "Sinhronizēt ar CSDD",
+      "syncWithCsdd": "Atsvaidzināt datus",
       "checkInsuranceHint": "Noklikšķiniet uz pogas, lai pārbaudītu apdrošināšanas datus"
     },
     "vehicleTypes": {
@@ -198,7 +248,8 @@
       "tricycle": "Tricikls",
       "boat": "Laiva",
       "ship": "Kuģis",
-      "other": "Cits"
+      "other": "Cits",
+      "tractor": "Traktors"
     },
     "tracking": {
       "title": "Izsekošana",
@@ -309,7 +360,8 @@
       "coolantFlush": "Dzesēšanas šķidruma nomaiņa",
       "engineTuneUp": "Dzinēja uzlabojumi",
       "fuel": "Degviela",
-      "refueling": "Degvielas uzpilde"
+      "refueling": "Degvielas uzpilde",
+      "serviceDue": "Tehniskā apkope"
     },
     "placeholders": {
       "mileage": "piem. 45000",
@@ -347,7 +399,7 @@
     "mileageTracking": "Nobraukuma izsekošana",
     "costByVehicle": "Izmaksas pēc transportlīdzekļa",
     "noDataAvailable": "Nav datu atlasītajam periodam",
-    "noMileageDataAvailable": "Nav pieejams nobraukuma datu",
+    "noMileageDataAvailable": "Nav pieejami nobraukuma dati",
     "costBreakdown": "Izmaksu sadalījums",
     "category": "Kategorija",
     "thisMonth": "Šomēnes",
@@ -397,7 +449,6 @@
     "user": "Lietotājs",
     "action": "Darbība",
     "details": "Detaļas",
-    "ipAddress": "IP adrese",
     "browser": "Pārlūks",
     "exportLog": "Eksportēt žurnālu",
     "actionType": "Darbības veids",
@@ -465,6 +516,11 @@
         "overdue": "Tehniskā apskate nokavēta {{vehicle}}",
         "dueInDays": "Tehniskā apskate jāveic pēc {{days}} dienām {{vehicle}}",
         "dueSoon": "Tuvojās tehniskās apskates termiņš {{vehicle}}"
+      },
+      "other": {
+        "overdue": "Atgādinājums tiek kavēts {{vehicle}}",
+        "dueInDays": "Atgādinājums beigsies pēc {{days}} dienām {{vehicle}}",
+        "dueSoon": "Atgādinājuma termiņš tuvojas {{vehicle}}"
       }
     },
     "message": {

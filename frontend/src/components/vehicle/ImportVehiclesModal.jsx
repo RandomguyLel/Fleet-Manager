@@ -16,9 +16,15 @@ const ImportVehiclesModal = ({ isOpen, onClose, onImport }) => {
 
   useEffect(() => {
     if (isOpen) {
+      // If not connected to CSDD, show error and do not fetch
+      if (csddIntegration.connectionStatus !== 'connected') {
+        setError(t('alerts.csddNotConnectedImport'));
+        setVehicles([]);
+        return;
+      }
       fetchVehicles();
     }
-  }, [isOpen]);
+  }, [isOpen, csddIntegration.connectionStatus, t]);
 
   const fetchVehicles = async () => {
     try {
@@ -96,7 +102,7 @@ const ImportVehiclesModal = ({ isOpen, onClose, onImport }) => {
 
   const handleImport = async () => {
     if (selectedVehicles.length === 0) {
-      alert('Please select at least one vehicle to import');
+      alert(t('alerts.importSelect'));
       return;
     }
 

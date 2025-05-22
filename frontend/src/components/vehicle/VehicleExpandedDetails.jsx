@@ -23,16 +23,9 @@ const VehicleExpandedDetails = ({
   
   // Helper function to get translated reminder name
   const getTranslatedReminderName = (reminderName) => {
-    switch(reminderName) {
-      case 'Road Worthiness Certificate':
-        return t('vehicles.reminders.roadWorthinessCertificate');
-      case 'Insurance Renewal':
-        return t('vehicles.reminders.insuranceRenewal');
-      case 'Service Due':
-        return t('vehicles.reminders.serviceDue');
-      default:
-        return reminderName; // For custom reminders or any other type
-    }
+    return t(`vehicles.reminders.${reminderName}`) !== `vehicles.reminders.${reminderName}`
+      ? t(`vehicles.reminders.${reminderName}`)
+      : reminderName;
   };
     
   // Helper function to get status badge class
@@ -103,12 +96,6 @@ const VehicleExpandedDetails = ({
                     <p className="text-gray-500 dark:text-gray-400">
                       <span className="font-medium">{t('vehicles.mileage')}:</span> {vehicle.mileage ? `${vehicle.mileage} km` : '-'}</p>
                   </div>
-                </div>
-              </div>
-              <div className="flex-1 bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">{t('vehicles.location.title')}</h4>
-                <div className="bg-gray-200 dark:bg-gray-600 h-40 rounded flex items-center justify-center">
-                  <span className="text-gray-600 dark:text-gray-300">{t('vehicles.location.mapView')}</span>
                 </div>
               </div>
             </div>

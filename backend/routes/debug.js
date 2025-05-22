@@ -24,7 +24,6 @@ router.post('/generate-vehicles', async (req, res) => {
       page: 'Vehicles',
       field: 'debug_generate_vehicles',
       new_value: 'Generated sample vehicles',
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
 
@@ -88,7 +87,7 @@ router.post('/generate-vehicles', async (req, res) => {
 
       // Insert vehicle
       const vehicleResult = await db.query(
-        'INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+        'INSERT INTO vehicles (id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
         [registrationNumber, status, type, lastService, documents, make, model, year, registrationNumber, regaplnr, mileage]
       );
       
@@ -168,7 +167,6 @@ router.post('/generate-service-history', async (req, res) => {
       page: 'Service History',
       field: 'debug_generate_service_history',
       new_value: 'Generated sample service history',
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
 
@@ -271,7 +269,7 @@ router.post('/generate-service-history', async (req, res) => {
       
       // Use a simpler approach to update the lastService field
       await db.query(
-        `UPDATE vehicles SET "lastService" = $1 WHERE id = $2`,
+        `UPDATE vehicles SET lastService = $1 WHERE id = $2`,
         [formattedDate, vehicle.id]
       );
     }
@@ -303,7 +301,6 @@ router.post('/generate-expired-reminders', async (req, res) => {
       page: 'Vehicles',
       field: 'debug_generate_expired_reminders',
       new_value: 'Generated vehicles with expired reminders',
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
 
@@ -361,7 +358,7 @@ router.post('/generate-expired-reminders', async (req, res) => {
 
       // Insert vehicle
       const vehicleResult = await db.query(
-        'INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+        'INSERT INTO vehicles (id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
         [registrationNumber, 'Active', type, lastService, 'Expired', make, model, year, registrationNumber, regaplnr, mileage]
       );
       
@@ -428,7 +425,6 @@ router.post('/generate-upcoming-reminders', async (req, res) => {
       page: 'Vehicles',
       field: 'debug_generate_upcoming_reminders',
       new_value: 'Generated vehicles with upcoming reminders',
-      ip_address: req.ip,
       user_agent: req.headers['user-agent']
     });
 
@@ -484,7 +480,7 @@ router.post('/generate-upcoming-reminders', async (req, res) => {
 
       // Insert vehicle
       const vehicleResult = await db.query(
-        'INSERT INTO vehicles (id, status, type, "lastService", documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
+        'INSERT INTO vehicles (id, status, type, lastService, documents, make, model, year, license, regaplnr, mileage) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
         [registrationNumber, 'Active', type, lastService, 'Expiring Soon', make, model, year, registrationNumber, regaplnr, mileage]
       );
       

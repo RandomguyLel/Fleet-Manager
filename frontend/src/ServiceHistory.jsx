@@ -125,10 +125,10 @@ const ServiceModal = ({ isOpen, onClose, onSave, vehicles, editRecord, selectedV
       // Notify parent that save was successful
       onSave();
       
-      alert(`Service record ${editRecord ? 'updated' : 'created'} successfully!`);
+      alert(t('alerts.serviceRecordSuccess', { action: editRecord ? t('alerts.updated') : t('alerts.created') }));
     } catch (error) {
       console.error('Error saving service record:', error);
-      alert(`Error: ${error.message}`);
+      alert(t('alerts.error', { message: error.message }));
     }
   };
 
@@ -366,6 +366,10 @@ const ServiceHistory = () => {
     'Inspection': 'inspection',
     'Insurance Renewal': 'insuranceRenewal',
     'Road Worthiness Certificate': 'roadWorthinessCertificate',
+    'Service Due': 'serviceDue',
+    'serviceDue': 'serviceDue',
+    'insuranceRenewal': 'insuranceRenewal',
+    'roadWorthinessCertificate': 'roadWorthinessCertificate',
     'Other': 'other',
     'Spark Plugs Replacement': 'sparkPlugReplacement',
     'Wheel Alignment': 'wheelAlignment',
@@ -473,7 +477,7 @@ const ServiceHistory = () => {
       alert('Service record deleted successfully!');
     } catch (error) {
       console.error('Error deleting service record:', error);
-      alert(`Error: ${error.message}`);
+      alert(t('alerts.error', { message: error.message }));
     }
   };
   
