@@ -126,7 +126,8 @@
   "auth": {
     "tms": "TMS",
     "loginTitle": "Ienākt TMS",
-    "email": "Lietotājvārds/E-pasts",
+    "email": "E-pasts",
+    "emailUsername": "E-pasts/Lietotājvārds",
     "password": "Parole",
     "rememberMe": "Atcerēties mani",
     "forgotPassword": "Aizmirsi paroli?",

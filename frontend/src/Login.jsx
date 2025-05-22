@@ -138,7 +138,7 @@ const Login = () => {
                 className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
                   darkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
                 } rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
-                placeholder={t('auth.email')}
+                placeholder={t('auth.emailUsername')}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={isLoading}

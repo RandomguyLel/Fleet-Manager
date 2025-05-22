@@ -127,7 +127,8 @@
   "auth": {
     "tms": "Fleet Manager",
     "loginTitle": "Login to Fleet Manager",
-    "email": "Email/Username",
+    "email": "E-mail",
+    "emailUsername": "E-mail/Username",
     "password": "Password",
     "rememberMe": "Remember me",
     "forgotPassword": "Forgot password?",
