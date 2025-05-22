@@ -356,12 +356,16 @@ const Analytics = () => {
   const chartData = calculateChartData();
 
   // Setup chart data
+  const monthLabels = Object.keys(chartData.recordsByMonth).sort((a, b) => {
+    // Convert 'Jan 2025' to a Date for comparison
+    return new Date(a) - new Date(b);
+  });
   const costTrendData = {
-    labels: Object.keys(chartData.recordsByMonth),
+    labels: monthLabels,
     datasets: [
       {
         label: 'Total Cost',
-        data: Object.values(chartData.recordsByMonth),
+        data: monthLabels.map(label => chartData.recordsByMonth[label]),
         fill: false,
         borderColor: 'rgb(75, 192, 192)',
         tension: 0.1
