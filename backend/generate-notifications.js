@@ -75,7 +75,8 @@ async function generateNotifications(force = false) {
             const messageVars = {
               reminderName: reminder.name,
               vehicle: `${reminder.make} ${reminder.model} (${reminder.vehicle_id})`,
-              date: new Date(reminder.date).toLocaleDateString()
+              date: new Date(reminder.date).toLocaleDateString(),
+              days: diffDays
             };
             
             // Create notification

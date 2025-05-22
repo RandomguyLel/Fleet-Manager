@@ -306,7 +306,7 @@ const NotificationBell = () => {
                               // If the title is a translation key, translate it
                               if (notification.title.startsWith('notifications.types.')) {
                                 return t(notification.title, {
-                                  days: notification.daysUntilDue,
+                                  days: notification.message_vars?.days,
                                   vehicle: `${notification.make} ${notification.model}`
                                 });
                               }
