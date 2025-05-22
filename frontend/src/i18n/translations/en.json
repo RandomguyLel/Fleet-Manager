@@ -10,6 +10,7 @@
     "deleteVehicleError": "There was an error deleting one or more vehicles.",
     "noVehicleId": "No vehicle ID provided.",
     "csddNotConnected": "You need to connect to e.csdd.lv first. Please go to Edit Vehicle > Integrations tab to connect.",
+    "csddNotConnectedImport": "You need to connect to e.csdd.lv in System Settings before importing vehicles.",
     "csddSyncAllSuccess": "All vehicle data successfully synchronized: Road worthiness and insurance reminders updated.",
     "csddSyncPartialSuccess": "Vehicle data partially synchronized: Road worthiness updated, but insurance data could not be retrieved.",
     "csddSyncNoRegaplnr": "Vehicle details successfully updated from e.csdd.lv. No Registration Certificate Number available to check insurance.",
@@ -114,6 +115,7 @@
     "preview": "Preview",
     "download": "Download",
     "upload": "Upload",
+    "aboutText": "is a comprehensive solution for managing vehicle fleets, service history, and document management.",
     "eventTypes": {
       "reminder": "Reminder",
       "notification": "Notification",
@@ -123,8 +125,9 @@
     }
   },
   "auth": {
+    "tms": "Fleet Manager",
     "loginTitle": "Login to Fleet Manager",
-    "email": "Email",
+    "email": "Email/Username",
     "password": "Password",
     "rememberMe": "Remember me",
     "forgotPassword": "Forgot password?",
@@ -348,6 +351,7 @@
       "inspection": "Inspection",
       "insuranceRenewal": "Insurance Renewal",
       "roadWorthinessCertificate": "Road Worthiness Certificate",
+      "serviceDue": "Service Due",
       "other": "Other",
       "sparkPlugReplacement": "Spark Plug Replacement",
       "wheelAlignment": "Wheel Alignment",
@@ -516,6 +520,11 @@
         "overdue": "Road worthiness certificate expired for {{vehicle}}",
         "dueInDays": "Road worthiness certificate expires in {{days}} days for {{vehicle}}",
         "dueSoon": "Road worthiness certificate due soon for {{vehicle}}"
+      },
+      "other": {
+        "overdue": "Custom reminder overdue for {{vehicle}}",
+        "dueInDays": "Custom reminder due in {{days}} days for {{vehicle}}",
+        "dueSoon": "Custom reminder due soon for {{vehicle}}"
       }
     },
     "message": {

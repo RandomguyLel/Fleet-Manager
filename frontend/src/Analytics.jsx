@@ -370,7 +370,9 @@ const Analytics = () => {
   };
   
   const costByServiceTypeData = {
-    labels: Object.keys(chartData.costByServiceType),
+    labels: Object.keys(chartData.costByServiceType).map(key =>
+      t(`service.types.${key}`) !== `service.types.${key}` ? t(`service.types.${key}`) : key
+    ),
     datasets: [
       {
         label: 'Cost by Service Type',
@@ -782,7 +784,12 @@ const Analytics = () => {
                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                           {Object.entries(monthlyCosts).map(([category, costs]) => (
                             <tr key={category}>
-                              <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{category}</td>
+                              <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{
+                                category === 'Fuel' ? t('service.categories.fuel') :
+                                category === 'Maintenance' ? t('service.categories.maintenance') :
+                                category === 'Documents' ? t('service.categories.documents') :
+                                category
+                              }</td>
                               <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{formatCurrency(costs.thisMonth)}</td>
                               <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{formatCurrency(costs.lastMonth)}</td>
                               <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{formatCurrency(costs.ytd)}</td>

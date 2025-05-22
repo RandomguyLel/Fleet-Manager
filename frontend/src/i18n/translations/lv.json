@@ -10,6 +10,7 @@
     "deleteVehicleError": "Radās kļūda, dzēšot vienu vai vairākus transportlīdzekļus.",
     "noVehicleId": "Nav norādīts transportlīdzekļa ID.",
     "csddNotConnected": "Jums vispirms jāpieslēdzas e.csdd.lv. Lūdzu, dodieties uz Rediģēt transportlīdzekli > Integrācijas cilni, lai pieslēgtos.",
+    "csddNotConnectedImport": "Lūdzu, pieslēdzieties e.csdd.lv integrācijai sistēmas iestatījumos, lai varētu importēt transportlīdzekļus.",
     "csddSyncAllSuccess": "Visi transportlīdzekļa dati veiksmīgi sinhronizēti: tehniskā apskate un apdrošināšanas atgādinājumi atjaunināti.",
     "csddSyncPartialSuccess": "Dati daļēji sinhronizēti: tehniskā apskate atjaunināta, bet apdrošināšanas dati nav pieejami.",
     "csddSyncNoRegaplnr": "Transportlīdzekļa dati veiksmīgi atjaunināti no e.csdd.lv. Nav reģistrācijas apliecības numura, lai pārbaudītu apdrošināšanu.",
@@ -113,6 +114,7 @@
     "preview": "Priekšskatīt",
     "download": "Lejupielādēt",
     "upload": "Augšupielādēt",
+    "aboutText": "ir visaptverošs risinājums auto parka, servisa vēstures un dokumentu pārvaldībai.",
     "eventTypes": {
       "reminder": "Atgādinājums",
       "notification": "Paziņojums",
@@ -122,8 +124,9 @@
     }
   },
   "auth": {
-    "loginTitle": "Ienākt Fleet Manager",
-    "email": "Lietotājvārds",
+    "tms": "TMS",
+    "loginTitle": "Ienākt TMS",
+    "email": "Lietotājvārds/E-pasts",
     "password": "Parole",
     "rememberMe": "Atcerēties mani",
     "forgotPassword": "Aizmirsi paroli?",
@@ -357,7 +360,8 @@
       "coolantFlush": "Dzesēšanas šķidruma nomaiņa",
       "engineTuneUp": "Dzinēja uzlabojumi",
       "fuel": "Degviela",
-      "refueling": "Degvielas uzpilde"
+      "refueling": "Degvielas uzpilde",
+      "serviceDue": "Tehniskā apkope"
     },
     "placeholders": {
       "mileage": "piem. 45000",
@@ -395,7 +399,7 @@
     "mileageTracking": "Nobraukuma izsekošana",
     "costByVehicle": "Izmaksas pēc transportlīdzekļa",
     "noDataAvailable": "Nav datu atlasītajam periodam",
-    "noMileageDataAvailable": "Nav pieejams nobraukuma datu",
+    "noMileageDataAvailable": "Nav pieejami nobraukuma dati",
     "costBreakdown": "Izmaksu sadalījums",
     "category": "Kategorija",
     "thisMonth": "Šomēnes",
@@ -512,6 +516,11 @@
         "overdue": "Tehniskā apskate nokavēta {{vehicle}}",
         "dueInDays": "Tehniskā apskate jāveic pēc {{days}} dienām {{vehicle}}",
         "dueSoon": "Tuvojās tehniskās apskates termiņš {{vehicle}}"
+      },
+      "other": {
+        "overdue": "Atgādinājums tiek kavēts {{vehicle}}",
+        "dueInDays": "Atgādinājums beigsies pēc {{days}} dienām {{vehicle}}",
+        "dueSoon": "Atgādinājuma termiņš tuvojas {{vehicle}}"
       }
     },
     "message": {

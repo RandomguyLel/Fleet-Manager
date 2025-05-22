@@ -61,14 +61,17 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
             if (/^\d{4}-\d{2}-\d{2}$/.test(reminder.date)) {
               return reminder;
             }
-            
-            // Try to parse the date and format it as YYYY-MM-DD
+            // Try to parse the date and format it as YYYY-MM-DD (LOCAL, not UTC)
             try {
               const dateObj = new Date(reminder.date);
               if (!isNaN(dateObj.getTime())) {
+                // Use local date parts to avoid UTC shift
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
                 return {
                   ...reminder,
-                  date: dateObj.toISOString().split('T')[0]
+                  date: `${year}-${month}-${day}`
                 };
               }
             } catch (e) {
@@ -330,7 +333,6 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
   // Function to update a reminder
   const updateReminder = (index, field, value) => {
     const updatedReminders = [...(vehicleData.reminders || [])];
-    
     // Special handling for date fields to ensure YYYY-MM-DD format
     if (field === 'date' && value) {
       // If value is already in YYYY-MM-DD format, use it as is
@@ -340,13 +342,16 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
           [field]: value
         };
       } else {
-        // Try to parse and format the date
+        // Try to parse and format the date using LOCAL date parts
         try {
           const dateObj = new Date(value);
           if (!isNaN(dateObj.getTime())) {
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
             updatedReminders[index] = {
               ...updatedReminders[index],
-              [field]: dateObj.toISOString().split('T')[0]
+              [field]: `${year}-${month}-${day}`
             };
           } else {
             updatedReminders[index] = {
@@ -369,7 +374,6 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
         [field]: value
       };
     }
-    
     setVehicleData({
       ...vehicleData,
       reminders: updatedReminders
@@ -690,7 +694,7 @@ const AddVehicleModal = ({ onClose, onSave, vehicleToEdit }) => {
                 <button 
                   type="button"
                   onClick={addReminder}
-                  className="w-full py-2 flex justify-center items-center text-sm border border-dashed border-gray-300 rounded-md hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
+                  className="w-full py-2 flex justify-center items-center text-sm dark:text-white text-gray-900 border border-dashed border-gray-300 rounded-md hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700"
                 >
                   <span className="mr-1">➕</span> {t('vehicles.reminders.addReminder')}
                 </button>

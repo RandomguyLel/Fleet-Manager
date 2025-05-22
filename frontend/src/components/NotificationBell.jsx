@@ -226,6 +226,19 @@ const NotificationBell = () => {
     }).format(date);
   };
   
+  // Helper to translate reminder names
+  const getTranslatedReminderName = (reminderName) => {
+    const map = {
+      'Service Due': t('dashboard.serviceDue'),
+      'serviceDue': t('dashboard.serviceDue'),
+      'Insurance Renewal': t('dashboard.insuranceRenewal'),
+      'insuranceRenewal': t('dashboard.insuranceRenewal'),
+      'Road Worthiness Certificate': t('vehicles.reminders.roadWorthinessCertificate'),
+      'roadWorthinessCertificate': t('vehicles.reminders.roadWorthinessCertificate'),
+    };
+    return map[reminderName] || reminderName;
+  };
+  
   return (
     <div className="relative">
       <button 
@@ -292,7 +305,6 @@ const NotificationBell = () => {
                             {(() => {
                               // If the title is a translation key, translate it
                               if (notification.title.startsWith('notifications.types.')) {
-                                const [type, status] = notification.title.split('.').slice(-2);
                                 return t(notification.title, {
                                   days: notification.daysUntilDue,
                                   vehicle: `${notification.make} ${notification.model}`
@@ -304,15 +316,6 @@ const NotificationBell = () => {
                           </p>
                           <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                             {(() => {
-                              const reminderNameTranslationMap = {
-                                'Service Due': 'dashboard.serviceDue',
-                                'Insurance Renewal': 'dashboard.insuranceRenewal',
-                                'Road Worthiness Certificate': 'vehicles.reminders.roadWorthinessCertificate',
-                              };
-                              const getTranslatedReminderName = (reminderName) => {
-                                const key = reminderNameTranslationMap[reminderName];
-                                return key ? t(key) : reminderName;
-                              };
                               return notification.message_vars
                                 ? t('notifications.message.default', {
                                     ...notification.message_vars,
